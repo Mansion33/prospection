@@ -345,7 +345,7 @@
 
     // ---------- INIT CARTE ----------
 
-    const map = L.map("map").setView([44.994, -0.443], 14);
+    const map = L.map("map", { doubleClickZoom: false }).setView([44.994, -0.443], 14);
 
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
       maxZoom: 19,
@@ -446,7 +446,8 @@
     });
 
     const streetState = {};
-    const streetLayers = {};
+    const streetVisibleLayers = {};   // lignes visibles (fines)
+    const streetHitLayers = {};       // hitbox invisibles (larges)
     let currentStreetForPopup = null;
 
     // ---------- ETATS / COULEURS ----------
@@ -585,12 +586,12 @@
     // ---------- HIGHLIGHT DES RUES PAR SECTEUR ----------
 
     function highlightZone(zoneId) {
-      Object.entries(streetLayers).forEach(([name, layers]) => {
+      Object.entries(streetVisibleLayers).forEach(([name, layers]) => {
         const inZone = zoneStreetNames[zoneId]?.has(name);
         layers.forEach(layer => {
           layer.setStyle({
             opacity: inZone ? 0.9 : 0.15,
-            weight: inZone ? 3 : 1.5
+            weight: inZone ? 2.2 : 1.4
           });
         });
       });
@@ -659,6 +660,7 @@
 
     // ---------- DESSIN DES SECTEURS (init) ----------
 
+    const zoneLayers = {};
     zones.forEach(zone => {
       const polygon = L.polygon(zone.polygonCoords, {
         color: "#f44336",
@@ -719,14 +721,26 @@
             const etat = getStreetEtat(streetState[name]);
             const color = colorFromEtat(etat);
 
-            const line = L.polyline(coords, {
+            // ligne visible (fine)
+            const visibleLine = L.polyline(coords, {
               color: color,
-              weight: 3,      // plus épais = plus cliquable sur mobile
-              opacity: 0.7
+              weight: 1.8,
+              opacity: 0.8
             }).addTo(map);
 
-            if (!streetLayers[name]) streetLayers[name] = [];
-            streetLayers[name].push(line);
+            if (!streetVisibleLayers[name]) streetVisibleLayers[name] = [];
+            streetVisibleLayers[name].push(visibleLine);
+
+            // hitbox invisible (large) pour les clics / taps
+            const hitLine = L.polyline(coords, {
+              color: "#000",
+              weight: 12,
+              opacity: 0,
+              interactive: true
+            }).addTo(map);
+
+            if (!streetHitLayers[name]) streetHitLayers[name] = [];
+            streetHitLayers[name].push(hitLine);
 
             const centroid = computeCentroid(coords);
             const zone = findZoneForPoint(centroid[0], centroid[1]);
@@ -745,9 +759,13 @@
               if (zid) highlightZone(zid);
             };
 
-            line.on("click", handleTap);
-            line.on("tap", handleTap);
-            line.on("touchstart", handleTap);
+            visibleLine.on("click", handleTap);
+            visibleLine.on("tap", handleTap);
+            visibleLine.on("touchstart", handleTap);
+
+            hitLine.on("click", handleTap);
+            hitLine.on("tap", handleTap);
+            hitLine.on("touchstart", handleTap);
           });
 
         // Recalcule les polygones pour qu'ils épousent la forme des rues
@@ -787,17 +805,17 @@
 
       const etat = getStreetEtat(state);
       const color = colorFromEtat(etat);
-      (streetLayers[name] || []).forEach(line => {
+      (streetVisibleLayers[name] || []).forEach(line => {
         line.setStyle({
           color: color,
           opacity: 0.9,
-          weight: 3.2
+          weight: 2.1
         });
       });
 
       updateAllZonesVisual();
 
-      const layers = streetLayers[name] || [];
+      const layers = streetVisibleLayers[name] || [];
       if (layers.length > 0) {
         const latlng = layers[0].getCenter();
         openStreetPopup(name, latlng);
@@ -828,7 +846,13 @@
           const latlng = [lat, lng];
 
           if (!userMarker) {
-            userMarker = L.marker(latlng).addTo(map);
+            userMarker = L.circleMarker(latlng, {
+              radius: 7,
+              color: "#1976d2",
+              weight: 2,
+              fillColor: "#2196f3",
+              fillOpacity: 0.9
+            }).addTo(map);
           } else {
             userMarker.setLatLng(latlng);
           }
@@ -837,8 +861,8 @@
             userAccuracyCircle = L.circle(latlng, {
               radius: acc,
               weight: 1,
-              opacity: 0.6,
-              fillOpacity: 0.1
+              opacity: 0.4,
+              fillOpacity: 0.05
             }).addTo(map);
           } else {
             userAccuracyCircle.setLatLng(latlng);
