@@ -31,7 +31,7 @@
     }
     #map {
       width: 100%;
-      height: calc(100vh - 130px); /* place pour le panneau de tournée */
+      height: calc(100vh - 170px); /* header + stats + panneau tournée */
     }
     .zone-info {
       font-size: 14px;
@@ -71,6 +71,20 @@
       background: #000;
       color: #fff;
       white-space: nowrap;
+    }
+
+    /* Barre de stats */
+    #statsBar {
+      padding: 6px 15px;
+      border-bottom: 1px solid #eee;
+      font-size: 12px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px 16px;
+      align-items: center;
+    }
+    #statsBar .label {
+      font-weight: 600;
     }
 
     /* Panneau de tournée */
@@ -129,7 +143,7 @@
 
     @media (max-width: 768px) {
       #map {
-        height: calc(100vh - 160px);
+        height: calc(100vh - 200px);
       }
     }
   </style>
@@ -152,6 +166,15 @@
       <button id="gpsCenterBtn" class="btn-header">Me centrer</button>
     </div>
   </header>
+
+  <!-- Barre de stats -->
+  <div id="statsBar">
+    <span class="label">Stats du mois pour <span id="statsNegociateurLabel">Alexis</span> :</span>
+    <span id="statsTours">Tournées : —</span>
+    <span id="statsFlyers">Flyers : —</span>
+    <span id="statsRues">Rues différentes : —</span>
+    <span id="statsBadge">Badge : —</span>
+  </div>
 
   <!-- Panneau de tournée -->
   <div id="tourPanel">
@@ -190,18 +213,19 @@
     crossorigin=""
   ></script>
 
+  <!-- Supabase JS -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
   <script>
-    // ---------- CONFIG GLOBALE ----------
-
-    // --- SUPABASE : config projet ---
+    // ---------- SUPABASE CONFIG ----------
     const SUPABASE_URL = "https://wqujtckrvdhrwknplumq.supabase.co";
-    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndxdWp0Y2tydmRocndrbnBsdW1xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjMxMjcwOTQsImV4cCI6MjA3ODcwMzA5NH0.btJD5-yD_zRJ9niEvwYEF46iB18OJo8nNXHRTbc8opE";
+    const SUPABASE_ANON_KEY =
+      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndxdWp0Y2tydmRocndrbnBsdW1xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjMxMjcwOTQsImV4cCI6MjA3ODcwMzA5NH0.btJD5-yD_zRJ9niEvwYEF46iB18OJo8nNXHRTbc8opE";
 
-    const SUPABASE_HEADERS = {
-      "Content-Type": "application/json",
-      "apikey": SUPABASE_ANON_KEY,
-      "Authorization": "Bearer " + SUPABASE_ANON_KEY
-    };
+    const { createClient } = supabase;
+    const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    // ---------- CONFIG GLOBALE ----------
 
     let currentNegociateur = "Alexis";
     const negociateurSelect = document.getElementById("negociateurSelect");
@@ -220,7 +244,14 @@
     const toggleTourBtn = document.getElementById("toggleTourBtn");
     const timerDisplay = document.getElementById("timerDisplay");
 
-    const toursData = {}; // { nego: {flyers, notes, report, lastUpdate, durationSec} }
+    // Stats
+    const statsNegociateurLabel = document.getElementById("statsNegociateurLabel");
+    const statsTours = document.getElementById("statsTours");
+    const statsFlyers = document.getElementById("statsFlyers");
+    const statsRues = document.getElementById("statsRues");
+    const statsBadge = document.getElementById("statsBadge");
+
+    const toursData = {}; // stockage local optionnel
 
     // Timer
     let tourRunning = false;
@@ -235,14 +266,19 @@
     let userAccuracyCircle = null;
     let userHasBeenCentered = false;
 
-    negociateurSelect.addEventListener("change", (e) => {
+    // Historique Supabase des rues
+    const supabaseStreetHistory = {}; // name -> {dernierPassage, dernierNegociateur}
+
+    negociateurSelect.addEventListener("change", async (e) => {
       stopCurrentTour();
       currentNegociateur = e.target.value;
       currentNegociateurLabel.textContent = currentNegociateur;
+      statsNegociateurLabel.textContent = currentNegociateur;
       loadTourDataFor(currentNegociateur);
       focusOnNegotiator(currentNegociateur);
       updateCoverageForCurrentNegociateur();
       updateTimerDisplay();
+      await loadStatsFor(currentNegociateur);
     });
 
     mySectorBtn.addEventListener("click", () => {
@@ -295,16 +331,7 @@
       return `${h}:${m}:${s}`;
     }
 
-    function updateTimerDisplay() {
-      const base = lastTourDurationSecByNego[currentNegociateur] || 0;
-      let total = base;
-      if (tourRunning && tourStartTime) {
-        total += Math.floor((Date.now() - tourStartTime) / 1000);
-      }
-      timerDisplay.textContent = "Durée : " + formatDuration(total);
-    }
-
-    function saveCurrentTour() {
+    async function saveCurrentTour() {
       stopCurrentTour();
       updateTimerDisplay();
 
@@ -313,6 +340,8 @@
       const report = (reportInput.value || "").trim();
       const now = new Date();
       const durationSec = lastTourDurationSecByNego[currentNegociateur] || 0;
+      const today = now.toISOString().slice(0, 10);
+      const secteurId = negoToZoneId[currentNegociateur] || null;
 
       toursData[currentNegociateur] = {
         flyers,
@@ -322,32 +351,33 @@
         durationSec
       };
 
-      saveStatus.textContent = `Tournée enregistrée pour ${currentNegociateur} (${formatDuration(durationSec)})`;
-      setTimeout(() => {
-        saveStatus.textContent = "";
-      }, 4000);
-
-      // --- Envoi de la tournée vers Supabase ---
-      const secteurId = negoToZoneId[currentNegociateur] || null;
-
-      fetch(SUPABASE_URL + "/rest/v1/tours", {
-        method: "POST",
-        headers: {
-          ...SUPABASE_HEADERS,
-          "Prefer": "return=minimal"
-        },
-        body: JSON.stringify({
+      // Enregistrement Supabase
+      try {
+        const { error } = await supabaseClient.from("tours").insert({
           negociateur: currentNegociateur,
-          date: now.toISOString().slice(0, 10),
+          date: today,
           secteur_id: secteurId,
           flyers,
           notes,
           report,
-          duree_sec: durationSec
-        })
-      }).catch(err => {
-        console.error("Erreur envoi tournée Supabase:", err);
-      });
+          duration_sec: durationSec
+        });
+        if (error) {
+          console.error("Erreur Supabase tours:", error);
+          saveStatus.textContent = "Erreur lors de l'enregistrement.";
+        } else {
+          saveStatus.textContent = `Tournée enregistrée pour ${currentNegociateur} (${formatDuration(durationSec)})`;
+        }
+      } catch (e) {
+        console.error("Exception Supabase tours:", e);
+        saveStatus.textContent = "Erreur lors de l'enregistrement.";
+      }
+
+      setTimeout(() => {
+        saveStatus.textContent = "";
+      }, 4000);
+
+      await loadStatsFor(currentNegociateur);
     }
 
     function loadTourDataFor(nego) {
@@ -409,7 +439,7 @@
       window.open(url, "_blank");
     };
 
-    // ---------- SECTEURS (initialement rectangles, puis adaptés aux rues) ----------
+    // ---------- SECTEURS ----------
 
     const zones = [
       {
@@ -718,6 +748,37 @@
       });
     });
 
+    // ---------- CHARGEMENT HISTORIQUE RUES (SUPABASE) ----------
+
+    async function loadStreetHistoryFromSupabase() {
+      try {
+        const { data, error } = await supabaseClient
+          .from("street_passages")
+          .select("street_name, passage_date, negociateur")
+          .order("passage_date", { ascending: false });
+
+        if (error) {
+          console.error("Erreur chargement street_passages:", error);
+          return;
+        }
+        if (!data) return;
+
+        data.forEach(row => {
+          const name = row.street_name;
+          if (!name) return;
+          const existing = supabaseStreetHistory[name];
+          if (!existing || existing.dernierPassage < row.passage_date) {
+            supabaseStreetHistory[name] = {
+              dernierPassage: row.passage_date,
+              dernierNegociateur: row.negociateur
+            };
+          }
+        });
+      } catch (e) {
+        console.error("Exception chargement street_passages:", e);
+      }
+    }
+
     // ---------- CHARGEMENT DES RUES OSM (Overpass API) ----------
 
     const overpassQuery = `
@@ -728,134 +789,123 @@
       out geom;
     `;
 
-    fetch("https://overpass-api.de/api/interpreter", {
-      method: "POST",
-      body: overpassQuery
-    })
-      .then(res => res.json())
-      .then(data => {
-        if (!data.elements) return;
+    (async function initStreets() {
+      await loadStreetHistoryFromSupabase();
 
-        data.elements
-          .filter(el => el.type === "way" && el.tags && el.tags.name)
-          .forEach(way => {
-            const name = way.tags.name;
-            const coords = way.geometry.map(pt => [pt.lat, pt.lon]);
+      fetch("https://overpass-api.de/api/interpreter", {
+        method: "POST",
+        body: overpassQuery
+      })
+        .then(res => res.json())
+        .then(data => {
+          if (!data.elements) return;
 
-            if (!streetState[name]) {
-              streetState[name] = {
-                dernierPassage: null,
-                dernierNegociateur: null
+          data.elements
+            .filter(el => el.type === "way" && el.tags && el.tags.name)
+            .forEach(way => {
+              const name = way.tags.name;
+              const coords = way.geometry.map(pt => [pt.lat, pt.lon]);
+
+              let state = streetState[name] || { dernierPassage: null, dernierNegociateur: null };
+
+              // Si Supabase a un historique, on l'applique
+              if (supabaseStreetHistory[name]) {
+                state.dernierPassage = supabaseStreetHistory[name].dernierPassage;
+                state.dernierNegociateur = supabaseStreetHistory[name].dernierNegociateur || state.dernierNegociateur;
+              }
+              streetState[name] = state;
+
+              const etat = getStreetEtat(state);
+              const color = colorFromEtat(etat);
+
+              // ligne visible (fine)
+              const visibleLine = L.polyline(coords, {
+                color: color,
+                weight: 1.8,
+                opacity: 0.8
+              }).addTo(map);
+
+              if (!streetVisibleLayers[name]) streetVisibleLayers[name] = [];
+              streetVisibleLayers[name].push(visibleLine);
+
+              // hitbox invisible (large) pour les clics / taps
+              const hitLine = L.polyline(coords, {
+                color: "#000",
+                weight: 12,
+                opacity: 0,
+                interactive: true
+              }).addTo(map);
+
+              if (!streetHitLayers[name]) streetHitLayers[name] = [];
+              streetHitLayers[name].push(hitLine);
+
+              const centroid = computeCentroid(coords);
+              const zone = findZoneForPoint(centroid[0], centroid[1]);
+              if (zone) {
+                zoneStreetNames[zone.id].add(name);
+                zone.points.push(...coords); // pour le contour du secteur
+              }
+
+              const midIdx = Math.floor(coords.length / 2);
+              const midLatLng = coords[midIdx];
+
+              const handleTap = (e) => {
+                const latlng = e && e.latlng ? e.latlng : midLatLng;
+                openStreetPopup(name, latlng);
+                const zid = findZoneIdForStreet(name);
+                if (zid) highlightZone(zid);
               };
-            }
 
-            const etat = getStreetEtat(streetState[name]);
-            const color = colorFromEtat(etat);
+              visibleLine.on("click", handleTap);
+              visibleLine.on("tap", handleTap);
+              visibleLine.on("touchstart", handleTap);
 
-            // ligne visible (fine)
-            const visibleLine = L.polyline(coords, {
-              color: color,
-              weight: 1.8,
-              opacity: 0.8
-            }).addTo(map);
+              hitLine.on("click", handleTap);
+              hitLine.on("tap", handleTap);
+              hitLine.on("touchstart", handleTap);
+            });
 
-            if (!streetVisibleLayers[name]) streetVisibleLayers[name] = [];
-            streetVisibleLayers[name].push(visibleLine);
-
-            // hitbox invisible (large) pour les clics / taps
-            const hitLine = L.polyline(coords, {
-              color: "#000",
-              weight: 12,
-              opacity: 0,
-              interactive: true
-            }).addTo(map);
-
-            if (!streetHitLayers[name]) streetHitLayers[name] = [];
-            streetHitLayers[name].push(hitLine);
-
-            const centroid = computeCentroid(coords);
-            const zone = findZoneForPoint(centroid[0], centroid[1]);
-            if (zone) {
-              zoneStreetNames[zone.id].add(name);
-              zone.points.push(...coords); // pour le contour du secteur
-            }
-
-            const midIdx = Math.floor(coords.length / 2);
-            const midLatLng = coords[midIdx];
-
-            const handleTap = (e) => {
-              const latlng = e && e.latlng ? e.latlng : midLatLng;
-              openStreetPopup(name, latlng);
-              const zid = findZoneIdForStreet(name);
-              if (zid) highlightZone(zid);
-            };
-
-            visibleLine.on("click", handleTap);
-            visibleLine.on("tap", handleTap);
-            visibleLine.on("touchstart", handleTap);
-
-            hitLine.on("click", handleTap);
-            hitLine.on("tap", handleTap);
-            hitLine.on("touchstart", handleTap);
-          });
-
-        // Recalcule les polygones pour qu'ils épousent la forme des rues
-        zones.forEach(zone => {
-          if (zone.points && zone.points.length >= 3) {
-            const hull = buildHull(zone.points);
-            if (hull && hull.length >= 3) {
-              zone.polygonCoords = hull;
-              const poly = zoneLayers[zone.id];
-              if (poly) {
-                poly.setLatLngs(hull);
+          // Recalcule les polygones pour qu'ils épousent la forme des rues
+          zones.forEach(zone => {
+            if (zone.points && zone.points.length >= 3) {
+              const hull = buildHull(zone.points);
+              if (hull && hull.length >= 3) {
+                zone.polygonCoords = hull;
+                const poly = zoneLayers[zone.id];
+                if (poly) {
+                  poly.setLatLngs(hull);
+                }
               }
             }
-          }
-        });
+          });
 
-        updateAllZonesVisual();
-        focusOnNegotiator(currentNegociateur);
-        updateCoverageForCurrentNegociateur();
-      })
-      .catch(err => {
-        console.error("Erreur Overpass:", err);
-        alert("Impossible de charger les rues depuis OpenStreetMap (Overpass). Vérifie la connexion internet.");
-      });
+          updateAllZonesVisual();
+          focusOnNegotiator(currentNegociateur);
+          updateCoverageForCurrentNegociateur();
+        })
+        .catch(err => {
+          console.error("Erreur Overpass:", err);
+          alert("Impossible de charger les rues depuis OpenStreetMap (Overpass). Vérifie la connexion internet.");
+        });
+    })();
 
     // ---------- MARQUER UNE RUE COMME FAITE ----------
 
-    window.marquerRueFait = function () {
+    window.marquerRueFait = async function () {
       if (!currentStreetForPopup) return;
+
       const name = currentStreetForPopup;
-      const state = streetState[name] || { dernierPassage: null, dernierNegociateur: null };
+      let state = streetState[name] || { dernierPassage: null, dernierNegociateur: null };
 
       const aujourdHui = new Date().toISOString().slice(0, 10);
       state.dernierPassage = aujourdHui;
       state.dernierNegociateur = currentNegociateur;
       streetState[name] = state;
 
-      const zoneId = findZoneIdForStreet(name);
-
-      // --- Envoi du passage de rue vers Supabase ---
-      fetch(SUPABASE_URL + "/rest/v1/street_passages", {
-        method: "POST",
-        headers: {
-          ...SUPABASE_HEADERS,
-          "Prefer": "return=minimal"
-        },
-        body: JSON.stringify({
-          street_name: name,
-          negociateur: currentNegociateur,
-          date: aujourdHui,
-          secteur_id: zoneId,
-          etat: getStreetEtat(state)
-        })
-      }).catch(err => {
-        console.error("Erreur envoi passage rue Supabase:", err);
-      });
-
       const etat = getStreetEtat(state);
       const color = colorFromEtat(etat);
+
+      // Mise à jour visuelle de la rue
       (streetVisibleLayers[name] || []).forEach(line => {
         line.setStyle({
           color: color,
@@ -866,13 +916,33 @@
 
       updateAllZonesVisual();
 
+      const zoneId = findZoneIdForStreet(name) || null;
+
+      // Enregistrement dans Supabase (street_passages)
+      try {
+        const { error } = await supabaseClient.from("street_passages").insert({
+          negociateur: currentNegociateur,
+          street_name: name,
+          zone_id: zoneId,
+          passage_date: aujourdHui
+        });
+        if (error) {
+          console.error("Erreur Supabase street_passages:", error);
+          alert("Erreur lors de l'enregistrement du passage en base.");
+        }
+      } catch (e) {
+        console.error("Exception Supabase street_passages:", e);
+      }
+
+      // Ré-ouvre le popup sur la rue
       const layers = streetVisibleLayers[name] || [];
       if (layers.length > 0) {
         const latlng = layers[0].getCenter();
         openStreetPopup(name, latlng);
-        const zid = findZoneIdForStreet(name);
-        if (zid) highlightZone(zid);
+        if (zoneId) highlightZone(zoneId);
       }
+
+      await loadStatsFor(currentNegociateur);
     };
 
     // ---------- GEOLOCALISATION ----------
@@ -978,11 +1048,70 @@
       }
     }
 
+    // ---------- STATS SUPABASE ----------
+
+    async function loadStatsFor(nego) {
+      const now = new Date();
+      const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
+      const firstDayStr = firstDay.toISOString().slice(0, 10);
+
+      try {
+        // Tournées du mois
+        const { data: toursRows, error: toursError } = await supabaseClient
+          .from("tours")
+          .select("flyers")
+          .eq("negociateur", nego)
+          .gte("date", firstDayStr);
+
+        if (toursError) {
+          console.error("Erreur stats tours:", toursError);
+        }
+
+        const toursCount = toursRows ? toursRows.length : 0;
+        let flyersTotal = 0;
+        (toursRows || []).forEach(r => {
+          flyersTotal += r.flyers || 0;
+        });
+
+        // Rues différentes
+        const { data: passagesRows, error: passagesError } = await supabaseClient
+          .from("street_passages")
+          .select("street_name")
+          .eq("negociateur", nego)
+          .gte("passage_date", firstDayStr);
+
+        if (passagesError) {
+          console.error("Erreur stats rues:", passagesError);
+        }
+
+        const streetSet = new Set();
+        (passagesRows || []).forEach(r => {
+          if (r.street_name) streetSet.add(r.street_name);
+        });
+        const distinctStreets = streetSet.size;
+
+        statsTours.textContent = `Tournées : ${toursCount}`;
+        statsFlyers.textContent = `Flyers : ${flyersTotal}`;
+        statsRues.textContent = `Rues différentes : ${distinctStreets}`;
+
+        // Petit badge gamification
+        let badge = "—";
+        if (flyersTotal >= 500) badge = "🏅 Ultra diffuseur";
+        else if (flyersTotal >= 200) badge = "🎯 Diffuseur actif";
+        else if (flyersTotal > 0) badge = "🚀 En route";
+        statsBadge.textContent = `Badge : ${badge}`;
+      } catch (e) {
+        console.error("Exception stats:", e);
+      }
+    }
+
     // ---------- INIT UI ----------
 
     currentNegociateurLabel.textContent = currentNegociateur;
+    statsNegociateurLabel.textContent = currentNegociateur;
     loadTourDataFor(currentNegociateur);
     updateTimerDisplay();
+    loadStatsFor(currentNegociateur);
   </script>
 </body>
 </html>
