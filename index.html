@@ -210,14 +210,13 @@
     const toggleTourBtn = document.getElementById("toggleTourBtn");
     const timerDisplay = document.getElementById("timerDisplay");
 
-    // Données de tournée par négociateur (mémoire locale de la session)
-    const toursData = {}; // { Alexis: {flyers, notes, report, lastUpdate, durationSec}, ... }
+    const toursData = {}; // { nego: {flyers, notes, report, lastUpdate, durationSec} }
 
     // Timer
     let tourRunning = false;
     let tourStartTime = null;
     let tourTimerInterval = null;
-    const lastTourDurationSecByNego = {}; // négociateur -> secondes cumulées
+    const lastTourDurationSecByNego = {};
 
     // Geoloc
     let gpsEnabled = false;
@@ -227,7 +226,7 @@
     let userHasBeenCentered = false;
 
     negociateurSelect.addEventListener("change", (e) => {
-      stopCurrentTour(); // on clôt proprement la tournée précédente
+      stopCurrentTour();
       currentNegociateur = e.target.value;
       currentNegociateurLabel.textContent = currentNegociateur;
       loadTourDataFor(currentNegociateur);
@@ -246,13 +245,11 @@
 
     toggleTourBtn.addEventListener("click", () => {
       if (!tourRunning) {
-        // démarrer
         tourRunning = true;
         tourStartTime = Date.now();
         toggleTourBtn.textContent = "Arrêter la tournée";
         tourTimerInterval = setInterval(updateTimerDisplay, 1000);
       } else {
-        // arrêter
         stopCurrentTour();
       }
       updateTimerDisplay();
@@ -298,7 +295,6 @@
     }
 
     function saveCurrentTour() {
-      // on arrête la tournée en cours pour fixer la durée
       stopCurrentTour();
       updateTimerDisplay();
 
@@ -339,12 +335,12 @@
       saveStatus.textContent = "";
     }
 
-    // BBox de Saint-André-de-Cubzac pour la requête OSM
+    // BBox de Saint-André (légèrement élargie)
     const BBOX = {
-      south: 44.988,
-      west: -0.455,
-      north: 45.000,
-      east: -0.435
+      south: 44.985,
+      west: -0.46,
+      north: 45.003,
+      east: -0.43
     };
 
     // ---------- INIT CARTE ----------
@@ -356,56 +352,85 @@
       attribution: "&copy; OpenStreetMap"
     }).addTo(map);
 
-    // ---------- SECTEURS (4 rectangles) ----------
+    // Popup Street View sur appui long / clic droit
+    map.on("contextmenu", function(e) {
+      const lat = e.latlng.lat.toFixed(6);
+      const lng = e.latlng.lng.toFixed(6);
+      const html = `
+        <div class="zone-info">
+          <strong>Street View & coordonnées</strong><br/>
+          Lat : ${lat}<br/>
+          Lng : ${lng}<br/>
+          <button class="btn btn-primary" onclick="openStreetView(${lat}, ${lng})">
+            Ouvrir Street View ici
+          </button>
+        </div>
+      `;
+      L.popup()
+        .setLatLng(e.latlng)
+        .setContent(html)
+        .openOn(map);
+    });
+
+    window.openStreetView = function(lat, lng) {
+      const url = `https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${lat},${lng}`;
+      window.open(url, "_blank");
+    };
+
+    // ---------- SECTEURS (initialement rectangles, puis adaptés aux rues) ----------
 
     const zones = [
       {
         id: 1,
         nom: "Secteur 1 – Alexis – Nord-Ouest",
         negociateur: "Alexis",
-        bbox: { minLat: 44.994, maxLat: 45.000, minLng: -0.455, maxLng: -0.445 },
+        bbox: { minLat: 44.994, maxLat: 45.003, minLng: -0.46, maxLng: -0.445 },
         polygonCoords: [
-          [45.0000, -0.4550],
-          [45.0000, -0.4450],
-          [44.9940, -0.4450],
-          [44.9940, -0.4550]
-        ]
+          [45.003, -0.46],
+          [45.003, -0.445],
+          [44.994, -0.445],
+          [44.994, -0.46]
+        ],
+        points: []
       },
       {
         id: 2,
         nom: "Secteur 2 – Nicolas – Nord-Est",
         negociateur: "Nicolas",
-        bbox: { minLat: 44.994, maxLat: 45.000, minLng: -0.445, maxLng: -0.435 },
+        bbox: { minLat: 44.994, maxLat: 45.003, minLng: -0.445, maxLng: -0.43 },
         polygonCoords: [
-          [45.0000, -0.4450],
-          [45.0000, -0.4350],
-          [44.9940, -0.4350],
-          [44.9940, -0.4450]
-        ]
+          [45.003, -0.445],
+          [45.003, -0.43],
+          [44.994, -0.43],
+          [44.994, -0.445]
+        ],
+        points: []
       },
       {
         id: 3,
         nom: "Secteur 3 – Thibault – Sud-Ouest",
         negociateur: "Thibault",
-        bbox: { minLat: 44.988, maxLat: 44.994, minLng: -0.455, maxLng: -0.445 },
+        bbox: { minLat: 44.985, maxLat: 44.994, minLng: -0.46, maxLng: -0.445 },
         polygonCoords: [
-          [44.9940, -0.4550],
-          [44.9940, -0.4450],
-          [44.9880, -0.4450],
-          [44.9880, -0.4550]
-        ]
+          [44.994, -0.46],
+          [44.994, -0.445],
+          [44.985, -0.445],
+          [44.985, -0.46]
+        ],
+        points: []
       },
       {
         id: 4,
         nom: "Secteur 4 – Laurent – Sud-Est",
         negociateur: "Laurent",
-        bbox: { minLat: 44.988, maxLat: 44.994, minLng: -0.445, maxLng: -0.435 },
+        bbox: { minLat: 44.985, maxLat: 44.994, minLng: -0.445, maxLng: -0.43 },
         polygonCoords: [
-          [44.9940, -0.4450],
-          [44.9940, -0.4350],
-          [44.9880, -0.4350],
-          [44.9880, -0.4450]
-        ]
+          [44.994, -0.445],
+          [44.994, -0.43],
+          [44.985, -0.43],
+          [44.985, -0.445]
+        ],
+        points: []
       }
     ];
 
@@ -413,7 +438,6 @@
     const zoneStreetNames = {};
     zones.forEach(z => zoneStreetNames[z.id] = new Set());
 
-    // Map négociateur -> id de zone (pour le filtre)
     const negoToZoneId = {};
     zones.forEach(z => {
       if (z.negociateur) {
@@ -421,9 +445,7 @@
       }
     });
 
-    // état des rues : name -> {dernierPassage, dernierNegociateur}
     const streetState = {};
-    // couches Leaflet : name -> [polyline, ...]
     const streetLayers = {};
     let currentStreetForPopup = null;
 
@@ -441,10 +463,10 @@
 
     function colorFromEtat(etat) {
       switch (etat) {
-        case "fait":     return "#4caf50";  // vert
-        case "arefaire": return "#ff9800";  // orange
+        case "fait":     return "#4caf50";
+        case "arefaire": return "#ff9800";
         case "afaire":
-        default:         return "#f44336";  // rouge
+        default:         return "#f44336";
       }
     }
 
@@ -525,6 +547,41 @@
       return null;
     }
 
+    // Convex hull (contour des secteurs à partir des rues)
+    function cross(o, a, b) {
+      const x1 = a[1] - o[1];
+      const y1 = a[0] - o[0];
+      const x2 = b[1] - o[1];
+      const y2 = b[0] - o[0];
+      return x1 * y2 - y1 * x2;
+    }
+
+    function buildHull(points) {
+      if (!points || points.length < 3) return points || [];
+      const pts = points.slice().sort((p1, p2) => {
+        if (p1[1] === p2[1]) return p1[0] - p2[0]; // tri par lng puis lat
+        return p1[1] - p2[1];
+      });
+      const lower = [];
+      for (const p of pts) {
+        while (lower.length >= 2 && cross(lower[lower.length - 2], lower[lower.length - 1], p) <= 0) {
+          lower.pop();
+        }
+        lower.push(p);
+      }
+      const upper = [];
+      for (let i = pts.length - 1; i >= 0; i--) {
+        const p = pts[i];
+        while (upper.length >= 2 && cross(upper[upper.length - 2], upper[upper.length - 1], p) <= 0) {
+          upper.pop();
+        }
+        upper.push(p);
+      }
+      upper.pop();
+      lower.pop();
+      return lower.concat(upper);
+    }
+
     // ---------- HIGHLIGHT DES RUES PAR SECTEUR ----------
 
     function highlightZone(zoneId) {
@@ -532,8 +589,8 @@
         const inZone = zoneStreetNames[zoneId]?.has(name);
         layers.forEach(layer => {
           layer.setStyle({
-            opacity: inZone ? 0.9 : 0.1,
-            weight: inZone ? 2 : 1
+            opacity: inZone ? 0.9 : 0.15,
+            weight: inZone ? 3 : 1.5
           });
         });
       });
@@ -600,7 +657,7 @@
         .openOn(map);
     }
 
-    // ---------- DESSIN DES SECTEURS ----------
+    // ---------- DESSIN DES SECTEURS (init) ----------
 
     zones.forEach(zone => {
       const polygon = L.polygon(zone.polygonCoords, {
@@ -664,7 +721,7 @@
 
             const line = L.polyline(coords, {
               color: color,
-              weight: 1.5,
+              weight: 3,      // plus épais = plus cliquable sur mobile
               opacity: 0.7
             }).addTo(map);
 
@@ -675,17 +732,37 @@
             const zone = findZoneForPoint(centroid[0], centroid[1]);
             if (zone) {
               zoneStreetNames[zone.id].add(name);
+              zone.points.push(...coords); // pour le contour du secteur
             }
 
             const midIdx = Math.floor(coords.length / 2);
             const midLatLng = coords[midIdx];
 
-            line.on("click", () => {
-              openStreetPopup(name, midLatLng);
+            const handleTap = (e) => {
+              const latlng = e && e.latlng ? e.latlng : midLatLng;
+              openStreetPopup(name, latlng);
               const zid = findZoneIdForStreet(name);
               if (zid) highlightZone(zid);
-            });
+            };
+
+            line.on("click", handleTap);
+            line.on("tap", handleTap);
+            line.on("touchstart", handleTap);
           });
+
+        // Recalcule les polygones pour qu'ils épousent la forme des rues
+        zones.forEach(zone => {
+          if (zone.points && zone.points.length >= 3) {
+            const hull = buildHull(zone.points);
+            if (hull && hull.length >= 3) {
+              zone.polygonCoords = hull;
+              const poly = zoneLayers[zone.id];
+              if (poly) {
+                poly.setLatLngs(hull);
+              }
+            }
+          }
+        });
 
         updateAllZonesVisual();
         focusOnNegotiator(currentNegociateur);
@@ -714,7 +791,7 @@
         line.setStyle({
           color: color,
           opacity: 0.9,
-          weight: 1.8
+          weight: 3.2
         });
       });
 
@@ -768,7 +845,6 @@
             userAccuracyCircle.setRadius(acc);
           }
 
-          // on centre une première fois automatiquement
           if (!userHasBeenCentered) {
             map.setView(latlng, 17);
             userHasBeenCentered = true;
