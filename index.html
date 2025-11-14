@@ -193,6 +193,16 @@
   <script>
     // ---------- CONFIG GLOBALE ----------
 
+    // --- SUPABASE : config projet ---
+    const SUPABASE_URL = "https://wqujtckrvdhrwknplumq.supabase.co";
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndxdWp0Y2tydmRocndrbnBsdW1xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjMxMjcwOTQsImV4cCI6MjA3ODcwMzA5NH0.btJD5-yD_zRJ9niEvwYEF46iB18OJo8nNXHRTbc8opE";
+
+    const SUPABASE_HEADERS = {
+      "Content-Type": "application/json",
+      "apikey": SUPABASE_ANON_KEY,
+      "Authorization": "Bearer " + SUPABASE_ANON_KEY
+    };
+
     let currentNegociateur = "Alexis";
     const negociateurSelect = document.getElementById("negociateurSelect");
     const currentNegociateurLabel = document.getElementById("currentNegociateurLabel");
@@ -316,6 +326,28 @@
       setTimeout(() => {
         saveStatus.textContent = "";
       }, 4000);
+
+      // --- Envoi de la tournée vers Supabase ---
+      const secteurId = negoToZoneId[currentNegociateur] || null;
+
+      fetch(SUPABASE_URL + "/rest/v1/tours", {
+        method: "POST",
+        headers: {
+          ...SUPABASE_HEADERS,
+          "Prefer": "return=minimal"
+        },
+        body: JSON.stringify({
+          negociateur: currentNegociateur,
+          date: now.toISOString().slice(0, 10),
+          secteur_id: secteurId,
+          flyers,
+          notes,
+          report,
+          duree_sec: durationSec
+        })
+      }).catch(err => {
+        console.error("Erreur envoi tournée Supabase:", err);
+      });
     }
 
     function loadTourDataFor(nego) {
@@ -434,7 +466,6 @@
       }
     ];
 
-    
     const zoneStreetNames = {};
     zones.forEach(z => zoneStreetNames[z.id] = new Set());
 
@@ -802,6 +833,26 @@
       state.dernierPassage = aujourdHui;
       state.dernierNegociateur = currentNegociateur;
       streetState[name] = state;
+
+      const zoneId = findZoneIdForStreet(name);
+
+      // --- Envoi du passage de rue vers Supabase ---
+      fetch(SUPABASE_URL + "/rest/v1/street_passages", {
+        method: "POST",
+        headers: {
+          ...SUPABASE_HEADERS,
+          "Prefer": "return=minimal"
+        },
+        body: JSON.stringify({
+          street_name: name,
+          negociateur: currentNegociateur,
+          date: aujourdHui,
+          secteur_id: zoneId,
+          etat: getStreetEtat(state)
+        })
+      }).catch(err => {
+        console.error("Erreur envoi passage rue Supabase:", err);
+      });
 
       const etat = getStreetEtat(state);
       const color = colorFromEtat(etat);
