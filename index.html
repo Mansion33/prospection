@@ -179,7 +179,9 @@
       timer: document.getElementById('timerDisplay'),
       coverage: document.getElementById('coverageDisplay'),
       status: document.getElementById('statusMessage'),
-      gpsBtn: document.getElementById('gpsBtn')
+      gpsBtn: document.getElementById('gpsBtn'),
+      // LIGNE CRITIQUE AJOUTÉE :
+      centerZoneBtn: document.getElementById('centerZoneBtn') 
     };
 
     // Carte Leaflet
@@ -292,12 +294,13 @@
         });
 
         updateInterface();
+        // LIGNE DE DÉSACTIVATION DU LOADER (MAINTENANT SÛRE)
         ui.loader.style.display = 'none';
 
       } catch (err) {
         console.error(err);
         ui.loadText.textContent = "Erreur : " + err.message;
-        alert("Impossible de charger la carte. Vérifiez votre connexion.");
+        alert("Impossible de charger la carte. Vérifiez votre connexion et les clés Supabase.");
       }
     }
 
@@ -426,9 +429,7 @@
     async function saveTour() {
       ui.saveBtn.textContent = "Enregistrement...";
       
-      // Calcul de la durée (approx pour l'exemple)
-      // Idéalement on cumule les sessions
-      const duration = ui.timer.textContent; // format texte pour l'instant
+      const durationSec = Math.floor((Date.now() - state.startTime) / 1000);
 
       const { error } = await supabaseClient.from('tours').insert({
         negociateur: state.negociateur,
@@ -437,7 +438,7 @@
         flyers: parseInt(ui.flyers.value) || 0,
         notes: "",
         report: ui.report.value,
-        duration_sec: 0 // A implémenter proprement avec un compteur int
+        duration_sec: durationSec // La durée est correctement calculée ici
       });
 
       if (!error) {
@@ -445,6 +446,7 @@
         ui.flyers.value = "";
         ui.report.value = "";
         ui.timer.textContent = "00:00:00";
+        state.startTime = null; // Réinitialisation
       } else {
         alert("Erreur sauvegarde tournée");
       }
