@@ -120,9 +120,9 @@
        1. CONFIGURATION & INITIALISATION
        ========================================= */
     
-    // 🔑 CLÉS SUPABASE 🔑
+    // 🔑 CLÉS SUPABASE MISES À JOUR (avec la nouvelle clé anonyme) 🔑
     const SUPABASE_URL = "https://wqujtckrvdhrwknplumq.supabase.co"; 
-    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndxdWp0Y2tydmRocndrbnBsdW1xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjMxMjcwOTQsImV4cCI6MjA3ODcwMzA5NH0.btJD5-yD_zRJ9niEvwYEF46iB18OJo8nNXHRTbc8opI";
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndxdWp0Y2tydmRocndrbnBsdW1xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjMxMjcwOTQsImV4cCI6MjA3ODcwMzA5NH0.btJD5-yD_zRJ9niEvwYEF46iB18OJo8nNXHRTbc8opE"; // Fin: E
 
     // Initialisation Supabase
     let supabaseClient;
@@ -225,12 +225,15 @@
         ui.loadText.textContent = "Récupération de l'historique Supabase...";
         
         // 1. Charger l'historique des passages
+        // L'erreur Invalid API Key se produit si la clé est mauvaise, provoquant un échec de la requête.
         const { data: historyData, error: supabaseError } = await supabaseClient
           .from('street_passages')
           .select('street_name, passage_date, negociateur')
           .order('passage_date', { ascending: true }); 
         
         if (supabaseError) {
+          // Si on arrive ici, soit la connexion est mauvaise, soit les RLS ne donnent pas accès au SELECT.
+          // Mais l'erreur Invalid API Key est généralement interceptée par la librairie elle-même.
           throw new Error("Erreur Supabase: " + supabaseError.message);
         }
 
@@ -246,7 +249,7 @@
         // 2. Dessiner les rues à partir de STATIC_STREETS
         STATIC_STREETS.forEach(street => {
           const name = street.name;
-          const coords = street.coords; // Déjà au format [[lat, lng], ...] pour Leaflet
+          const coords = street.coords; 
 
           // Calculer le centre (simple) pour la vérification de zone
           // Turf a besoin de [lng, lat]
@@ -258,6 +261,7 @@
           // Vérifier dans quel polygone se trouve le centre de la rue
           for (let z of ZONES) {
             const polyGeoJSON = turf.polygon([z.poly]);
+            // On vérifie le point central (lon, lat) vs le polygone
             if (turf.booleanPointInPolygon(center, polyGeoJSON)) {
               zoneId = z.id;
               break;
@@ -296,11 +300,12 @@
         });
 
         updateInterface();
-        // Le loader disparaît enfin !
+        // Le loader disparaît
         ui.loader.style.display = 'none';
 
       } catch (err) {
         console.error(err);
+        // Utiliser l'erreur exacte fournie par le système
         ui.loadText.textContent = "Erreur fatale : " + err.message;
         alert("Impossible de charger l'application : " + err.message);
       }
