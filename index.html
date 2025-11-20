@@ -220,12 +220,12 @@
       return "#e74c3c"; // Rouge (À refaire urgence)
     }
 
-    // Chargement des données (Utilise désormais passage_date)
+    // Chargement des données (Utilise 'passage_date' qui doit maintenant exister)
     async function initApp() {
       try {
         ui.loadText.textContent = "Récupération de l'historique Supabase...";
         
-        // 1. Charger l'historique des passages (La colonne doit maintenant être 'passage_date' après le RENAME SQL)
+        // 1. Charger l'historique des passages 
         const { data: historyData, error: supabaseError } = await supabaseClient
           .from('street_passages')
           .select('street_name, passage_date, negociateur') 
