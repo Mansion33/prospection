@@ -121,9 +121,9 @@
        1. CONFIGURATION & INITIALISATION
        ========================================= */
     
-    // 🔑 CLÉS SUPABASE 🔑
+    // 🔑 CLÉS SUPABASE (MISES À JOUR) 🔑
     const SUPABASE_URL = "https://wqujtckrvdhrwknplumq.supabase.co"; 
-    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndxdWp0Y2tydmRocndrbnBsdW1xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjMxMjcwOTQsImV4cCI6MjA3ODcwMzA5NH0.btJD5-yD_zRJ9niEvwYEF46iB18OJo8nNXHRTbc8opE";
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndxdWp0Y2tydmRocndrbnBsdW1xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjMxMjcwOTQsImV4cHI6MjA3ODcwMzA5NH0.btJD5-yD_zRJ9niEvwYEF46iB18OJo8nNXHRTbc8opE";
 
     // Initialisation Supabase
     let supabaseClient;
@@ -131,6 +131,7 @@
       const { createClient } = supabase;
       supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     } catch (e) {
+      // Ce bloc ne devrait plus être atteint si les clés sont valides
       alert("Erreur config Supabase. Vérifiez les clés.");
     }
 
@@ -232,6 +233,7 @@
           .order('passage_date', { ascending: true }); 
         
         if (supabaseError) {
+          // Si l'erreur persiste, c'est que la clé API n'est pas la bonne ou que le RLS bloque
           throw new Error("Erreur Supabase: " + supabaseError.message);
         }
 
@@ -301,8 +303,9 @@
 
       } catch (err) {
         console.error(err);
-        ui.loadText.textContent = "Erreur fatale : " + err.message;
+        // Afficher l'erreur à l'utilisateur
         alert("Impossible de charger l'application : " + err.message);
+        ui.loadText.textContent = "Erreur fatale : " + err.message;
       }
     }
 
@@ -345,7 +348,7 @@
       const { error } = await supabaseClient.from('street_passages').insert({
         negociateur: state.negociateur,
         street_name: name,
-        passage_date: today, // <--- La colonne est maintenant 'passage_date'
+        passage_date: today, // Le nom de colonne est maintenant correct
         zone_id: st.zoneId
       });
 
