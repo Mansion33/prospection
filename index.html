@@ -2,73 +2,53 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8" />
-  <title>Mansion - Terrain V2</title>
+  <title>Mansion V2 - St André Précis</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
 
   <style>
-    /* --- ESTHÉTIQUE MOBILE APP --- */
     body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #fff; overflow: hidden; }
     
-    header { 
-      height: 55px; padding: 0 15px; display: flex; align-items: center; justify-content: space-between; 
-      border-bottom: 1px solid #eee; background: white; z-index: 1000; position: relative; box-shadow: 0 1px 5px rgba(0,0,0,0.05);
-    }
+    header { height: 55px; padding: 0 15px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #eee; background: white; z-index: 1000; position: relative; box-shadow: 0 1px 5px rgba(0,0,0,0.05); }
     .brand { font-weight: 900; font-size: 18px; letter-spacing: -0.5px; color: #111; }
     select { padding: 8px; border-radius: 8px; border: 1px solid #eee; font-size: 14px; background: #f9f9f9; font-weight: 500; }
     
-    /* DASHBOARD FLOTTANT */
-    #dashboard { 
-      position: absolute; top: 70px; left: 10px; right: 10px; 
-      background: rgba(255,255,255,0.95); backdrop-filter: blur(10px);
-      padding: 12px; border-radius: 12px; box-shadow: 0 8px 20px rgba(0,0,0,0.15);
-      z-index: 900; display: flex; flex-direction: column; gap: 10px;
-      border: 1px solid rgba(0,0,0,0.05);
-    }
-    
+    #dashboard { position: absolute; top: 70px; left: 10px; right: 10px; background: rgba(255,255,255,0.95); backdrop-filter: blur(10px); padding: 12px; border-radius: 12px; box-shadow: 0 8px 20px rgba(0,0,0,0.15); z-index: 900; display: flex; flex-direction: column; gap: 10px; border: 1px solid rgba(0,0,0,0.05); }
     .stats-row { display: flex; justify-content: space-between; font-size: 13px; font-weight: 600; color: #333; }
     .actions { display: flex; gap: 8px; }
-    
     button { flex: 1; padding: 10px; border: none; border-radius: 8px; cursor: pointer; font-weight: 700; font-size: 13px; transition: transform 0.1s; }
     button:active { transform: scale(0.98); }
-    
     .btn-start { background: #111; color: #fff; }
     .btn-gps { background: #007AFF; color: #fff; display: flex; align-items: center; justify-content: center; gap: 5px;}
     .gps-active { background: #34c759 !important; box-shadow: 0 0 10px rgba(52, 199, 89, 0.4); }
 
-    /* MAP & POPUP */
     #map { width: 100%; height: calc(100vh - 55px); z-index: 1; background: #f0f0f0; }
     
+    /* Popup Styles */
     .leaflet-popup-content-wrapper { border-radius: 12px; }
     .street-name { display: block; font-weight: 800; font-size: 15px; margin-bottom: 4px; text-transform: capitalize; }
     .street-meta { display: block; font-size: 12px; color: #888; margin-bottom: 12px; }
     
-    .btn-validate { background: #2ecc71; color: white; width: 100%; padding: 12px; border-radius: 8px; margin-bottom: 8px; font-size: 14px; }
+    .popup-buttons { display: flex; flex-direction: column; gap: 8px; }
+    .btn-validate { background: #2ecc71; color: white; width: 100%; padding: 12px; border-radius: 8px; font-size: 14px; }
+    .btn-flyers { background: #f1c40f; color: #333; width: 100%; padding: 10px; border-radius: 8px; font-weight: 600; }
+    .btn-note { background: #9b59b6; color: white; width: 100%; padding: 10px; border-radius: 8px; font-weight: 600; }
     .btn-view { background: #e1e1e1; color: #333; width: 100%; padding: 10px; border-radius: 8px; }
 
-    /* LOADER */
-    #loader { 
-        position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%); 
-        background: #111; color: white; padding: 8px 20px; border-radius: 30px; 
-        font-size: 12px; font-weight: 600; z-index: 2000; 
-        display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.2);
-    }
+    #loader { position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%); background: #111; color: white; padding: 8px 20px; border-radius: 30px; font-size: 12px; font-weight: 600; z-index: 2000; display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
     .spinner { width: 12px; height: 12px; border: 2px solid #fff; border-top-color: transparent; border-radius: 50%; animation: spin 1s linear infinite; }
     @keyframes spin { to { transform: rotate(360deg); } }
-
-    /* Legendes Zones */
-    .legend-dot { height: 10px; width: 10px; border-radius: 50%; display: inline-block; margin-right: 5px; }
   </style>
 </head>
 <body>
 
   <header>
-    <div class="brand">MANSION <span style="font-size:10px; color:#888; font-weight:400">V2</span></div>
+    <div class="brand">MANSION <span style="font-size:10px; color:#888; font-weight:400">V2.1</span></div>
     <select id="negociateur">
-      <option value="Alexis">Alexis (NO)</option>
-      <option value="Nicolas">Nicolas (NE)</option>
-      <option value="Thibault">Thibault (SO)</option>
-      <option value="Laurent">Laurent (SE)</option>
+      <option value="Alexis">Alexis (Nord)</option>
+      <option value="Nicolas">Nicolas (Est)</option>
+      <option value="Thibault">Thibault (Sud)</option>
+      <option value="Laurent">Laurent (Ouest)</option>
     </select>
   </header>
 
@@ -91,53 +71,54 @@
   <script src="https://cdn.jsdelivr.net/npm/@turf/turf@6/turf.min.js"></script>
 
   <script>
-    // CONFIGURATION
+    // --- CONFIGURATION ---
     const CENTER_LAT = 44.9945;
     const CENTER_LNG = -0.4465;
-    
-    // SUPABASE (Tes clés sont exposées ici côté client, assure-toi d'avoir activé RLS si possible, sinon OK pour prototype)
     const SB_URL = "https://wqujtckrvdhrwknplumq.supabase.co";
     const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndxdWp0Y2tydmRocndrbnBsdW1xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjMxMjcwOTQsImV4cCI6MjA3ODcwMzA5NH0.btJD5-yD_zRJ9niEvwYEF46iB18OJo8nNXHRTbc8opE";
     const supabaseClient = supabase.createClient(SB_URL, SB_KEY);
 
-    // ZONES (Logique Turf.js: [Lng, Lat])
+    // --- NOUVELLES ZONES PRÉCISES (Polygones réels de St André) ---
     const ZONES = [
-      { id: 1, nego: "Alexis", color: "#e74c3c", poly: [[CENTER_LNG, CENTER_LAT], [CENTER_LNG, 45.10], [-0.60, 45.10], [-0.60, CENTER_LAT], [CENTER_LNG, CENTER_LAT]] }, // NO
-      { id: 2, nego: "Nicolas", color: "#3498db", poly: [[CENTER_LNG, CENTER_LAT], [CENTER_LNG, 45.10], [-0.30, 45.10], [-0.30, CENTER_LAT], [CENTER_LNG, CENTER_LAT]] }, // NE
-      { id: 3, nego: "Thibault", color: "#f1c40f", poly: [[CENTER_LNG, CENTER_LAT], [CENTER_LNG, 44.90], [-0.60, 44.90], [-0.60, CENTER_LAT], [CENTER_LNG, CENTER_LAT]] }, // SO
-      { id: 4, nego: "Laurent", color: "#9b59b6", poly: [[CENTER_LNG, CENTER_LAT], [CENTER_LNG, 44.90], [-0.30, 44.90], [-0.30, CENTER_LAT], [CENTER_LNG, CENTER_LAT]] }  // SE
+      { 
+        id: 1, nego: "Alexis", color: "#e74c3c", // Nord (ex: La Garenne, Peujard limitrophe)
+        poly: [[-0.455, 45.005], [-0.440, 45.005], [-0.435, 44.998], [-0.445, 44.990], [-0.460, 44.995], [-0.455, 45.005]]
+      },
+      { 
+        id: 2, nego: "Nicolas", color: "#3498db", // Est (ex: Centre, Route de Libourne)
+        poly: [[-0.445, 44.990], [-0.435, 44.998], [-0.425, 44.990], [-0.430, 44.980], [-0.440, 44.985], [-0.445, 44.990]]
+      },
+      { 
+        id: 3, nego: "Thibault", color: "#f1c40f", // Sud (ex: Port, Cubzac-les-Ponts limitrophe)
+        poly: [[-0.460, 44.995], [-0.445, 44.990], [-0.440, 44.985], [-0.450, 44.975], [-0.470, 44.985], [-0.460, 44.995]]
+      },
+      { 
+        id: 4, nego: "Laurent", color: "#9b59b6", // Ouest (ex: Bouilh, Plagne)
+        poly: [[-0.470, 44.985], [-0.450, 44.975], [-0.455, 44.970], [-0.480, 44.980], [-0.475, 44.990], [-0.470, 44.985]]
+      }
     ];
 
-    // ETAT DE L'APP
-    const state = { 
-      streets: {}, 
-      nego: "Alexis", 
-      gpsId: null, 
-      userMarker: null, 
-      timer: null, 
-      seconds: 0 
-    };
+    const state = { streets: {}, nego: "Alexis", gpsId: null, userMarker: null, timer: null, seconds: 0, zoneLayers: [] };
 
-    // INIT MAP
+    // --- INIT MAP ---
     const map = L.map('map', { zoomControl: false }).setView([CENTER_LAT, CENTER_LNG], 14);
     L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
       maxZoom: 20, attribution: '© OpenStreetMap'
     }).addTo(map);
 
-    // DESSIN DES ZONES (Visuel Discret)
+    // Dessin des zones précises
     ZONES.forEach(z => {
-      // Inversion Lng/Lat pour Leaflet
-      const leafPoly = z.poly.map(p => [p[1], p[0]]);
-      L.polygon(leafPoly, { color: z.color, weight: 1, fillOpacity: 0.05, interactive: false }).addTo(map);
+      const leafPoly = z.poly.map(p => [p[1], p[0]]); // Inversion pour Leaflet
+      const layer = L.polygon(leafPoly, { color: z.color, weight: 2, fillOpacity: 0.1, interactive: false }).addTo(map);
+      state.zoneLayers[z.id] = layer;
     });
 
-    // --- FONCTIONS CORE ---
+    // --- FONCTIONS ---
 
     function getStatusColor(date) {
-      if(!date) return "#ff3b30"; // Rouge (Jamais)
+      if(!date) return "#ff3b30";
       const diff = (new Date() - new Date(date)) / (1000 * 3600 * 24);
-      if(diff <= 20) return "#2ecc71"; // Vert (Frais)
-      return "#f39c12"; // Orange (A refaire)
+      return diff <= 20 ? "#2ecc71" : "#f39c12";
     }
 
     function getZoneForPoint(lat, lng) {
@@ -147,32 +128,34 @@
     }
 
     function drawStreet(name, latlngs, lastDate) {
-      if(state.streets[name]) return; // Doublons OSM
-
-      // Calcul du centre pour la zone
+      if(state.streets[name]) return;
       const center = latlngs[Math.floor(latlngs.length/2)];
       const zoneId = getZoneForPoint(center[0], center[1]);
-      
       const color = getStatusColor(lastDate);
 
-      // Zone Cliquable (Invisible mais large)
-      const hitLine = L.polyline(latlngs, { weight: 25, opacity: 0 }).addTo(map);
-      
-      // Ligne Visuelle
-      const visLine = L.polyline(latlngs, { color: color, weight: 4, opacity: 0.8, interactive: false }).addTo(map);
+      const hitLine = L.polyline(latlngs, { weight: 20, opacity: 0 }).addTo(map);
+      // Tracé de rue plus fin (weight: 3)
+      const visLine = L.polyline(latlngs, { color: color, weight: 3, opacity: 0.8, interactive: false }).addTo(map);
 
-      // Interaction
       hitLine.on('click', (e) => {
+         // Zoom et centrage fluides sur la rue cliquée
+         map.setView(e.latlng, 17, { pan: { animate: true, duration: 0.5 } });
+
          const safeName = name.replace(/'/g, "\\'");
          const dateStr = lastDate ? new Date(lastDate).toLocaleDateString('fr-FR') : "Jamais";
          
+         // Popup avec les nouveaux boutons
          const popupHtml = `
             <span class="street-name">${name}</span>
             <span class="street-meta">Secteur ${zoneId} • Dernier : ${dateStr}</span>
-            <button class="btn-validate" onclick="validate('${safeName}', ${zoneId})">✅ MARQUER FAIT</button>
-            <button class="btn-view" onclick="openStreetView(${e.latlng.lat}, ${e.latlng.lng})">👁️ STREET VIEW</button>
+            <div class="popup-buttons">
+              <button class="btn-validate" onclick="validate('${safeName}', ${zoneId})">✅ MARQUER FAIT (Porte à Porte)</button>
+              <button class="btn-flyers" onclick="logAction('${safeName}', 'flyers', ${zoneId})">📄 FLYERS DONE</button>
+              <button class="btn-note" onclick="logAction('${safeName}', 'note', ${zoneId})">📝 NOTE (Rencontre)</button>
+              <button class="btn-view" onclick="openStreetView(${e.latlng.lat}, ${e.latlng.lng})">👁️ STREET VIEW</button>
+            </div>
          `;
-         L.popup({offset:[0,-5], minWidth: 220}).setLatLng(e.latlng).setContent(popupHtml).openOn(map);
+         L.popup({offset:[0,-5], minWidth: 240}).setLatLng(e.latlng).setContent(popupHtml).openOn(map);
       });
 
       state.streets[name] = { vis: visLine, hit: hitLine, zoneId: zoneId, date: lastDate };
@@ -180,80 +163,71 @@
 
     // --- ACTIONS ---
 
+    // Fonction générique pour loguer des actions (Flyers, Note) - A CONNECTER A SUPABASE SI BESOIN
+    window.logAction = async (name, actionType, zoneId) => {
+        alert(`Action "${actionType}" enregistrée pour ${name} ! (Simulation)`);
+        map.closePopup();
+        // Ici, tu pourrais ajouter un appel Supabase pour enregistrer ce type d'action spécifique.
+    };
+
     window.validate = async (name, zoneId) => {
         const today = new Date().toISOString().split('T')[0];
-        
-        // Update UI immédiat
         if(state.streets[name]) {
-            state.streets[name].vis.setStyle({ color: '#2ecc71' }); // Devient Vert
+            state.streets[name].vis.setStyle({ color: '#2ecc71' });
             state.streets[name].date = today;
         }
         map.closePopup();
         updateUI();
-
-        // Sauvegarde Supabase
         const { error } = await supabaseClient.from('street_passages').upsert({
-             street_name: name, 
-             passage_date: today, 
-             negociateur: state.nego, 
-             zone_id: zoneId
+             street_name: name, passage_date: today, negociateur: state.nego, zone_id: zoneId
         }, { onConflict: 'street_name' });
-        
         if(error) alert("Erreur de sauvegarde: " + error.message);
     };
 
     window.openStreetView = (lat, lng) => {
-        // Lien officiel API Google Maps pour Mobile
-        const url = `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
-        window.open(url, '_blank');
+        window.open(`https://www.google.com/maps/search/?api=1&query=${lat},${lng}`, '_blank');
     };
 
     function updateUI() {
         const currentZoneObj = ZONES.find(z => z.nego === state.nego);
         const myZoneId = currentZoneObj ? currentZoneObj.id : 0;
-        
-        let countTotal = 0;
-        let countDone = 0;
+        let countTotal = 0, countDone = 0;
         
         Object.values(state.streets).forEach(st => {
             const isMine = (st.zoneId === myZoneId);
-            
-            // Focus visuel sur mon secteur
+            // Rues du secteur: opacité 1, épaisseur 3. Autres: opacité 0.2, épaisseur 2.
+            st.vis.setStyle({ opacity: isMine ? 1 : 0.2, weight: isMine ? 3 : 2 });
             if(isMine) {
-                st.vis.setStyle({ opacity: 1, weight: 4 });
                 st.hit.bringToFront();
                 countTotal++;
                 if(st.date && (new Date() - new Date(st.date))/(8.64e7) <= 20) countDone++;
-            } else {
-                st.vis.setStyle({ opacity: 0.15, weight: 2 }); // Grise les autres
             }
         });
         
         const percent = countTotal > 0 ? Math.round((countDone / countTotal) * 100) : 0;
-        document.getElementById('coverage').innerHTML = 
-            `<span style="color:${currentZoneObj.color}">●</span> ${countDone}/${countTotal} rues (${percent}%)`;
+        document.getElementById('coverage').innerHTML = `<span style="color:${currentZoneObj.color}">●</span> ${countDone}/${countTotal} rues (${percent}%)`;
+
+        // Recentrage sur la zone du négociateur sélectionné
+        if (currentZoneObj && state.zoneLayers[myZoneId]) {
+            map.fitBounds(state.zoneLayers[myZoneId].getBounds(), { padding: [20, 20], animate: true, duration: 0.8 });
+        }
     }
 
     // --- CHARGEMENT DONNEES ---
-
     async function initData() {
         const loader = document.getElementById('loader');
-        
-        // 1. Historique Supabase
         let history = {};
-        const { data, error } = await supabaseClient.from('street_passages').select('*');
+        const { data } = await supabaseClient.from('street_passages').select('*');
         if(data) data.forEach(d => history[d.street_name] = d.passage_date);
 
-        // 2. Rues OSM (Overpass)
-        // Bbox plus large pour bien couvrir
+        // Requête Overpass plus ciblée sur St André
         const query = `[out:json][timeout:25];
-            way["highway"~"residential|living_street"](44.92,-0.55,45.05,-0.35);
+            way["highway"~"residential|living_street|unclassified"](around:2500, 44.9945, -0.4465);
             out geom;`;
             
         try {
             const res = await fetch("https://overpass-api.de/api/interpreter?data=" + encodeURIComponent(query));
             const osmData = await res.json();
-            
             if(osmData.elements) {
                 osmData.elements.forEach(el => {
                     if(el.tags && el.tags.name) {
@@ -262,7 +236,7 @@
                     }
                 });
             }
-            updateUI();
+            updateUI(); // Le premier appel va aussi centrer sur le secteur par défaut (Alexis)
             loader.style.display = 'none';
         } catch(e) {
             loader.innerText = "Erreur réseau. Recharge la page.";
@@ -271,10 +245,9 @@
     }
 
     // --- LISTENERS ---
-
     document.getElementById('negociateur').addEventListener('change', (e) => {
         state.nego = e.target.value;
-        updateUI();
+        updateUI(); // UI update trigger le recentrage
     });
 
     document.getElementById('btnStart').addEventListener('click', function() {
@@ -292,48 +265,26 @@
         }
     });
 
-    // GPS TRACKING AVANCÉ
     document.getElementById('btnGps').addEventListener('click', function() {
         if (state.gpsId) {
-            // Désactiver
-            navigator.geolocation.clearWatch(state.gpsId);
-            state.gpsId = null;
-            this.classList.remove('gps-active');
-            this.innerHTML = "📍 Suivi GPS";
+            navigator.geolocation.clearWatch(state.gpsId); state.gpsId = null;
+            this.classList.remove('gps-active'); this.innerHTML = "📍 Suivi GPS";
             if(state.userMarker) map.removeLayer(state.userMarker);
         } else {
-            // Activer
             if (!navigator.geolocation) return alert("GPS non supporté");
-            this.classList.add('gps-active');
-            this.innerHTML = "📡 Recherche...";
-            
+            this.classList.add('gps-active'); this.innerHTML = "📡 Recherche...";
             state.gpsId = navigator.geolocation.watchPosition((pos) => {
                 const ll = [pos.coords.latitude, pos.coords.longitude];
-                
-                // Création ou MAJ du marqueur
                 if (!state.userMarker) {
-                    state.userMarker = L.circleMarker(ll, {
-                        radius: 10, color: 'white', weight: 3, 
-                        fillColor: '#007AFF', fillOpacity: 1
-                    }).addTo(map);
-                    map.setView(ll, 17); // Zoom fort au début
-                } else {
-                    state.userMarker.setLatLng(ll);
-                }
-                
+                    state.userMarker = L.circleMarker(ll, { radius: 10, color: 'white', weight: 3, fillColor: '#007AFF', fillOpacity: 1 }).addTo(map);
+                } else { state.userMarker.setLatLng(ll); }
+                map.setView(ll, 17, { animate: true }); // Suivi fluide
                 document.getElementById('btnGps').innerHTML = "🎯 Suivi actif";
-                
-            }, (err) => {
-                console.error(err);
-                alert("Impossible d'avoir la position");
-                this.classList.remove('gps-active');
-            }, { enableHighAccuracy: true });
+            }, (err) => { console.error(err); alert("Position impossible"); this.classList.remove('gps-active'); }, { enableHighAccuracy: true });
         }
     });
 
-    // START
     initData();
-
   </script>
 </body>
 </html>
