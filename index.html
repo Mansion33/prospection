@@ -2,100 +2,66 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8" />
-  <title>Carte de Prospection - Mansion Bordeaux</title>
+  <title>Carte Mansion - Directe</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
 
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
 
   <style>
-    body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background: #f5f5f5; overflow: hidden; }
+    /* RESET */
+    body { margin: 0; padding: 0; font-family: sans-serif; background: #f5f5f5; overflow: hidden; }
     * { box-sizing: border-box; }
 
-    header {
-      background: #fff; padding: 10px 15px; border-bottom: 1px solid #ddd;
-      display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;
-    }
-    .brand { font-weight: 700; font-size: 15px; }
-    .controls { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+    /* HEADER */
+    header { background: #fff; padding: 10px; border-bottom: 1px solid #ccc; display: flex; justify-content: space-between; align-items: center; height: 60px; z-index: 1000; position: relative; }
+    .brand { font-weight: bold; font-size: 14px; }
+    .controls { display: flex; gap: 5px; }
+    select, button { padding: 5px; border-radius: 4px; border: 1px solid #999; font-size: 12px; background: white; cursor: pointer; }
+    button.primary { background: black; color: white; border-color: black; }
+    button.accent { background: #0066cc; color: white; border: none; }
 
-    select, button {
-      font-size: 13px; padding: 6px 10px;
-      border-radius: 6px; border: 1px solid #ccc; background: #fff; cursor: pointer;
-    }
-    button.primary { background: #000; color: #fff; border-color: #000; }
-    button.accent { background: #0066cc; color: #fff; border: none; }
+    /* DASHBOARD */
+    #dashboard { background: white; padding: 10px; font-size: 12px; height: 140px; border-bottom: 1px solid #ddd; display: flex; flex-direction: column; gap: 5px; z-index: 1000; position: relative; }
+    .stats { display: flex; justify-content: space-between; font-weight: bold; color: #555; }
+    .inputs { display: flex; gap: 5px; }
+    .inputs input, .inputs textarea { flex: 1; padding: 5px; border: 1px solid #ccc; border-radius: 4px; }
 
-    #dashboard {
-      background: #fff; border-bottom: 1px solid #ddd; padding: 10px 15px;
-      height: 140px; display:flex; flex-direction:column; gap:8px; font-size: 12px;
-    }
-    .stats { display:flex; justify-content:space-between; color:#555; font-weight:600; }
-    .inputs { display:flex; gap:6px; }
-    .inputs input, .inputs textarea {
-      flex:1; padding:6px; border-radius:4px; border:1px solid #ccc; font-size:12px;
-    }
-    .inputs textarea { resize:vertical; min-height:32px; }
+    /* CARTE */
+    #map { width: 100%; height: calc(100vh - 200px); background: #e5e5e5; z-index: 1; }
 
-    #map { width:100%; height:calc(100vh - 200px); background:#e5e5e5; }
-
-    #loader {
-      position:fixed; inset:0; background:#fff; z-index:9999;
-      display:flex; align-items:center; justify-content:center;
-      transition:opacity .4s;
-    }
-    #loader.hidden { opacity:0; pointer-events:none; }
-
-    .spinner {
-      width:40px; height:40px; border:4px solid #eee; border-top:4px solid #000;
-      border-radius:50%; animation:spin 1s linear infinite; margin:0 auto 10px auto;
-    }
-    @keyframes spin { from{transform:rotate(0deg);} to{transform:rotate(360deg);} }
-
-    .popup-content { text-align:center; min-width:160px; }
-    .btn-done { background:#2ecc71; color:#fff; border:none; padding:8px; width:100%; margin-top:6px; border-radius:4px; cursor:pointer; }
-
-    @media(max-width:600px){
-      header{flex-direction:column; align-items:flex-start;}
-      #map{height:calc(100vh - 230px);}
-    }
+    /* POPUP */
+    .popup-content { text-align: center; min-width: 150px; }
+    .btn-done { background: #2ecc71; color: white; border: none; padding: 8px; width: 100%; margin-top: 5px; cursor: pointer; border-radius: 4px; }
   </style>
 </head>
 <body>
 
-  <div id="loader">
-    <div style="text-align:center">
-      <div class="spinner"></div>
-      <div id="loaderText">Construction de la carte...</div>
-      <small style="color:#999; display:block; margin-top:4px;">(déblocage automatique)</small>
-    </div>
-  </div>
-
   <header>
-    <div class="brand">Mansion Bordeaux <span style="font-weight:400; color:#666;">| Prospection</span></div>
+    <div class="brand">Mansion Prospection</div>
     <div class="controls">
       <select id="negociateur">
-        <option value="Alexis">Alexis (Nord-Ouest)</option>
-        <option value="Nicolas">Nicolas (Nord-Est)</option>
-        <option value="Thibault">Thibault (Sud-Ouest)</option>
-        <option value="Laurent">Laurent (Sud-Est)</option>
+        <option value="Alexis">Alexis (NO)</option>
+        <option value="Nicolas">Nicolas (NE)</option>
+        <option value="Thibault">Thibault (SO)</option>
+        <option value="Laurent">Laurent (SE)</option>
       </select>
       <button id="btnGps" class="accent">📍 GPS</button>
-      <button id="btnLoad">➕ Rues</button>
+      <button id="btnLoad">⬇️ Charger +</button>
     </div>
   </header>
 
   <div id="dashboard">
     <div class="stats">
       <span id="timer">00:00:00</span>
-      <span id="coverage">0% couvert</span>
+      <span id="coverage">--% Couvert</span>
     </div>
     <div class="inputs">
-      <input type="number" id="flyers" placeholder="Nb flyers" />
-      <textarea id="notes" placeholder="Notes / adresses..."></textarea>
+      <input type="number" id="flyers" placeholder="Nb Flyers">
+      <textarea id="notes" placeholder="Notes..."></textarea>
     </div>
-    <div style="display:flex; gap:6px;">
+    <div style="margin-top:5px; display:flex; gap:5px;">
       <button id="btnStart" class="primary" style="flex:1;">▶ Démarrer</button>
-      <button id="btnSave" style="flex:1; background:#eee;" disabled>💾 Enregistrer</button>
+      <button id="btnSave" disabled style="flex:1; background:#eee;">💾 Sauver</button>
     </div>
   </div>
 
@@ -106,245 +72,230 @@
   <script src="https://cdn.jsdelivr.net/npm/@turf/turf@6/turf.min.js"></script>
 
   <script>
-    // ---------- util loader ----------
-    const loaderEl = document.getElementById('loader');
-    function hideLoader() {
-      if (loaderEl && !loaderEl.classList.contains('hidden')) {
-        loaderEl.classList.add('hidden');
-      }
-    }
-    // sécurité anti “chargement infini”
-    setTimeout(hideLoader, 3000);
-
-    // ---------- config carte ----------
+    /* --- 1. INITIALISATION CARTE IMMÉDIATE --- */
+    // On initialise la carte tout de suite, sans attendre
     const map = L.map('map').setView([44.996, -0.446], 15);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '© OpenStreetMap'
     }).addTo(map);
 
+    // --- 2. CONFIGURATION ---
     const ZONES = [
-      { id:1, nego:"Alexis",  color:"#e74c3c", poly:[[-0.48,45.02],[-0.446,45.02],[-0.446,44.995],[-0.48,44.995]] },
+      { id:1, nego:"Alexis", color:"#e74c3c", poly:[[-0.48,45.02],[-0.446,45.02],[-0.446,44.995],[-0.48,44.995]] },
       { id:2, nego:"Nicolas", color:"#3498db", poly:[[-0.446,45.02],[-0.41,45.02],[-0.41,44.995],[-0.446,44.995]] },
-      { id:3, nego:"Thibault",color:"#f1c40f", poly:[[-0.48,44.995],[-0.446,44.995],[-0.446,44.96],[-0.48,44.96]] },
+      { id:3, nego:"Thibault", color:"#f1c40f", poly:[[-0.48,44.995],[-0.446,44.995],[-0.446,44.96],[-0.48,44.96]] },
       { id:4, nego:"Laurent", color:"#9b59b6", poly:[[-0.446,44.995],[-0.41,44.995],[-0.41,44.96],[-0.446,44.96]] }
     ];
 
-    // réseau minimum pour que la carte soit toujours utilisable
-    const BASE_STREETS = [
-      {name:"Rue Nationale",        pts:[[44.993,-0.445],[44.998,-0.446],[45.002,-0.447]]},
-      {name:"Route de Libourne",    pts:[[44.993,-0.445],[44.990,-0.440],[44.985,-0.430]]},
-      {name:"Rue de la Gare",       pts:[[44.995,-0.446],[44.996,-0.450],[44.997,-0.455]]},
-      {name:"Av. de l'Europe",      pts:[[45.000,-0.440],[45.005,-0.435]]},
-      {name:"Rue Dantagnan",        pts:[[44.994,-0.448],[44.994,-0.452]]},
-      {name:"Chemin Bois Milon",    pts:[[44.985,-0.445],[44.980,-0.445]]},
-      {name:"Rue Cousteau",         pts:[[44.998,-0.442],[45.000,-0.438]]}
+    // Rues en dur (pour affichage immédiat même sans internet)
+    const STATIC_STREETS = [
+      {name:"Rue Nationale", pts:[[44.993,-0.445],[44.998,-0.446],[45.002,-0.447]]},
+      {name:"Route de Libourne", pts:[[44.993,-0.445],[44.990,-0.440],[44.985,-0.430]]},
+      {name:"Rue de la Gare", pts:[[44.995,-0.446],[44.996,-0.450],[44.997,-0.455]]},
+      {name:"Av. de l'Europe", pts:[[45.000,-0.440],[45.005,-0.435]]},
+      {name:"Rue Dantagnan", pts:[[44.994,-0.448],[44.994,-0.452]]},
+      {name:"Rue Cousteau", pts:[[44.998,-0.442],[45.000,-0.438]]}
     ];
 
-    // ---------- Supabase (optionnel) ----------
-    const SUPABASE_URL = "https://wqujtckrvdhrwknplumq.supabase.co";
-    const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndxdWp0Y2tydmRocndrbnBsdW1xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjMxMjcwOTQsImV4cCI6MjA3ODcwMzA5NH0.btJD5-yD_zRJ9niEvwYEF46iB18OJo8nNXHRTbc8opE";
-
+    // Variables globales
+    const state = { nego: "Alexis", streets: {}, running: false, start: 0, interval: null, gps: null, marker: null };
     let supabaseClient = null;
-    if (window.supabase) {
+
+    /* --- 3. DESSIN ET LOGIQUE --- */
+    
+    // Dessin des zones (pointillés)
+    ZONES.forEach(z => {
+       const poly = z.poly.map(p => [p[1], p[0]]); // Inversion Lat/Lon pour Leaflet
+       L.polygon(poly, { color: z.color, fillOpacity: 0.05, weight: 1, dashArray: '6' }).addTo(map);
+    });
+
+    // Fonction pour dessiner une rue
+    function drawStreet(name, pts, lastDate) {
+      // Déjà dessinée ?
+      if(state.streets[name]) return;
+
+      // Calcul Couleur
+      let color = "#bdc3c7"; // Gris par défaut
+      if(lastDate) {
+         const days = (new Date() - new Date(lastDate)) / (1000 * 3600 * 24);
+         if(days <= 20) color = "#2ecc71"; // Vert
+         else if(days <= 45) color = "#f39c12"; // Orange
+         else color = "#e74c3c"; // Rouge
+      }
+
+      // Zone ID (Turf)
+      let zoneId = "?";
       try {
-        supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-      } catch (e) {
-        console.warn("Erreur init Supabase :", e);
-      }
-    }
+        const center = pts[Math.floor(pts.length/2)];
+        const pt = turf.point([center[1], center[0]]);
+        const found = ZONES.find(z => turf.booleanPointInPolygon(pt, turf.polygon([z.poly])));
+        if(found) zoneId = found.id;
+      } catch(e) {}
 
-    // ---------- état global ----------
-    const state = {
-      nego: "Alexis",
-      streets: {},   // {name: {layer, zoneId, date}}
-      running: false,
-      startTime: 0,
-      timerId: null
-    };
+      // Ligne Invisible (Clic)
+      L.polyline(pts, { weight: 20, opacity: 0 }).addTo(map).on('click', (e) => {
+         const safeName = name.replace(/'/g, "\\'");
+         L.popup().setLatLng(e.latlng).setContent(`
+           <div class="popup-content">
+             <b>${name}</b><br><small>Zone ${zoneId}</small><br>
+             Passage: ${lastDate || "Jamais"}<br>
+             <button class="btn-done" onclick="markDone('${safeName}', ${zoneId})">✅ FAIT</button>
+           </div>
+         `).openOn(map);
+      });
 
-    const ui = {
-      nego: document.getElementById('negociateur'),
-      coverage: document.getElementById('coverage'),
-      timer: document.getElementById('timer'),
-      btnLoad: document.getElementById('btnLoad')
-    };
-
-    // ---------- fonctions principales ----------
-    async function startApp() {
-      try {
-        // 1. dessiner les secteurs
-        ZONES.forEach(z => {
-          const latlngs = z.poly.map(p => [p[1], p[0]]);
-          L.polygon(latlngs, {
-            color: z.color, weight: 2, fillOpacity: 0.06, dashArray: "4"
-          }).addTo(map);
-        });
-
-        // 2. historique rues depuis Supabase (si dispo)
-        let history = {};
-        if (supabaseClient) {
-          try {
-            const { data, error } = await supabaseClient
-              .from('street_passages')
-              .select('street_name, passage_date');
-            if (!error && data) {
-              data.forEach(row => { history[row.street_name] = row; });
-            }
-          } catch (e) {
-            console.warn("Lecture Supabase impossible (mode offline).");
-          }
-        }
-
-        // 3. dessiner le réseau minimal
-        BASE_STREETS.forEach(s => drawStreet(s.name, s.pts, history[s.name]));
-
-        updateUI();
-        hideLoader();
-      } catch (err) {
-        console.error("Erreur startApp:", err);
-        hideLoader();
-        alert("Erreur lors du chargement de la carte.");
-      }
-    }
-
-    function drawStreet(name, coords, hist) {
-      let color = "#bdc3c7";
-      let lastDate = hist ? hist.passage_date : null;
-
-      if (lastDate) {
-        const days = (new Date() - new Date(lastDate)) / 86400000;
-        if (days <= 20) color = "#2ecc71";
-        else if (days <= 45) color = "#f39c12";
-        else color = "#e74c3c";
-      }
-
-      // déterminer le secteur
-      let zoneId = null;
-      try {
-        const mid = coords[Math.floor(coords.length / 2)];
-        const pt = turf.point([mid[1], mid[0]]);
-        const zone = ZONES.find(z => turf.booleanPointInPolygon(pt, turf.polygon([z.poly])));
-        if (zone) zoneId = zone.id;
-      } catch (e) {
-        console.warn("Erreur turf pour", name, e);
-      }
-
-      // couche cliquable invisible (large)
-      L.polyline(coords, { weight: 25, opacity: 0 })
-        .addTo(map)
-        .on('click', e => openStreetPopup(name, zoneId, lastDate, e.latlng));
-
-      // couche visible
-      const layer = L.polyline(coords, { color, weight: 4, opacity: 0.8 }).addTo(map);
-
+      // Ligne Visible
+      const layer = L.polyline(pts, { color: color, weight: 3, interactive: false }).addTo(map);
       state.streets[name] = { layer, zoneId, date: lastDate };
     }
 
-    function openStreetPopup(name, zoneId, lastDate, latlng) {
-      const safeName = name.replace(/'/g, "\\'");
-      const content = `
-        <div class="popup-content">
-          <b>${name}</b><br>
-          <small>Secteur : ${zoneId || "?"}</small><br>
-          <small>Dernier passage : ${lastDate || "Jamais"}</small>
-          <button class="btn-done" onclick="window.__doStreet('${safeName}', ${zoneId || 'null'})">
-            ✅ Marquer comme fait
-          </button>
-        </div>
-      `;
-      L.popup().setLatLng(latlng).setContent(content).openOn(map);
-    }
-
-    window.__doStreet = async (name, zoneId) => {
-      const today = new Date().toISOString().split('T')[0];
-      const st = state.streets[name];
-      if (st) {
-        st.layer.setStyle({ color: "#2ecc71" });
-        st.date = today;
-      }
-      map.closePopup();
-      updateUI();
-
-      if (supabaseClient) {
-        try {
-          await supabaseClient.from('street_passages').upsert({
-            street_name: name,
-            passage_date: today,
-            negociateur: state.nego,
-            zone_id: zoneId
-          }, { onConflict: 'street_name' });
-        } catch (e) {
-          console.warn("Erreur sauvegarde Supabase:", e);
+    // Fonction globale pour marquer une rue faite
+    window.markDone = async (name, zoneId) => {
+        const today = new Date().toISOString().split('T')[0];
+        if(state.streets[name]) {
+            state.streets[name].layer.setStyle({ color: '#2ecc71' });
+            state.streets[name].date = today;
         }
-      }
+        map.closePopup();
+        updateUI();
+
+        if(supabaseClient) {
+            await supabaseClient.from('street_passages').upsert({
+                street_name: name, passage_date: today, negociateur: state.nego, zone_id: zoneId
+            }, { onConflict: 'street_name' });
+        }
     };
 
+    // Mise à jour interface (opacité selon négociateur)
     function updateUI() {
-      const myZone = ZONES.find(z => z.nego === state.nego)?.id;
+        const myId = ZONES.find(z => z.nego === state.nego)?.id;
+        
+        let doneCount = 0;
+        let totalCount = 0;
 
-      // opacité des rues selon le secteur
-      Object.values(state.streets).forEach(st => {
-        const active = (st.zoneId === myZone);
-        st.layer.setStyle({
-          opacity: active ? 1 : 0.25,
-          weight: active ? 4 : 2
+        Object.values(state.streets).forEach(st => {
+            const isMine = (st.zoneId === myId);
+            st.layer.setStyle({ opacity: isMine ? 1 : 0.2, weight: isMine ? 4 : 2 });
+            
+            if(isMine) {
+                totalCount++;
+                if(st.date) {
+                    const days = (new Date() - new Date(st.date))/(8.64e7);
+                    if(days <= 20) doneCount++;
+                }
+            }
         });
-      });
 
-      // couverture
-      if (!myZone) {
-        ui.coverage.textContent = "Hors zone";
-        return;
-      }
-      const list = Object.values(state.streets).filter(st => st.zoneId === myZone);
-      if (!list.length) {
-        ui.coverage.textContent = "0% (0/0)";
-        return;
-      }
-      const now = new Date();
-      const done = list.filter(st => st.date && (now - new Date(st.date)) / 86400000 <= 20).length;
-      const pct = Math.round(done * 100 / list.length);
-      ui.coverage.textContent = `${pct}% (${done}/${list.length})`;
+        if(totalCount > 0) {
+            const pct = Math.round((doneCount / totalCount) * 100);
+            document.getElementById('coverage').innerText = `${pct}% (${doneCount}/${totalCount})`;
+        } else {
+            document.getElementById('coverage').innerText = "N/A";
+        }
     }
 
-    // ---------- Overpass en bonus (bouton ➕ Rues) ----------
-    ui.btnLoad.addEventListener('click', async () => {
-      const btn = ui.btnLoad;
-      btn.textContent = "⏳";
-      try {
-        const q = `[out:json][timeout:15];
-          way["highway"~"residential|unclassified"](44.98,-0.46,45.01,-0.43);
-          out geom;`;
-        const res = await fetch("https://overpass-api.de/api/interpreter?data=" + encodeURIComponent(q));
-        if (!res.ok) throw new Error("Overpass " + res.status);
-        const data = await res.json();
-        let added = 0;
-        data.elements.forEach(el => {
-          if (el.type === "way" && el.tags && el.tags.name && !state.streets[el.tags.name]) {
-            const pts = el.geometry.map(p => [p.lat, p.lon]);
-            drawStreet(el.tags.name, pts, null);
-            added++;
-          }
-        });
-        alert(added + " rues supplémentaires chargées.");
+    // --- 4. CONNEXION ET CHARGEMENT (ASYNC) ---
+    async function initData() {
+        // A. Connexion Supabase
+        try {
+            const SUPABASE_URL = "https://wqujtckrvdhrwknplumq.supabase.co"; 
+            const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndxdWp0Y2tydmRocndrbnBsdW1xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjMxMjcwOTQsImV4cCI6MjA3ODcwMzA5NH0.btJD5-yD_zRJ9niEvwYEF46iB18OJo8nNXHRTbc8opE";
+            if(typeof supabase !== 'undefined') {
+                supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+            }
+        } catch(e) { console.warn("Erreur Supabase init:", e); }
+
+        // B. Récupération historique
+        let history = {};
+        if(supabaseClient) {
+            try {
+                const { data } = await supabaseClient.from('street_passages').select('*');
+                if(data) data.forEach(d => history[d.street_name] = d.passage_date);
+            } catch(e) { console.warn("Erreur fetch history:", e); }
+        }
+
+        // C. Affichage des rues statiques
+        STATIC_STREETS.forEach(s => drawStreet(s.name, s.pts, history[s.name]));
+        
         updateUI();
-      } catch (e) {
-        alert("Impossible de charger les rues via Overpass (serveur saturé).");
-        console.warn(e);
-      }
-      btn.textContent = "➕ Rues";
+    }
+
+    // --- 5. EVENTS ---
+    
+    // Changement Négociateur
+    document.getElementById('negociateur').addEventListener('change', (e) => {
+        state.nego = e.target.value;
+        updateUI();
     });
 
-    // ---------- changement négociateur ----------
-    document.getElementById('negociateur').addEventListener('change', e => {
-      state.nego = e.target.value;
-      updateUI();
+    // Bouton Charger + (Overpass)
+    document.getElementById('btnLoad').addEventListener('click', async () => {
+        const btn = document.getElementById('btnLoad');
+        btn.innerText = "⏳...";
+        try {
+            // Requête API Overpass
+            const bbox = "44.98,-0.46,45.02,-0.43"; // St André Large
+            const q = `[out:json][timeout:10];way["highway"~"residential|unclassified"](${bbox});out geom;`;
+            const res = await fetch("https://overpass-api.de/api/interpreter?data=" + encodeURIComponent(q));
+            const data = await res.json();
+            
+            let count = 0;
+            data.elements.forEach(el => {
+                if(el.tags && el.tags.name) {
+                    const pts = el.geometry.map(p => [p.lat, p.lon]);
+                    // On ne redessine pas si existe déjà
+                    if(!state.streets[el.tags.name]) {
+                        drawStreet(el.tags.name, pts, null); // Pas d'historique connu pour les nouvelles rues pour l'instant
+                        count++;
+                    }
+                }
+            });
+            alert(`${count} rues ajoutées !`);
+            updateUI();
+        } catch(e) {
+            alert("Erreur chargement rues : " + e.message);
+        }
+        btn.innerText = "⬇️ Charger +";
     });
 
-    // (Timer & GPS pourront être remis ensuite)
+    // GPS
+    document.getElementById('btnGps').addEventListener('click', () => {
+        if(state.gps) {
+            navigator.geolocation.clearWatch(state.gps);
+            state.gps = null;
+            if(state.marker) map.removeLayer(state.marker);
+            document.getElementById('btnGps').innerText = "📍 GPS";
+        } else {
+            document.getElementById('btnGps').innerText = "🛑 Stop";
+            state.gps = navigator.geolocation.watchPosition(pos => {
+                const latlng = [pos.coords.latitude, pos.coords.longitude];
+                if(!state.marker) state.marker = L.circleMarker(latlng, { radius:8, color:'white', fillColor:'#007AFF', fillOpacity:1 }).addTo(map);
+                else state.marker.setLatLng(latlng);
+            }, null, { enableHighAccuracy: true });
+        }
+    });
 
-    // lancement
-    startApp();
+    // Démarrer Tournée
+    document.getElementById('btnStart').addEventListener('click', function() {
+        state.running = !state.running;
+        this.innerText = state.running ? "⏸ Pause" : "▶ Démarrer";
+        document.getElementById('btnSave').disabled = !state.running;
+        
+        if(state.running) {
+            state.start = Date.now();
+            state.interval = setInterval(() => {
+                const s = Math.floor((Date.now() - state.start)/1000);
+                const date = new Date(s * 1000).toISOString().substr(11, 8);
+                document.getElementById('timer').innerText = date;
+            }, 1000);
+        } else {
+            clearInterval(state.interval);
+        }
+    });
+
+    // Lancement
+    initData();
+
   </script>
 </body>
 </html>
