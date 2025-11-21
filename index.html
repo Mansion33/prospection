@@ -210,7 +210,29 @@
       const hitLine = L.polyline(latlngs, { weight: 20, opacity: 0 }).addTo(map);
       const visLine = L.polyline(latlngs, { color: color, weight: 3, opacity: 0.8, interactive: false }).addTo(map);
 
+      let longPressTimer = null;
+      let longPressTriggered = false;
+
+      hitLine.on('mousedown touchstart', (e) => {
+        longPressTriggered = false;
+        longPressTimer = setTimeout(() => {
+          longPressTriggered = true;
+          const lat = e.latlng.lat;
+          const lng = e.latlng.lng;
+          openStreetView(lat, lng);
+        }, 800); // 800ms = appui prolongé
+      });
+
+      hitLine.on('mouseup touchend mouseleave touchcancel', () => {
+        if(longPressTimer) {
+          clearTimeout(longPressTimer);
+          longPressTimer = null;
+        }
+      });
+
       hitLine.on('click', (e) => {
+         if(longPressTriggered) return; // Ne pas ouvrir popup si Street View activé
+         
          map.setView(e.latlng, 17, { pan: { animate: true, duration: 0.5 } });
          state.currentStreet = name;
          
@@ -233,10 +255,10 @@
                 <button class="flyer-btn" onclick="updateFlyers('${safeName}', 1)">+</button>
               </div>
               <div class="popup-buttons">
-                <button class="btn-validate" onclick="validate('${safeName}', ${zoneId})">✅ MARQUER FAIT (Porte à Porte)</button>
+                <button class="btn-validate" onclick="validate('${safeName}', ${zoneId})">✅ PORTE À PORTE FAIT</button>
+                <button class="btn-flyers" onclick="markBoitage('${safeName}', ${zoneId})">📬 BOÎTAGE FAIT</button>
                 <button class="btn-note" onclick="openNoteModal('${safeName}', ${zoneId})">📝 AJOUTER UNE NOTE</button>
                 <button class="btn-history" onclick="showHistory('${safeName}')">📊 VOIR L'HISTORIQUE</button>
-                <button class="btn-view" onclick="openStreetView(${e.latlng.lat}, ${e.latlng.lng})">👁️ STREET VIEW</button>
               </div>
             </div>
          `;
@@ -254,7 +276,19 @@
       
       const elementId = `flyer-${name.replace(/\s/g, '-')}`;
       const el = document.getElementById(elementId);
-      if(el) el.textContent = newCount;
+      if(el) {
+        el.textContent = newCount;
+        // Feedback visuel
+        el.style.color = '#2ecc71';
+        el.style.transform = 'scale(1.2)';
+        setTimeout(() => {
+          el.style.color = '#333';
+          el.style.transform = 'scale(1)';
+        }, 300);
+      }
+
+      // Afficher notification "Enregistré"
+      showSaveNotification();
 
       await supabaseClient.from('street_actions').upsert({
         street_name: name,
@@ -265,11 +299,19 @@
 
       await supabaseClient.from('street_history').insert({
         street_name: name,
-        action_type: 'flyers',
+        action_type: 'boitage',
         action_data: { count: newCount, delta: delta },
         negociateur: state.nego
       });
     };
+
+    function showSaveNotification() {
+      const notif = document.createElement('div');
+      notif.style.cssText = 'position:fixed;top:80px;left:50%;transform:translateX(-50%);background:#2ecc71;color:white;padding:10px 20px;border-radius:20px;font-weight:600;font-size:13px;z-index:3000;box-shadow:0 4px 10px rgba(0,0,0,0.2);';
+      notif.textContent = '✓ Enregistré';
+      document.body.appendChild(notif);
+      setTimeout(() => notif.remove(), 1500);
+    }
 
     // --- MODAL NOTES ---
     window.openNoteModal = (name, zoneId) => {
@@ -321,15 +363,22 @@
       let html = '';
       data.forEach(item => {
         const date = new Date(item.created_at).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
-        const typeLabel = item.action_type === 'note' ? '📝 Note' : item.action_type === 'flyers' ? '📄 Flyers' : '✅ Passage';
+        const typeLabel = item.action_type === 'note' ? '📝 Note' : 
+                         item.action_type === 'boitage' ? '📬 Boîtage' : 
+                         item.action_type === 'porte_a_porte' ? '🚪 Porte à Porte' : 
+                         '✅ Action';
         
         let content = '';
         if(item.action_type === 'note') {
           content = item.action_data.note;
-        } else if(item.action_type === 'flyers') {
+        } else if(item.action_type === 'boitage' && item.action_data.delta) {
           content = `${item.action_data.delta > 0 ? '+' : ''}${item.action_data.delta} flyer(s) - Total: ${item.action_data.count}`;
+        } else if(item.action_type === 'boitage') {
+          content = 'Boîtage effectué';
+        } else if(item.action_type === 'porte_a_porte') {
+          content = 'Porte à porte effectué';
         } else {
-          content = 'Rue marquée comme effectuée';
+          content = 'Action effectuée';
         }
 
         html += `
@@ -344,7 +393,7 @@
       document.getElementById('historyContent').innerHTML = html;
     };
 
-    // --- VALIDATION ---
+    // --- VALIDATION PORTE À PORTE ---
     window.validate = async (name, zoneId) => {
         const today = new Date().toISOString().split('T')[0];
         if(state.streets[name]) {
@@ -355,12 +404,34 @@
         updateUI();
 
         await supabaseClient.from('street_passages').upsert({
-             street_name: name, passage_date: today, negociateur: state.nego, zone_id: zoneId
+             street_name: name, passage_date: today, negociateur: state.nego, zone_id: zoneId, method: 'porte_a_porte'
         }, { onConflict: 'street_name' });
 
         await supabaseClient.from('street_history').insert({
           street_name: name,
-          action_type: 'passage',
+          action_type: 'porte_a_porte',
+          action_data: { date: today },
+          negociateur: state.nego
+        });
+    };
+
+    // --- VALIDATION BOÎTAGE ---
+    window.markBoitage = async (name, zoneId) => {
+        const today = new Date().toISOString().split('T')[0];
+        if(state.streets[name]) {
+            state.streets[name].vis.setStyle({ color: '#f39c12' });
+            state.streets[name].date = today;
+        }
+        map.closePopup();
+        updateUI();
+
+        await supabaseClient.from('street_passages').upsert({
+             street_name: name, passage_date: today, negociateur: state.nego, zone_id: zoneId, method: 'boitage'
+        }, { onConflict: 'street_name' });
+
+        await supabaseClient.from('street_history').insert({
+          street_name: name,
+          action_type: 'boitage',
           action_data: { date: today },
           negociateur: state.nego
         });
@@ -402,11 +473,12 @@
         const { data } = await supabaseClient.from('street_passages').select('*');
         if(data) data.forEach(d => history[d.street_name] = d.passage_date);
 
-        // Requête Overpass AMÉLIORÉE - Plus de types de rues
+        // Requête Overpass AMÉLIORÉE - Plus de types de rues + zone élargie
         const query = `[out:json][timeout:30];
             (
-              way["highway"~"residential|living_street|unclassified|tertiary|service|pedestrian|footway|path"](around:3000, 44.9945, -0.4465);
-              way["highway"]["name"](around:3000, 44.9945, -0.4465);
+              way["highway"~"residential|living_street|unclassified|tertiary|tertiary_link|secondary|service|track"](around:4000, 44.9945, -0.4465);
+              way["highway"]["name"](around:4000, 44.9945, -0.4465);
+              way["place"~"square|plaza"](around:4000, 44.9945, -0.4465);
             );
             out geom;`;
             
