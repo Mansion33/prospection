@@ -2,115 +2,204 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8" />
-  <title>Mansion V4 - Fun & Heatmap</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Mansion V5 - Ultimate</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
   
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
-  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap" rel="stylesheet">
 
   <style>
-    /* --- DESIGN LUDIQUE (UI) --- */
-    body { margin: 0; font-family: 'Nunito', sans-serif; background: #fff; overflow: hidden; -webkit-tap-highlight-color: transparent; }
-    
-    /* Header minimaliste */
-    header { 
-        height: 60px; padding: 0 20px; display: flex; align-items: center; justify-content: space-between; 
-        background: white; z-index: 1000; position: relative; box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-    }
-    .brand { font-weight: 900; font-size: 20px; background: -webkit-linear-gradient(45deg, #FF416C, #FF4B2B); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-    
-    select { 
-        padding: 8px 12px; border-radius: 20px; border: 2px solid #f0f0f0; 
-        font-size: 14px; background: #fff; font-weight: 700; color: #444; outline: none;
+    /* --- 1. VARIABLES & THEME (Dark Mode Ready) --- */
+    :root {
+      --bg-color: #F4F4F6; /* Gris chaud */
+      --card-bg: rgba(255, 255, 255, 0.95);
+      --text-main: #111;
+      --text-sec: #666;
+      --accent: #D4AF37; /* Doré Mansion */
+      --primary: #111;   /* Noir Mansion */
+      --success: #2ecc71;
+      --highlight: #007AFF;
+      --radius: 20px;
+      --shadow: 0 8px 30px rgba(0,0,0,0.08);
     }
 
-    /* Dashboard Flottant "Capsule" */
-    #dashboard { 
-        position: absolute; top: 80px; left: 50%; transform: translateX(-50%); width: 90%; max-width: 400px;
-        background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(8px);
-        padding: 8px; border-radius: 25px; box-shadow: 0 10px 25px rgba(0,0,0,0.1);
-        z-index: 900; display: flex; align-items: center; justify-content: space-between; gap: 10px; border: 1px solid rgba(255,255,255,0.5);
+    [data-theme="dark"] {
+      --bg-color: #121212;
+      --card-bg: rgba(30, 30, 30, 0.95);
+      --text-main: #fff;
+      --text-sec: #aaa;
+      --primary: #fff; /* Boutons deviennent blancs */
+      --shadow: 0 8px 30px rgba(0,0,0,0.4);
     }
-    
-    .stats { font-size: 12px; font-weight: 800; color: #555; padding-left: 10px; display: flex; flex-direction: column; line-height: 1.2; }
-    
-    /* Boutons Ronds et Sympas */
-    .btn-circle { width: 40px; height: 40px; border-radius: 50%; border: none; font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275); box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
-    .btn-circle:active { transform: scale(0.9); }
-    
-    .btn-gps { background: #fff; color: #007AFF; }
-    .btn-gps.active { background: #34c759; color: white; animation: pulse 2s infinite; }
-    .btn-heat { background: #fff; color: #FF4B2B; }
-    .btn-heat.active { background: #FF4B2B; color: white; }
-    
-    /* POPUP "MINI" STYLE BULLE */
-    .leaflet-popup-content-wrapper { border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); padding: 0; }
-    .leaflet-popup-content { margin: 0; width: 240px !important; }
-    .leaflet-popup-tip { box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
-    
-    .mini-popup { padding: 15px; text-align: center; }
-    .pop-title { font-size: 16px; font-weight: 800; color: #333; margin-bottom: 5px; display: block; }
-    .pop-meta { font-size: 11px; color: #999; margin-bottom: 15px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
-    
-    .pop-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px; }
-    
-    .action-btn { 
-        padding: 12px 5px; border-radius: 12px; border: none; color: white; font-size: 12px; font-weight: 700; cursor: pointer;
-        display: flex; flex-direction: column; align-items: center; gap: 5px; 
+
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    body { margin: 0; font-family: 'Plus Jakarta Sans', sans-serif; background: var(--bg-color); overflow: hidden; color: var(--text-main); transition: background 0.3s; }
+
+    /* --- 2. CARTE PLEIN ÉCRAN --- */
+    #map { 
+        width: 100vw; height: 100vh; position: fixed; top: 0; left: 0; z-index: 1; 
+        transition: filter 0.3s;
     }
-    .btn-boitage { background: linear-gradient(135deg, #2ecc71, #27ae60); }
-    .btn-pap { background: linear-gradient(135deg, #3498db, #2980b9); }
-    
-    /* Compteur Flyers minimaliste */
-    .flyer-row { background: #f4f6f8; border-radius: 12px; padding: 8px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
-    .flyer-mini-btn { width: 25px; height: 25px; border-radius: 50%; border: none; background: white; color: #333; font-weight: bold; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
-    
-    /* MODAL OVERLAY (Pour Long Press StreetView Feedback) */
-    #sv-feedback {
-        position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0);
-        background: rgba(0,0,0,0.8); color: white; padding: 20px; border-radius: 20px;
-        font-weight: bold; pointer-events: none; z-index: 5000; transition: transform 0.3s;
-        display: flex; flex-direction: column; align-items: center; gap: 10px;
+    [data-theme="dark"] #map { filter: invert(1) hue-rotate(180deg) brightness(0.8); }
+
+    /* --- 3. HEADER PREMIUM --- */
+    header {
+      position: absolute; top: 0; left: 0; right: 0; z-index: 1000;
+      background: var(--card-bg); backdrop-filter: blur(10px);
+      padding: 15px 20px 20px 20px; border-bottom-left-radius: 30px; border-bottom-right-radius: 30px;
+      box-shadow: var(--shadow);
     }
-    #sv-feedback.show { transform: translate(-50%, -50%) scale(1); }
+
+    .header-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+    .brand { font-weight: 900; font-size: 22px; letter-spacing: -1px; }
+    .theme-switch { font-size: 20px; cursor: pointer; background: none; border: none; }
+
+    .user-select-wrapper { display: flex; align-items: center; gap: 10px; background: rgba(0,0,0,0.05); padding: 5px 15px; border-radius: 50px; }
+    #user-emoji { font-size: 20px; }
+    select { background: transparent; border: none; font-weight: 700; font-size: 14px; color: var(--text-main); outline: none; }
+
+    /* Progress Bar Secteur */
+    .progress-container { margin-top: 10px; }
+    .progress-labels { display: flex; justify-content: space-between; font-size: 11px; font-weight: 600; color: var(--text-sec); margin-bottom: 4px; }
+    .progress-bar-bg { height: 8px; background: rgba(0,0,0,0.1); border-radius: 10px; overflow: hidden; }
+    .progress-bar-fill { height: 100%; width: 0%; background: linear-gradient(90deg, #ff6b6b, #feca57, #48dbfb); transition: width 1s ease-out; }
+
+    /* --- 4. WIDGETS FLOTTANTS --- */
+    .floating-widgets { position: absolute; top: 140px; right: 15px; z-index: 900; display: flex; flex-direction: column; gap: 10px; }
+    .widget-btn { width: 45px; height: 45px; border-radius: 50%; background: var(--card-bg); color: var(--text-main); border: none; box-shadow: var(--shadow); font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: transform 0.2s; }
+    .widget-btn:active { transform: scale(0.9); }
+    .gps-active { color: #007AFF; animation: pulse 2s infinite; }
+
+    /* --- 5. BARRE D'ACTION BAS (MOBILE UX) --- */
+    #bottom-bar {
+      position: absolute; bottom: 20px; left: 20px; right: 20px; z-index: 1000;
+      background: var(--card-bg); backdrop-filter: blur(12px);
+      padding: 15px; border-radius: 25px; box-shadow: var(--shadow);
+      display: none; /* Caché par défaut */
+      flex-direction: column; gap: 10px;
+      transform: translateY(100px); opacity: 0; transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+    #bottom-bar.active { display: flex; transform: translateY(0); opacity: 1; }
+
+    .street-info { text-align: center; margin-bottom: 10px; }
+    .street-title { font-weight: 800; font-size: 18px; display: block; }
+    .street-sub { font-size: 12px; color: var(--text-sec); }
+
+    .actions-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .btn-action { padding: 15px; border-radius: 15px; border: none; font-weight: 700; font-size: 14px; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 5px; color: white; transition: transform 0.1s; }
+    .btn-action:active { transform: scale(0.95); }
+    
+    .btn-boitage { background: var(--success); box-shadow: 0 4px 15px rgba(46, 204, 113, 0.3); }
+    .btn-note { background: var(--primary); box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
+    .btn-close-bar { position: absolute; top: -15px; right: -5px; background: var(--text-main); color: var(--bg-color); width: 30px; height: 30px; border-radius: 50%; border: none; font-weight: bold; cursor: pointer; }
+
+    /* --- 6. MODALS & TOASTS --- */
+    .toast { position: absolute; top: 150px; left: 50%; transform: translateX(-50%); background: var(--primary); color: var(--bg-color); padding: 10px 20px; border-radius: 30px; font-size: 13px; font-weight: 600; z-index: 2000; opacity: 0; transition: opacity 0.3s; pointer-events: none; white-space: nowrap; }
+    .toast.show { opacity: 1; margin-top: 10px; }
+
+    /* Modal générique */
+    .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 5000; display: none; align-items: center; justify-content: center; backdrop-filter: blur(5px); }
+    .modal-card { background: var(--bg-color); width: 90%; max-width: 350px; padding: 25px; border-radius: 25px; position: relative; }
+    .modal-title { font-size: 18px; font-weight: 800; margin-bottom: 15px; }
+    textarea { width: 100%; padding: 12px; border-radius: 12px; border: 2px solid #ddd; font-family: inherit; margin-bottom: 15px; min-height: 80px; }
+    .modal-btns { display: flex; gap: 10px; }
+    .btn-modal { flex: 1; padding: 12px; border-radius: 12px; border: none; font-weight: 700; cursor: pointer; }
+    .btn-cancel { background: #ddd; color: #333; }
+    .btn-confirm { background: var(--primary); color: var(--bg-color); }
 
     /* LOADER */
-    #loader { position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%); background: #222; color: white; padding: 10px 25px; border-radius: 50px; font-size: 12px; font-weight: 700; z-index: 2000; display: flex; gap: 10px; box-shadow: 0 5px 20px rgba(0,0,0,0.3); }
+    #loader { position: absolute; bottom: 50%; left: 50%; transform: translate(-50%, 50%); background: var(--card-bg); color: var(--text-main); padding: 15px 30px; border-radius: 50px; font-weight: 800; z-index: 3000; box-shadow: var(--shadow); display: flex; gap: 10px; align-items: center; }
 
-    @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(52, 199, 89, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(52, 199, 89, 0); } 100% { box-shadow: 0 0 0 0 rgba(52, 199, 89, 0); } }
+    /* ANIMATIONS */
+    @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(0, 122, 255, 0.4); } 70% { box-shadow: 0 0 0 15px rgba(0, 122, 255, 0); } 100% { box-shadow: 0 0 0 0 rgba(0, 122, 255, 0); } }
+    .glow-effect { animation: stroke-pulse 1s ease-out; }
+    @keyframes stroke-pulse { 50% { stroke-width: 10; stroke-opacity: 1; } }
+
   </style>
 </head>
 <body>
 
-  <div id="sv-feedback">
-    <span style="font-size:30px">👁️</span>
-    Ouverture Street View...
-  </div>
-
   <header>
-    <div class="brand">MANSION V4</div>
-    <select id="negociateur">
-      <option value="Alexis">Alexis</option>
-      <option value="Nicolas">Nicolas</option>
-      <option value="Thibault">Thibault</option>
-      <option value="Laurent">Laurent</option>
-    </select>
+    <div class="header-top">
+      <div class="brand">MANSION</div>
+      <button class="theme-switch" onclick="toggleTheme()">🌙</button>
+    </div>
+    
+    <div style="display:flex; justify-content:space-between; align-items:flex-end;">
+      <div>
+        <div style="font-size:12px; color:var(--text-sec); margin-bottom:4px;">Négociateur</div>
+        <div class="user-select-wrapper">
+          <span id="user-emoji">👑</span>
+          <select id="negociateur">
+            <option value="Alexis">Alexis</option>
+            <option value="Nicolas">Nicolas</option>
+            <option value="Thibault">Thibault</option>
+            <option value="Laurent">Laurent</option>
+          </select>
+        </div>
+      </div>
+      <div style="text-align:right;">
+        <div style="font-size:10px; color:var(--text-sec); text-transform:uppercase; font-weight:700;">Objectif Jour</div>
+        <div style="font-weight:800; font-size:16px;">🎯 <span id="daily-count">0</span>/5 rues</div>
+      </div>
+    </div>
+
+    <div class="progress-container">
+      <div class="progress-labels">
+        <span>Secteur</span>
+        <span id="progress-pct">0%</span>
+      </div>
+      <div class="progress-bar-bg">
+        <div class="progress-bar-fill" id="progress-fill"></div>
+      </div>
+    </div>
   </header>
 
-  <div id="dashboard">
-    <div class="stats">
-      <span id="coverage" style="font-size:14px; color:#333;">0%</span>
-      <span style="color:#aaa; font-size:10px;">PROSPECTION</span>
-    </div>
-    <button class="btn-circle btn-heat" id="btnHeat" onclick="toggleHeatmap()">🔥</button>
-    <button class="btn-circle btn-gps" id="btnGps">📍</button>
+  <div class="floating-widgets">
+    <button class="widget-btn" id="btnGps" onclick="toggleGPS()">📍</button>
+    <button class="widget-btn" onclick="showLeaderboard()">🏆</button>
   </div>
 
-  <div id="loader">Chargement...</div>
+  <div id="loader"><span>🚀</span> Chargement...</div>
+
   <div id="map"></div>
 
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
-  <script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
+  <div id="bottom-bar">
+    <button class="btn-close-bar" onclick="closeBottomBar()">✕</button>
+    
+    <div class="street-info">
+      <span class="street-title" id="bar-street-name">Rue Inconnue</span>
+      <span class="street-sub" id="bar-street-meta">Jamais prospectée</span>
+    </div>
+
+    <div class="actions-grid">
+      <button class="btn-action btn-boitage" onclick="markBoitage()">
+        <span style="font-size:20px">📬</span> BOÎTAGE FAIT
+      </button>
+      <button class="btn-action btn-note" onclick="openNoteModal()">
+        <span style="font-size:20px">📝</span> NOTE RAPIDE
+      </button>
+    </div>
+    
+    <div style="text-align:center; font-size:10px; color:var(--text-sec); margin-top:10px;">
+      Appui long sur la carte = Street View 👁️
+    </div>
+  </div>
+
+  <div id="toast" class="toast">Action enregistrée !</div>
+
+  <div id="modal-note" class="modal-overlay">
+    <div class="modal-card">
+      <div class="modal-title">📝 Note Rapide</div>
+      <textarea id="note-input" placeholder="Ex: Maison à vendre au n°12..."></textarea>
+      <div class="modal-btns">
+        <button class="btn-modal btn-cancel" onclick="closeModal()">Annuler</button>
+        <button class="btn-modal btn-confirm" onclick="saveNote()">Enregistrer</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdn.jsdelivr.net/npm/@turf/turf@6/turf.min.js"></script>
 
@@ -118,239 +207,263 @@
     // --- 1. CONFIGURATION ---
     const CENTER_LAT = 44.9945;
     const CENTER_LNG = -0.4465;
+    // URL Supabase
     const SB_URL = "https://wqujtckrvdhrwknplumq.supabase.co";
     const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndxdWp0Y2tydmRocndrbnBsdW1xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjMxMjcwOTQsImV4cCI6MjA3ODcwMzA5NH0.btJD5-yD_zRJ9niEvwYEF46iB18OJo8nNXHRTbc8opE";
     const supabaseClient = supabase.createClient(SB_URL, SB_KEY);
 
-    // ZONES (Carré géant divisé en 4)
-    const BOX_SIZE = 0.05; 
-    const ZONES = [
-      { id: 1, nego: "Alexis", color: "#e74c3c", poly: [[CENTER_LAT, CENTER_LNG], [CENTER_LAT + BOX_SIZE, CENTER_LNG], [CENTER_LAT + BOX_SIZE, CENTER_LNG - BOX_SIZE], [CENTER_LAT, CENTER_LNG - BOX_SIZE]] },
-      { id: 2, nego: "Nicolas", color: "#3498db", poly: [[CENTER_LAT, CENTER_LNG], [CENTER_LAT + BOX_SIZE, CENTER_LNG], [CENTER_LAT + BOX_SIZE, CENTER_LNG + BOX_SIZE], [CENTER_LAT, CENTER_LNG + BOX_SIZE]] },
-      { id: 3, nego: "Thibault", color: "#f1c40f", poly: [[CENTER_LAT, CENTER_LNG], [CENTER_LAT - BOX_SIZE, CENTER_LNG], [CENTER_LAT - BOX_SIZE, CENTER_LNG - BOX_SIZE], [CENTER_LAT, CENTER_LNG - BOX_SIZE]] },
-      { id: 4, nego: "Laurent", color: "#9b59b6", poly: [[CENTER_LAT, CENTER_LNG], [CENTER_LAT - BOX_SIZE, CENTER_LNG], [CENTER_LAT - BOX_SIZE, CENTER_LNG + BOX_SIZE], [CENTER_LAT, CENTER_LNG + BOX_SIZE]] }
-    ];
-
-    // ETAT GLOBAL
-    const state = { streets: {}, flyers: {}, heatPoints: [], nego: "Alexis", gpsId: null, userMarker: null, heatLayer: null, heatEnabled: false };
-
-    // --- 2. INIT MAP ---
-    const map = L.map('map', { zoomControl: false, tap: false }).setView([CENTER_LAT, CENTER_LNG], 15);
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', { maxZoom: 20 }).addTo(map);
-
-    // --- 3. LOGIQUE HEATMAP & DESSIN ---
-
-    // Couleur basée UNIQUEMENT sur le BOITAGE (demande client)
-    function getStreetColor(boitageDate) {
-      if(!boitageDate) return "#ff3b30"; // Rouge (Pas fait)
-      const diff = (new Date() - new Date(boitageDate)) / (8.64e7);
-      if(diff <= 20) return "#2ecc71"; // Vert (Boité récemment)
-      return "#f39c12"; // Orange (Boité il y a longtemps)
-    }
-
-    // Gestion Heatmap
-    window.toggleHeatmap = () => {
-        state.heatEnabled = !state.heatEnabled;
-        const btn = document.getElementById('btnHeat');
-        
-        if(state.heatEnabled) {
-            btn.classList.add('active');
-            // Création layer si inexistant
-            if(!state.heatLayer) {
-                // Config Heatmap : radius = taille des points, blur = flou
-                state.heatLayer = L.heatLayer(state.heatPoints, { radius: 25, blur: 20, maxZoom: 17 }).addTo(map);
-            } else {
-                map.addLayer(state.heatLayer);
-            }
-            // Assombrir un peu le fond pour faire ressortir le feu
-            document.querySelector('.leaflet-tile-pane').style.opacity = '0.4';
-        } else {
-            btn.classList.remove('active');
-            if(state.heatLayer) map.removeLayer(state.heatLayer);
-            document.querySelector('.leaflet-tile-pane').style.opacity = '1';
-        }
+    // Emojis Négociateurs
+    const EMOJIS = { "Alexis": "👑", "Nicolas": "🚀", "Thibault": "🦁", "Laurent": "⚡" };
+    
+    // État de l'app
+    const state = { 
+      streets: {}, 
+      notes: {}, 
+      nego: "Alexis", 
+      selectedStreet: null, 
+      gpsId: null, 
+      userMarker: null,
+      dailyCount: 0 
     };
 
-    function drawStreet(name, latlngs, dbData) {
-      const center = latlngs[Math.floor(latlngs.length/2)];
-      
-      // HEATMAP DATA : On ajoute chaque point de rue dans le tableau de chaleur
-      // Si la rue a déjà été visitée (data existe), on ajoute de l'intensité
-      const intensity = dbData ? 1 : 0.1; 
-      // On ajoute quelques points le long de la rue pour la heatmap
-      latlngs.forEach((pt, i) => {
-          if(i % 3 === 0) state.heatPoints.push([pt[0], pt[1], intensity]); // Un point tous les 3 noeuds
-      });
+    // --- 2. INIT MAP ---
+    // Fixe pour écran blanc : on force le refresh size après chargement
+    const map = L.map('map', { zoomControl: false, tap: false }).setView([CENTER_LAT, CENTER_LNG], 15);
+    
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+      maxZoom: 20, attribution: ''
+    }).addTo(map);
 
-      // Couleur basée sur date_boitage (et non passage générique)
-      // Note: On suppose que 'passage_date' dans ta DB actuelle est la ref. 
-      // Si tu veux séparer, il faudra une colonne 'boitage_date'. Ici j'utilise passage_date si method='boitage'
-      let color = "#ff3b30";
+    // --- 3. FONCTIONS VISUELLES ---
+    
+    // Changement Thème
+    function toggleTheme() {
+        const body = document.body;
+        const current = body.getAttribute('data-theme');
+        const next = current === 'dark' ? 'light' : 'dark';
+        body.setAttribute('data-theme', next);
+        document.querySelector('.theme-switch').innerText = next === 'dark' ? '☀️' : '🌙';
+    }
+
+    // Mise à jour Progress Bar & Objectifs
+    function updateDashboard() {
+        let total = 0, done = 0;
+        Object.values(state.streets).forEach(st => {
+            total++;
+            if(st.status === 'done') done++;
+        });
+
+        const pct = total ? Math.round((done/total)*100) : 0;
+        document.getElementById('progress-pct').innerText = pct + "%";
+        document.getElementById('progress-fill').style.width = pct + "%";
+        
+        // Couleur dynamique de la barre
+        const fill = document.getElementById('progress-fill');
+        if(pct < 30) fill.style.background = "#ff6b6b"; // Rouge
+        else if(pct < 70) fill.style.background = "#feca57"; // Orange
+        else fill.style.background = "#2ecc71"; // Vert
+    }
+
+    // Toast Notification
+    function showToast(msg) {
+        const t = document.getElementById('toast');
+        t.innerText = msg;
+        t.classList.add('show');
+        if(navigator.vibrate) navigator.vibrate(50); // Vibration Tactile
+        setTimeout(() => t.classList.remove('show'), 2000);
+    }
+
+    // --- 4. LOGIQUE CARTE ---
+
+    function drawStreet(name, latlngs, dbData, noteData) {
+      if(state.streets[name]) return; // Evite doublons visuels
+
+      // Statut visuel
+      let color = "#ff4757"; // Rouge par défaut
+      let status = 'todo';
+      
+      // Si boité récemment (vert)
       if(dbData && dbData.method === 'boitage') {
-          color = getStreetColor(dbData.passage_date);
+         const diff = (new Date() - new Date(dbData.passage_date)) / 8.64e7;
+         if(diff <= 20) { color = "#2ecc71"; status = 'done'; }
+         else { color = "#ffa502"; status = 'old'; }
       }
 
-      // Dessin Lignes
-      const hitLine = L.polyline(latlngs, { weight: 25, opacity: 0 }).addTo(map);
-      const visLine = L.polyline(latlngs, { color: color, weight: 4, opacity: 0.8, interactive: false, lineCap: 'round' }).addTo(map);
+      // 1. Zone cliquable large (invisible)
+      const hitLine = L.polyline(latlngs, { weight: 30, opacity: 0 }).addTo(map);
+      
+      // 2. Ligne visible
+      const visLine = L.polyline(latlngs, { color: color, weight: 4, opacity: 0.9, lineCap: 'round' }).addTo(map);
 
-      if(!state.streets[name]) state.streets[name] = { segments: [], data: dbData };
-      state.streets[name].segments.push({ vis: visLine, hit: hitLine });
+      // 3. Etoile si note (⭐)
+      let starMarker = null;
+      if(noteData) {
+          const center = latlngs[Math.floor(latlngs.length/2)];
+          starMarker = L.marker(center, {
+              icon: L.divIcon({ html: '⭐', className: '', iconSize: [20,20], iconAnchor: [10,10] })
+          }).addTo(map);
+      }
 
-      // Clic Ouverture Mini Popup
+      state.streets[name] = { 
+          vis: visLine, hit: hitLine, status: status, 
+          latlngs: latlngs, dbData: dbData, star: starMarker 
+      };
+
+      // Interaction
       hitLine.on('click', (e) => {
-         L.DomEvent.stopPropagation(e);
-         openMiniPopup(name, e.latlng);
+          L.DomEvent.stopPropagation(e);
+          openBottomBar(name);
+          // Highlight selection
+          visLine.setStyle({ weight: 8 });
+          setTimeout(() => visLine.setStyle({ weight: 4 }), 300);
       });
     }
 
-    // --- 4. POPUP MINI & INTERACTIONS ---
+    // --- 5. BOTTOM BAR ACTIONS ---
 
-    function openMiniPopup(name, latlng) {
-        const safeName = name.replace(/'/g, "\\'");
-        const flyers = state.flyers[name] || 0;
+    function openBottomBar(name) {
+        state.selectedStreet = name;
+        const st = state.streets[name];
         
-        // Calcul date boitage
-        const dbData = state.streets[name].data;
-        const lastBoitage = (dbData && dbData.method === 'boitage') 
-             ? new Date(dbData.passage_date).toLocaleDateString().slice(0,5) // Format jj/mm
-             : "--/--";
-
-        const html = `
-          <div class="mini-popup">
-            <span class="pop-title">${name}</span>
-            <div class="pop-meta">Dernier Boîtage : ${lastBoitage}</div>
-            
-            <div class="flyer-row">
-                 <button class="flyer-mini-btn" onclick="updateFlyer('${safeName}', -1)">-</button>
-                 <span style="font-weight:900" id="fly-${safeName.replace(/\s/g,'')}">${flyers}</span> <span style="font-size:10px">FLYERS</span>
-                 <button class="flyer-mini-btn" onclick="updateFlyer('${safeName}', 1)">+</button>
-            </div>
-
-            <div class="pop-grid">
-                <button class="action-btn btn-boitage" onclick="actionBoitage('${safeName}')">
-                    <span style="font-size:18px">📬</span> Boîtage
-                </button>
-                <button class="action-btn btn-pap" onclick="actionPAP('${safeName}')">
-                    <span style="font-size:18px">🚪</span> Porte à P.
-                </button>
-            </div>
-            <div style="font-size:10px; color:#aaa; margin-top:5px;">Appui long pour Street View</div>
-          </div>
-        `;
+        document.getElementById('bar-street-name').innerText = name;
         
-        L.popup({ offset: [0, -5] }).setLatLng(latlng).setContent(html).openOn(map);
+        // Sous-titre
+        let meta = "Jamais faite";
+        if(st.dbData) {
+            const d = new Date(st.dbData.passage_date).toLocaleDateString('fr-FR');
+            meta = st.dbData.method === 'boitage' ? `Boité le ${d}` : `Visité le ${d}`;
+        }
+        document.getElementById('bar-street-meta').innerText = meta;
+
+        // Ouvrir barre
+        const bar = document.getElementById('bottom-bar');
+        bar.style.display = 'flex';
+        // Petit délai pour l'animation CSS
+        setTimeout(() => bar.classList.add('active'), 10);
     }
 
-    // ACTION : BOITAGE (Change la couleur)
-    window.actionBoitage = async (name) => {
-        const today = new Date().toISOString().split('T')[0];
-        
-        // Update visuel immédiat -> VERT
-        if(state.streets[name]) {
-            state.streets[name].data = { passage_date: today, method: 'boitage' };
-            state.streets[name].segments.forEach(s => s.vis.setStyle({ color: '#2ecc71' }));
-        }
-        map.closePopup();
-        updateCoverage();
+    function closeBottomBar() {
+        const bar = document.getElementById('bottom-bar');
+        bar.classList.remove('active');
+        setTimeout(() => bar.style.display = 'none', 400);
+        state.selectedStreet = null;
+    }
 
-        // Save DB (Table passages pour la couleur)
+    // ACTION : BOITAGE
+    window.markBoitage = async () => {
+        const name = state.selectedStreet;
+        if(!name) return;
+
+        // 1. Animation & Son
+        const st = state.streets[name];
+        st.vis.setStyle({ color: '#2ecc71', className: 'glow-effect' }); // Vert + Glow CSS
+        st.status = 'done';
+        
+        // 2. Update Objectif Jour
+        state.dailyCount++;
+        document.getElementById('daily-count').innerText = state.dailyCount;
+        
+        // 3. Feedback
+        showToast(`✅ ${name} terminée !`);
+        closeBottomBar();
+        updateDashboard();
+
+        // 4. Save DB
+        const today = new Date().toISOString().split('T')[0];
         await supabaseClient.from('street_passages').upsert({
             street_name: name, passage_date: today, negociateur: state.nego, method: 'boitage'
         }, { onConflict: 'street_name' });
     };
 
-    // ACTION : PORTE A PORTE (Historique uniquement)
-    window.actionPAP = async (name) => {
-        const today = new Date().toISOString(); // Timestamp complet
-        map.closePopup();
-        alert(`🚪 Porte à Porte noté pour ${name} !`);
-
-        // Save DB (Historique uniquement, ne touche pas à street_passages couleur)
-        await supabaseClient.from('street_history').insert({
-             street_name: name, 
-             action_type: 'porte_a_porte', 
-             action_data: { date: today }, 
-             negociateur: state.nego 
-        });
+    // ACTION : NOTE
+    window.openNoteModal = () => {
+        document.getElementById('modal-note').style.display = 'flex';
+    };
+    window.closeModal = () => {
+        document.getElementById('modal-note').style.display = 'none';
+        document.getElementById('note-input').value = "";
     };
 
-    window.updateFlyer = async (name, delta) => {
-        const current = state.flyers[name] || 0;
-        const newVal = Math.max(0, current + delta);
-        state.flyers[name] = newVal;
-        document.getElementById(`fly-${name.replace(/\s/g,'')}`).innerText = newVal;
-        
-        await supabaseClient.from('street_actions').upsert({
-            street_name: name, flyer_count: newVal, negociateur: state.nego
-        }, { onConflict: 'street_name' });
-    };
-
-    // --- 5. STREET VIEW LONG PRESS (Global Map) ---
-    let longPressTimer;
-    const holdDuration = 800; // ms
-
-    function startPress(e) {
-        // Ignorer si on touche plus d'un doigt (zoom)
-        if(e.originalEvent.touches && e.originalEvent.touches.length > 1) return;
-
-        const lat = e.latlng.lat;
-        const lng = e.latlng.lng;
-
-        longPressTimer = setTimeout(() => {
-            // Feedback visuel
-            const fb = document.getElementById('sv-feedback');
-            fb.classList.add('show');
-            setTimeout(() => fb.classList.remove('show'), 2000);
+    window.saveNote = async () => {
+        const txt = document.getElementById('note-input').value;
+        const name = state.selectedStreet;
+        if(txt && name) {
+            // Save DB
+            await supabaseClient.from('street_history').insert({
+                street_name: name, action_type: 'note', action_data: { note: txt }, negociateur: state.nego
+            });
             
-            // Vibration
-            if(navigator.vibrate) navigator.vibrate(50);
-            
-            // Ouvrir Street View
-            window.open(`https://www.google.com/maps/search/?api=1&query=$${lat},${lng}`, '_blank');
-        }, holdDuration);
-    }
-
-    function cancelPress() {
-        if(longPressTimer) clearTimeout(longPressTimer);
-    }
-
-    // Attacher l'event sur toute la map
-    map.on('mousedown touchstart', startPress);
-    map.on('mouseup touchend dragstart', cancelPress);
-
-    // --- 6. CHARGEMENT & UI ---
-
-    function updateCoverage() {
-        // Calcul simple basé sur le nombre de rues vertes
-        let total = 0, done = 0;
-        Object.values(state.streets).forEach(st => {
-            total++;
-            // Est-ce vert ? (Boitage < 20 jours)
-            if(st.data && st.data.method === 'boitage') {
-                 const diff = (new Date() - new Date(st.data.passage_date)) / 8.64e7;
-                 if(diff <= 20) done++;
+            // Add Visual Star if not exists
+            if(!state.streets[name].star) {
+                const ll = state.streets[name].latlngs;
+                const center = ll[Math.floor(ll.length/2)];
+                state.streets[name].star = L.marker(center, {
+                    icon: L.divIcon({ html: '⭐', className: '', iconSize: [20,20] })
+                }).addTo(map);
             }
-        });
-        const pct = total ? Math.round((done/total)*100) : 0;
-        document.getElementById('coverage').innerText = `${pct}%`;
-    }
+            
+            showToast("📝 Note sauvegardée");
+            closeModal();
+            closeBottomBar();
+        }
+    };
+
+    // --- 6. GPS & STREET VIEW ---
+
+    // Long Press pour Street View
+    let pressTimer; 
+    map.on('mousedown touchstart', (e) => {
+        pressTimer = setTimeout(() => {
+            if(navigator.vibrate) navigator.vibrate([30, 30]);
+            window.open(`https://www.google.com/maps/search/?api=1&query=$${e.latlng.lat},${e.latlng.lng}`, '_blank');
+        }, 800);
+    });
+    map.on('mouseup touchend dragstart', () => clearTimeout(pressTimer));
+
+    // Bouton GPS
+    window.toggleGPS = () => {
+        const btn = document.getElementById('btnGps');
+        if(state.gpsId) {
+            navigator.geolocation.clearWatch(state.gpsId);
+            state.gpsId = null;
+            btn.classList.remove('gps-active');
+            if(state.userMarker) map.removeLayer(state.userMarker);
+        } else {
+            if(!navigator.geolocation) return alert("Pas de GPS");
+            btn.classList.add('gps-active');
+            state.gpsId = navigator.geolocation.watchPosition(pos => {
+                const ll = [pos.coords.latitude, pos.coords.longitude];
+                if(!state.userMarker) {
+                    state.userMarker = L.circleMarker(ll, { radius: 8, color: 'white', fillColor: '#007AFF', fillOpacity: 1 }).addTo(map);
+                    map.setView(ll, 17);
+                } else {
+                    state.userMarker.setLatLng(ll);
+                }
+            }, null, { enableHighAccuracy: true });
+        }
+    };
+
+    // --- 7. CHARGEMENT ---
 
     async function init() {
         const loader = document.getElementById('loader');
         
-        // Load Data
+        // Toast Accueil
+        setTimeout(() => showToast(`Bonjour ${state.nego} 👋 Prêt à performer ?`), 1000);
+
+        // Load DB
         const { data: passages } = await supabaseClient.from('street_passages').select('*');
         let pHist = {}; if(passages) passages.forEach(p => pHist[p.street_name] = p);
 
-        const { data: actions } = await supabaseClient.from('street_actions').select('*');
-        if(actions) actions.forEach(a => state.flyers[a.street_name] = a.flyer_count);
+        // Load Notes (Pour les étoiles)
+        const { data: history } = await supabaseClient.from('street_history').select('*').eq('action_type', 'note');
+        let nHist = {}; if(history) history.forEach(h => nHist[h.street_name] = true);
 
-        // Load OSM (Large Zone)
-        const query = `[out:json][timeout:90];
-            way["highway"~"residential|unclassified|living_street|tertiary"](44.96,-0.50,45.04,-0.40);
+        // Load OSM (Zone St André)
+        const query = `[out:json][timeout:25];
+            way["highway"~"residential|unclassified|living_street"](44.96,-0.50,45.04,-0.40);
             out geom;`;
-            
+
         try {
             const res = await fetch("https://overpass-api.de/api/interpreter?data=" + encodeURIComponent(query));
             const json = await res.json();
@@ -358,37 +471,27 @@
             json.elements.forEach(el => {
                 if(el.tags && el.tags.name) {
                     const latlngs = el.geometry.map(p => [p.lat, p.lon]);
-                    drawStreet(el.tags.name, latlngs, pHist[el.tags.name]);
+                    drawStreet(el.tags.name, latlngs, pHist[el.tags.name], nHist[el.tags.name]);
                 }
             });
             
-            updateCoverage();
+            updateDashboard();
             loader.style.display = 'none';
-        } catch(e) { console.error(e); loader.innerText = "Erreur chargement"; }
+        } catch(e) {
+            console.error(e);
+            loader.innerHTML = "❌ Erreur. Rechargez.";
+        }
     }
 
-    // Events Boutons Dashboard
-    document.getElementById('btnGps').addEventListener('click', function() {
-        const btn = this;
-        if(state.gpsId) {
-            navigator.geolocation.clearWatch(state.gpsId); state.gpsId = null;
-            btn.classList.remove('active');
-            if(state.userMarker) map.removeLayer(state.userMarker);
-        } else {
-            if(!navigator.geolocation) return alert("Pas de GPS");
-            btn.classList.add('active');
-            state.gpsId = navigator.geolocation.watchPosition(pos => {
-                const ll = [pos.coords.latitude, pos.coords.longitude];
-                if(!state.userMarker) state.userMarker = L.circleMarker(ll, {radius:8, color:'white', fillColor:'#007AFF', fillOpacity:1}).addTo(map);
-                else state.userMarker.setLatLng(ll);
-                map.setView(ll, 17);
-            }, null, {enableHighAccuracy:true});
-        }
+    // Changement Nego
+    document.getElementById('negociateur').addEventListener('change', (e) => {
+        state.nego = e.target.value;
+        document.getElementById('user-emoji').innerText = EMOJIS[state.nego] || "👤";
+        showToast(`Profil chargé : ${state.nego}`);
     });
 
-    document.getElementById('negociateur').addEventListener('change', (e) => state.nego = e.target.value);
-
     init();
+
   </script>
 </body>
 </html>
