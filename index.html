@@ -2,292 +2,353 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8" />
-  <title>Mansion V3.1 - Full Coverage</title>
+  <title>Mansion V4 - Fun & Heatmap</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;900&display=swap" rel="stylesheet">
 
   <style>
-    /* --- STYLE GÉNÉRAL --- */
-    body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #fff; overflow: hidden; }
+    /* --- DESIGN LUDIQUE (UI) --- */
+    body { margin: 0; font-family: 'Nunito', sans-serif; background: #fff; overflow: hidden; -webkit-tap-highlight-color: transparent; }
     
-    header { height: 55px; padding: 0 15px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #eee; background: white; z-index: 1000; position: relative; }
-    .brand { font-weight: 900; font-size: 18px; letter-spacing: -0.5px; color: #111; }
-    select { padding: 8px; border-radius: 8px; border: 1px solid #eee; font-size: 14px; background: #f9f9f9; font-weight: 600; }
+    /* Header minimaliste */
+    header { 
+        height: 60px; padding: 0 20px; display: flex; align-items: center; justify-content: space-between; 
+        background: white; z-index: 1000; position: relative; box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    }
+    .brand { font-weight: 900; font-size: 20px; background: -webkit-linear-gradient(45deg, #FF416C, #FF4B2B); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
     
-    /* DASHBOARD */
-    #dashboard { position: absolute; top: 65px; left: 10px; right: 10px; background: rgba(255,255,255,0.95); backdrop-filter: blur(10px); padding: 10px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); z-index: 900; display: flex; flex-direction: column; gap: 10px; }
-    .stats-row { display: flex; justify-content: space-between; font-size: 13px; font-weight: 600; color: #333; }
-    .actions { display: flex; gap: 8px; }
-    button { flex: 1; padding: 12px; border: none; border-radius: 8px; cursor: pointer; font-weight: 700; font-size: 13px; }
-    .btn-start { background: #111; color: #fff; }
-    .btn-gps { background: #007AFF; color: #fff; }
-    .gps-active { background: #34c759 !important; }
+    select { 
+        padding: 8px 12px; border-radius: 20px; border: 2px solid #f0f0f0; 
+        font-size: 14px; background: #fff; font-weight: 700; color: #444; outline: none;
+    }
 
-    #map { width: 100%; height: calc(100vh - 55px); z-index: 1; background: #f0f0f0; }
-
-    /* POPUP & BUTTONS */
-    .leaflet-popup-content { min-width: 260px !important; margin: 10px; }
-    .street-title { font-size: 16px; font-weight: 800; margin-bottom: 5px; display: block; border-bottom: 1px solid #eee; padding-bottom: 5px; text-transform: capitalize; }
+    /* Dashboard Flottant "Capsule" */
+    #dashboard { 
+        position: absolute; top: 80px; left: 50%; transform: translateX(-50%); width: 90%; max-width: 400px;
+        background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(8px);
+        padding: 8px; border-radius: 25px; box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        z-index: 900; display: flex; align-items: center; justify-content: space-between; gap: 10px; border: 1px solid rgba(255,255,255,0.5);
+    }
     
-    .flyer-counter { display: flex; align-items: center; justify-content: space-between; background: #f0f2f5; padding: 8px; border-radius: 8px; margin: 10px 0; }
-    .flyer-btn { width: 30px; height: 30px; border-radius: 50%; background: #007AFF; color: white; font-size: 18px; display: flex; align-items: center; justify-content: center; padding: 0; flex: none; }
-    .flyer-val { font-weight: 800; font-size: 16px; }
-
-    .btn-action { width: 100%; padding: 10px; margin-top: 5px; border-radius: 6px; color: white; font-weight: 600; font-size: 13px; }
-    .act-porte { background: #2ecc71; }
-    .act-boite { background: #f39c12; }
-    .act-note { background: #9b59b6; }
-    .act-view { background: #34495e; margin-top: 10px; }
+    .stats { font-size: 12px; font-weight: 800; color: #555; padding-left: 10px; display: flex; flex-direction: column; line-height: 1.2; }
+    
+    /* Boutons Ronds et Sympas */
+    .btn-circle { width: 40px; height: 40px; border-radius: 50%; border: none; font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275); box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+    .btn-circle:active { transform: scale(0.9); }
+    
+    .btn-gps { background: #fff; color: #007AFF; }
+    .btn-gps.active { background: #34c759; color: white; animation: pulse 2s infinite; }
+    .btn-heat { background: #fff; color: #FF4B2B; }
+    .btn-heat.active { background: #FF4B2B; color: white; }
+    
+    /* POPUP "MINI" STYLE BULLE */
+    .leaflet-popup-content-wrapper { border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); padding: 0; }
+    .leaflet-popup-content { margin: 0; width: 240px !important; }
+    .leaflet-popup-tip { box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
+    
+    .mini-popup { padding: 15px; text-align: center; }
+    .pop-title { font-size: 16px; font-weight: 800; color: #333; margin-bottom: 5px; display: block; }
+    .pop-meta { font-size: 11px; color: #999; margin-bottom: 15px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+    
+    .pop-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px; }
+    
+    .action-btn { 
+        padding: 12px 5px; border-radius: 12px; border: none; color: white; font-size: 12px; font-weight: 700; cursor: pointer;
+        display: flex; flex-direction: column; align-items: center; gap: 5px; 
+    }
+    .btn-boitage { background: linear-gradient(135deg, #2ecc71, #27ae60); }
+    .btn-pap { background: linear-gradient(135deg, #3498db, #2980b9); }
+    
+    /* Compteur Flyers minimaliste */
+    .flyer-row { background: #f4f6f8; border-radius: 12px; padding: 8px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+    .flyer-mini-btn { width: 25px; height: 25px; border-radius: 50%; border: none; background: white; color: #333; font-weight: bold; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+    
+    /* MODAL OVERLAY (Pour Long Press StreetView Feedback) */
+    #sv-feedback {
+        position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0);
+        background: rgba(0,0,0,0.8); color: white; padding: 20px; border-radius: 20px;
+        font-weight: bold; pointer-events: none; z-index: 5000; transition: transform 0.3s;
+        display: flex; flex-direction: column; align-items: center; gap: 10px;
+    }
+    #sv-feedback.show { transform: translate(-50%, -50%) scale(1); }
 
     /* LOADER */
-    #loader { position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%); background: #111; color: white; padding: 8px 20px; border-radius: 30px; font-size: 12px; font-weight: 600; z-index: 2000; display: flex; gap: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
-    
-    /* MODAL NOTE */
-    .modal { display: none; position: fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.6); z-index: 3000; align-items:center; justify-content:center; }
-    .modal.active { display: flex; }
-    .modal-box { background: white; padding: 20px; border-radius: 12px; width: 85%; max-width: 350px; }
-    textarea { width: 100%; height: 80px; margin: 10px 0; padding: 8px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 6px; }
+    #loader { position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%); background: #222; color: white; padding: 10px 25px; border-radius: 50px; font-size: 12px; font-weight: 700; z-index: 2000; display: flex; gap: 10px; box-shadow: 0 5px 20px rgba(0,0,0,0.3); }
+
+    @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(52, 199, 89, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(52, 199, 89, 0); } 100% { box-shadow: 0 0 0 0 rgba(52, 199, 89, 0); } }
   </style>
 </head>
 <body>
 
+  <div id="sv-feedback">
+    <span style="font-size:30px">👁️</span>
+    Ouverture Street View...
+  </div>
+
   <header>
-    <div class="brand">MANSION V3.1</div>
+    <div class="brand">MANSION V4</div>
     <select id="negociateur">
-      <option value="Alexis">Alexis (NO)</option>
-      <option value="Nicolas">Nicolas (NE)</option>
-      <option value="Thibault">Thibault (SO)</option>
-      <option value="Laurent">Laurent (SE)</option>
+      <option value="Alexis">Alexis</option>
+      <option value="Nicolas">Nicolas</option>
+      <option value="Thibault">Thibault</option>
+      <option value="Laurent">Laurent</option>
     </select>
   </header>
 
   <div id="dashboard">
-    <div class="stats-row">
-      <span id="timer">00:00:00</span>
-      <span id="coverage">Chargement...</span>
+    <div class="stats">
+      <span id="coverage" style="font-size:14px; color:#333;">0%</span>
+      <span style="color:#aaa; font-size:10px;">PROSPECTION</span>
     </div>
-    <div class="actions">
-      <button class="btn-start" id="btnStart">▶️ GO</button>
-      <button class="btn-gps" id="btnGps">📍 GPS</button>
-    </div>
+    <button class="btn-circle btn-heat" id="btnHeat" onclick="toggleHeatmap()">🔥</button>
+    <button class="btn-circle btn-gps" id="btnGps">📍</button>
   </div>
 
-  <div id="loader">Chargement complet...</div>
+  <div id="loader">Chargement...</div>
   <div id="map"></div>
 
-  <div id="noteModal" class="modal">
-    <div class="modal-box">
-      <h3>📝 Ajouter une note</h3>
-      <p id="modalStreetName" style="color:#666; font-size:12px;"></p>
-      <textarea id="noteInput" placeholder="Ex: Pas intéressé, Revenir le soir..."></textarea>
-      <div style="display:flex; gap:10px;">
-        <button onclick="closeNote()" style="background:#ccc; color:#333;">Annuler</button>
-        <button onclick="confirmNote()" style="background:#2ecc71; color:white;">Enregistrer</button>
-      </div>
-    </div>
-  </div>
-
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+  <script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdn.jsdelivr.net/npm/@turf/turf@6/turf.min.js"></script>
 
   <script>
-    // 1. CONFIG
+    // --- 1. CONFIGURATION ---
     const CENTER_LAT = 44.9945;
     const CENTER_LNG = -0.4465;
     const SB_URL = "https://wqujtckrvdhrwknplumq.supabase.co";
     const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndxdWp0Y2tydmRocndrbnBsdW1xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjMxMjcwOTQsImV4cCI6MjA3ODcwMzA5NH0.btJD5-yD_zRJ9niEvwYEF46iB18OJo8nNXHRTbc8opE";
     const supabaseClient = supabase.createClient(SB_URL, SB_KEY);
 
-    // 2. ZONES HOMOGÈNES (Quadrants mathématiques)
-    // On divise un carré géant autour de St André en 4
-    const BOX_SIZE = 0.06; // Taille environ 6km autour du centre
+    // ZONES (Carré géant divisé en 4)
+    const BOX_SIZE = 0.05; 
     const ZONES = [
-      { 
-        id: 1, nego: "Alexis", color: "#e74c3c", // Nord-Ouest
-        poly: [[CENTER_LAT, CENTER_LNG], [CENTER_LAT + BOX_SIZE, CENTER_LNG], [CENTER_LAT + BOX_SIZE, CENTER_LNG - BOX_SIZE], [CENTER_LAT, CENTER_LNG - BOX_SIZE]] 
-      },
-      { 
-        id: 2, nego: "Nicolas", color: "#3498db", // Nord-Est
-        poly: [[CENTER_LAT, CENTER_LNG], [CENTER_LAT + BOX_SIZE, CENTER_LNG], [CENTER_LAT + BOX_SIZE, CENTER_LNG + BOX_SIZE], [CENTER_LAT, CENTER_LNG + BOX_SIZE]] 
-      },
-      { 
-        id: 3, nego: "Thibault", color: "#f1c40f", // Sud-Ouest
-        poly: [[CENTER_LAT, CENTER_LNG], [CENTER_LAT - BOX_SIZE, CENTER_LNG], [CENTER_LAT - BOX_SIZE, CENTER_LNG - BOX_SIZE], [CENTER_LAT, CENTER_LNG - BOX_SIZE]] 
-      },
-      { 
-        id: 4, nego: "Laurent", color: "#9b59b6", // Sud-Est
-        poly: [[CENTER_LAT, CENTER_LNG], [CENTER_LAT - BOX_SIZE, CENTER_LNG], [CENTER_LAT - BOX_SIZE, CENTER_LNG + BOX_SIZE], [CENTER_LAT, CENTER_LNG + BOX_SIZE]] 
-      }
+      { id: 1, nego: "Alexis", color: "#e74c3c", poly: [[CENTER_LAT, CENTER_LNG], [CENTER_LAT + BOX_SIZE, CENTER_LNG], [CENTER_LAT + BOX_SIZE, CENTER_LNG - BOX_SIZE], [CENTER_LAT, CENTER_LNG - BOX_SIZE]] },
+      { id: 2, nego: "Nicolas", color: "#3498db", poly: [[CENTER_LAT, CENTER_LNG], [CENTER_LAT + BOX_SIZE, CENTER_LNG], [CENTER_LAT + BOX_SIZE, CENTER_LNG + BOX_SIZE], [CENTER_LAT, CENTER_LNG + BOX_SIZE]] },
+      { id: 3, nego: "Thibault", color: "#f1c40f", poly: [[CENTER_LAT, CENTER_LNG], [CENTER_LAT - BOX_SIZE, CENTER_LNG], [CENTER_LAT - BOX_SIZE, CENTER_LNG - BOX_SIZE], [CENTER_LAT, CENTER_LNG - BOX_SIZE]] },
+      { id: 4, nego: "Laurent", color: "#9b59b6", poly: [[CENTER_LAT, CENTER_LNG], [CENTER_LAT - BOX_SIZE, CENTER_LNG], [CENTER_LAT - BOX_SIZE, CENTER_LNG + BOX_SIZE], [CENTER_LAT, CENTER_LNG + BOX_SIZE]] }
     ];
 
-    // 3. ETAT
-    const state = { streets: {}, flyers: {}, nego: "Alexis", gpsId: null, userMarker: null, timer: null, seconds: 0, currentStreet: null, currentZone: null };
+    // ETAT GLOBAL
+    const state = { streets: {}, flyers: {}, heatPoints: [], nego: "Alexis", gpsId: null, userMarker: null, heatLayer: null, heatEnabled: false };
 
-    // 4. INIT MAP
-    const map = L.map('map', { zoomControl: false, tap: false }).setView([CENTER_LAT, CENTER_LNG], 14);
+    // --- 2. INIT MAP ---
+    const map = L.map('map', { zoomControl: false, tap: false }).setView([CENTER_LAT, CENTER_LNG], 15);
     L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', { maxZoom: 20 }).addTo(map);
 
-    // Dessin des Zones
-    ZONES.forEach(z => {
-      L.polygon(z.poly, { color: z.color, weight: 1, fillOpacity: 0.08, interactive: false }).addTo(map);
-    });
+    // --- 3. LOGIQUE HEATMAP & DESSIN ---
 
-    // 5. FONCTIONS LOGIQUES
-
-    function getStatusColor(date) {
-      if(!date) return "#ff3b30"; // Rouge
-      const diff = (new Date() - new Date(date)) / (8.64e7);
-      return diff <= 20 ? "#2ecc71" : "#f39c12"; // Vert ou Orange
+    // Couleur basée UNIQUEMENT sur le BOITAGE (demande client)
+    function getStreetColor(boitageDate) {
+      if(!boitageDate) return "#ff3b30"; // Rouge (Pas fait)
+      const diff = (new Date() - new Date(boitageDate)) / (8.64e7);
+      if(diff <= 20) return "#2ecc71"; // Vert (Boité récemment)
+      return "#f39c12"; // Orange (Boité il y a longtemps)
     }
 
-    function getZoneForPoint(lat, lng) {
-      // Logique simple Quadrants
-      if (lat >= CENTER_LAT && lng < CENTER_LNG) return 1; // NO
-      if (lat >= CENTER_LAT && lng >= CENTER_LNG) return 2; // NE
-      if (lat < CENTER_LAT && lng < CENTER_LNG) return 3; // SO
-      return 4; // SE
-    }
+    // Gestion Heatmap
+    window.toggleHeatmap = () => {
+        state.heatEnabled = !state.heatEnabled;
+        const btn = document.getElementById('btnHeat');
+        
+        if(state.heatEnabled) {
+            btn.classList.add('active');
+            // Création layer si inexistant
+            if(!state.heatLayer) {
+                // Config Heatmap : radius = taille des points, blur = flou
+                state.heatLayer = L.heatLayer(state.heatPoints, { radius: 25, blur: 20, maxZoom: 17 }).addTo(map);
+            } else {
+                map.addLayer(state.heatLayer);
+            }
+            // Assombrir un peu le fond pour faire ressortir le feu
+            document.querySelector('.leaflet-tile-pane').style.opacity = '0.4';
+        } else {
+            btn.classList.remove('active');
+            if(state.heatLayer) map.removeLayer(state.heatLayer);
+            document.querySelector('.leaflet-tile-pane').style.opacity = '1';
+        }
+    };
 
-    // DESSIN DE RUE
-    function drawStreet(name, latlngs, dbPassage) {
+    function drawStreet(name, latlngs, dbData) {
       const center = latlngs[Math.floor(latlngs.length/2)];
-      const zoneId = getZoneForPoint(center[0], center[1]);
-      const lastDate = dbPassage ? dbPassage.passage_date : null;
-      const color = getStatusColor(lastDate);
+      
+      // HEATMAP DATA : On ajoute chaque point de rue dans le tableau de chaleur
+      // Si la rue a déjà été visitée (data existe), on ajoute de l'intensité
+      const intensity = dbData ? 1 : 0.1; 
+      // On ajoute quelques points le long de la rue pour la heatmap
+      latlngs.forEach((pt, i) => {
+          if(i % 3 === 0) state.heatPoints.push([pt[0], pt[1], intensity]); // Un point tous les 3 noeuds
+      });
 
-      // Lignes
-      const hitLine = L.polyline(latlngs, { weight: 25, opacity: 0 }).addTo(map); // Zone de clic large
-      const visLine = L.polyline(latlngs, { color: color, weight: 3, opacity: 0.8, interactive: false }).addTo(map);
+      // Couleur basée sur date_boitage (et non passage générique)
+      // Note: On suppose que 'passage_date' dans ta DB actuelle est la ref. 
+      // Si tu veux séparer, il faudra une colonne 'boitage_date'. Ici j'utilise passage_date si method='boitage'
+      let color = "#ff3b30";
+      if(dbData && dbData.method === 'boitage') {
+          color = getStreetColor(dbData.passage_date);
+      }
 
-      // Stockage (On groupe par nom pour gérer les mises à jour globales)
-      if (!state.streets[name]) state.streets[name] = { segments: [], date: lastDate, zoneId: zoneId };
+      // Dessin Lignes
+      const hitLine = L.polyline(latlngs, { weight: 25, opacity: 0 }).addTo(map);
+      const visLine = L.polyline(latlngs, { color: color, weight: 4, opacity: 0.8, interactive: false, lineCap: 'round' }).addTo(map);
+
+      if(!state.streets[name]) state.streets[name] = { segments: [], data: dbData };
       state.streets[name].segments.push({ vis: visLine, hit: hitLine });
 
-      // CLIC SUR RUE
+      // Clic Ouverture Mini Popup
       hitLine.on('click', (e) => {
-         L.DomEvent.stopPropagation(e); // Empêche le clic map
-         openPopup(name, zoneId, e.latlng);
+         L.DomEvent.stopPropagation(e);
+         openMiniPopup(name, e.latlng);
       });
     }
 
-    // POPUP
-    function openPopup(name, zoneId, latlng) {
-      state.currentStreet = name;
-      state.currentZone = zoneId;
-      const safeName = name.replace(/'/g, "\\'");
-      
-      // Date
-      const dateStr = state.streets[name].date ? new Date(state.streets[name].date).toLocaleDateString() : "Jamais";
-      
-      // Flyers
-      const flyers = state.flyers[name] || 0;
+    // --- 4. POPUP MINI & INTERACTIONS ---
 
-      const html = `
-        <span class="street-title">${name}</span>
-        <div style="font-size:11px; color:#777; margin-bottom:8px;">Zone ${zoneId} • Dernier: ${dateStr}</div>
+    function openMiniPopup(name, latlng) {
+        const safeName = name.replace(/'/g, "\\'");
+        const flyers = state.flyers[name] || 0;
+        
+        // Calcul date boitage
+        const dbData = state.streets[name].data;
+        const lastBoitage = (dbData && dbData.method === 'boitage') 
+             ? new Date(dbData.passage_date).toLocaleDateString().slice(0,5) // Format jj/mm
+             : "--/--";
 
-        <div class="flyer-counter">
-            <button class="flyer-btn" onclick="changeFlyer('${safeName}', -1)">-</button>
-            <span class="flyer-val" id="f-val-${safeName.replace(/\s/g, '')}">${flyers}</span> <span style="font-size:10px">FLYERS</span>
-            <button class="flyer-btn" onclick="changeFlyer('${safeName}', 1)">+</button>
-        </div>
+        const html = `
+          <div class="mini-popup">
+            <span class="pop-title">${name}</span>
+            <div class="pop-meta">Dernier Boîtage : ${lastBoitage}</div>
+            
+            <div class="flyer-row">
+                 <button class="flyer-mini-btn" onclick="updateFlyer('${safeName}', -1)">-</button>
+                 <span style="font-weight:900" id="fly-${safeName.replace(/\s/g,'')}">${flyers}</span> <span style="font-size:10px">FLYERS</span>
+                 <button class="flyer-mini-btn" onclick="updateFlyer('${safeName}', 1)">+</button>
+            </div>
 
-        <button class="btn-action act-porte" onclick="saveAction('${safeName}', 'porte')">✅ PORTE À PORTE FAIT</button>
-        <button class="btn-action act-boite" onclick="saveAction('${safeName}', 'boitage')">📬 BOÎTAGE FAIT</button>
-        <button class="btn-action act-note" onclick="openNote('${safeName}')">📝 NOTE</button>
-        <button class="btn-action act-view" onclick="window.open('https://www.google.com/maps/search/?api=1&query=$${latlng.lat},${latlng.lng}', '_blank')">👁️ STREET VIEW</button>
-      `;
-      
-      L.popup({offset:[0,-5]}).setLatLng(latlng).setContent(html).openOn(map);
+            <div class="pop-grid">
+                <button class="action-btn btn-boitage" onclick="actionBoitage('${safeName}')">
+                    <span style="font-size:18px">📬</span> Boîtage
+                </button>
+                <button class="action-btn btn-pap" onclick="actionPAP('${safeName}')">
+                    <span style="font-size:18px">🚪</span> Porte à P.
+                </button>
+            </div>
+            <div style="font-size:10px; color:#aaa; margin-top:5px;">Appui long pour Street View</div>
+          </div>
+        `;
+        
+        L.popup({ offset: [0, -5] }).setLatLng(latlng).setContent(html).openOn(map);
     }
 
-    // --- ACTIONS UTILISATEUR ---
+    // ACTION : BOITAGE (Change la couleur)
+    window.actionBoitage = async (name) => {
+        const today = new Date().toISOString().split('T')[0];
+        
+        // Update visuel immédiat -> VERT
+        if(state.streets[name]) {
+            state.streets[name].data = { passage_date: today, method: 'boitage' };
+            state.streets[name].segments.forEach(s => s.vis.setStyle({ color: '#2ecc71' }));
+        }
+        map.closePopup();
+        updateCoverage();
 
-    // 1. Gestion Flyers
-    window.changeFlyer = async (name, delta) => {
+        // Save DB (Table passages pour la couleur)
+        await supabaseClient.from('street_passages').upsert({
+            street_name: name, passage_date: today, negociateur: state.nego, method: 'boitage'
+        }, { onConflict: 'street_name' });
+    };
+
+    // ACTION : PORTE A PORTE (Historique uniquement)
+    window.actionPAP = async (name) => {
+        const today = new Date().toISOString(); // Timestamp complet
+        map.closePopup();
+        alert(`🚪 Porte à Porte noté pour ${name} !`);
+
+        // Save DB (Historique uniquement, ne touche pas à street_passages couleur)
+        await supabaseClient.from('street_history').insert({
+             street_name: name, 
+             action_type: 'porte_a_porte', 
+             action_data: { date: today }, 
+             negociateur: state.nego 
+        });
+    };
+
+    window.updateFlyer = async (name, delta) => {
         const current = state.flyers[name] || 0;
         const newVal = Math.max(0, current + delta);
         state.flyers[name] = newVal;
+        document.getElementById(`fly-${name.replace(/\s/g,'')}`).innerText = newVal;
         
-        // Update UI Popup
-        const el = document.getElementById(`f-val-${name.replace(/\s/g, '')}`);
-        if(el) el.innerText = newVal;
-
-        // Save DB
         await supabaseClient.from('street_actions').upsert({
             street_name: name, flyer_count: newVal, negociateur: state.nego
         }, { onConflict: 'street_name' });
     };
 
-    // 2. Save Passage (Porte ou Boitage)
-    window.saveAction = async (name, type) => {
-        const today = new Date().toISOString().split('T')[0];
-        
-        // Update Visuel
-        if(state.streets[name]) {
-            state.streets[name].date = today;
-            const color = (type === 'boitage') ? '#f39c12' : '#2ecc71'; // Orange si juste boite, Vert si porte
-            state.streets[name].segments.forEach(s => s.vis.setStyle({ color: color }));
-        }
-        map.closePopup();
-        updateUI();
+    // --- 5. STREET VIEW LONG PRESS (Global Map) ---
+    let longPressTimer;
+    const holdDuration = 800; // ms
 
-        // Save DB
-        await supabaseClient.from('street_passages').upsert({
-            street_name: name, passage_date: today, negociateur: state.nego, zone_id: state.currentZone, method: type
-        }, { onConflict: 'street_name' });
-    };
+    function startPress(e) {
+        // Ignorer si on touche plus d'un doigt (zoom)
+        if(e.originalEvent.touches && e.originalEvent.touches.length > 1) return;
 
-    // 3. Notes
-    window.openNote = (name) => {
-        document.getElementById('modalStreetName').innerText = name;
-        document.getElementById('noteInput').value = "";
-        document.getElementById('noteModal').classList.add('active');
-        map.closePopup();
-    };
+        const lat = e.latlng.lat;
+        const lng = e.latlng.lng;
 
-    window.closeNote = () => document.getElementById('noteModal').classList.remove('active');
-    
-    window.confirmNote = async () => {
-        const txt = document.getElementById('noteInput').value;
-        const name = state.currentStreet;
-        if(txt) {
-            await supabaseClient.from('street_history').insert({
-                street_name: name, action_type: 'note', action_data: { note: txt }, negociateur: state.nego
-            });
-            alert("Note enregistrée !");
-        }
-        closeNote();
-    };
+        longPressTimer = setTimeout(() => {
+            // Feedback visuel
+            const fb = document.getElementById('sv-feedback');
+            fb.classList.add('show');
+            setTimeout(() => fb.classList.remove('show'), 2000);
+            
+            // Vibration
+            if(navigator.vibrate) navigator.vibrate(50);
+            
+            // Ouvrir Street View
+            window.open(`https://www.google.com/maps/search/?api=1&query=$${lat},${lng}`, '_blank');
+        }, holdDuration);
+    }
 
-    // --- LONG PRESS STREET VIEW ---
-    let pressTimer;
-    map.on('mousedown touchstart', (e) => {
-        pressTimer = setTimeout(() => {
-             // Vibration si supportée (feedback haptique)
-             if(navigator.vibrate) navigator.vibrate(50);
-             window.open(`https://www.google.com/maps/search/?api=1&query=$${e.latlng.lat},${e.latlng.lng}`, '_blank');
-        }, 800);
-    });
-    map.on('mouseup touchend dragstart', () => clearTimeout(pressTimer));
+    function cancelPress() {
+        if(longPressTimer) clearTimeout(longPressTimer);
+    }
 
+    // Attacher l'event sur toute la map
+    map.on('mousedown touchstart', startPress);
+    map.on('mouseup touchend dragstart', cancelPress);
 
-    // --- CHARGEMENT ---
+    // --- 6. CHARGEMENT & UI ---
+
+    function updateCoverage() {
+        // Calcul simple basé sur le nombre de rues vertes
+        let total = 0, done = 0;
+        Object.values(state.streets).forEach(st => {
+            total++;
+            // Est-ce vert ? (Boitage < 20 jours)
+            if(st.data && st.data.method === 'boitage') {
+                 const diff = (new Date() - new Date(st.data.passage_date)) / 8.64e7;
+                 if(diff <= 20) done++;
+            }
+        });
+        const pct = total ? Math.round((done/total)*100) : 0;
+        document.getElementById('coverage').innerText = `${pct}%`;
+    }
+
     async function init() {
         const loader = document.getElementById('loader');
         
-        // 1. Load Data
+        // Load Data
         const { data: passages } = await supabaseClient.from('street_passages').select('*');
         let pHist = {}; if(passages) passages.forEach(p => pHist[p.street_name] = p);
 
         const { data: actions } = await supabaseClient.from('street_actions').select('*');
         if(actions) actions.forEach(a => state.flyers[a.street_name] = a.flyer_count);
 
-        // 2. Load OSM (Bounding Box ÉNORME)
-        // 44.96 -> 45.04 (Lat) et -0.50 -> -0.40 (Lng) couvre tout très largement
+        // Load OSM (Large Zone)
         const query = `[out:json][timeout:90];
-            way["highway"~"residential|unclassified|living_street|tertiary|secondary|service|track"](44.96,-0.50,45.04,-0.40);
+            way["highway"~"residential|unclassified|living_street|tertiary"](44.96,-0.50,45.04,-0.40);
             out geom;`;
             
         try {
@@ -296,68 +357,36 @@
             
             json.elements.forEach(el => {
                 if(el.tags && el.tags.name) {
-                    // CRUCIAL : Pas de filtre 'seen'. On dessine TOUT.
                     const latlngs = el.geometry.map(p => [p.lat, p.lon]);
                     drawStreet(el.tags.name, latlngs, pHist[el.tags.name]);
                 }
             });
-            updateUI();
+            
+            updateCoverage();
             loader.style.display = 'none';
-        } catch(e) {
-            console.error(e);
-            loader.innerText = "Erreur chargement (Trop de données ?)";
-        }
+        } catch(e) { console.error(e); loader.innerText = "Erreur chargement"; }
     }
 
-    function updateUI() {
-        const myZoneId = ZONES.find(z => z.nego === state.nego)?.id || 0;
-        let total = 0, done = 0;
-
-        for (const [name, data] of Object.entries(state.streets)) {
-            const isMine = (data.zoneId === myZoneId);
-            data.segments.forEach(seg => {
-                seg.vis.setStyle({ opacity: isMine ? 1 : 0.2, weight: isMine ? 3 : 1.5 });
-                if(isMine) seg.hit.bringToFront();
-            });
-            if(isMine) {
-                total++;
-                if(data.date && (new Date() - new Date(data.date))/(8.64e7) <= 20) done++;
-            }
-        }
-        
-        const pct = total ? Math.round((done/total)*100) : 0;
-        document.getElementById('coverage').innerText = `${done}/${total} (${pct}%)`;
-    }
-
-    // EVENTS UI
-    document.getElementById('negociateur').addEventListener('change', (e) => { state.nego = e.target.value; updateUI(); });
-    
+    // Events Boutons Dashboard
     document.getElementById('btnGps').addEventListener('click', function() {
+        const btn = this;
         if(state.gpsId) {
             navigator.geolocation.clearWatch(state.gpsId); state.gpsId = null;
-            this.classList.remove('gps-active'); this.innerHTML = "📍 GPS";
+            btn.classList.remove('active');
             if(state.userMarker) map.removeLayer(state.userMarker);
         } else {
             if(!navigator.geolocation) return alert("Pas de GPS");
-            this.classList.add('gps-active'); this.innerHTML = "⏳";
+            btn.classList.add('active');
             state.gpsId = navigator.geolocation.watchPosition(pos => {
                 const ll = [pos.coords.latitude, pos.coords.longitude];
                 if(!state.userMarker) state.userMarker = L.circleMarker(ll, {radius:8, color:'white', fillColor:'#007AFF', fillOpacity:1}).addTo(map);
                 else state.userMarker.setLatLng(ll);
                 map.setView(ll, 17);
-                this.innerHTML = "ON";
             }, null, {enableHighAccuracy:true});
         }
     });
 
-    document.getElementById('btnStart').addEventListener('click', function() {
-        if(state.timer) { clearInterval(state.timer); state.timer=null; this.innerText="▶️ GO"; this.style.background="#111"; }
-        else {
-            state.seconds=0; state.timer=setInterval(()=>{ state.seconds++; 
-            document.getElementById('timer').innerText=new Date(state.seconds*1000).toISOString().substr(11,8); }, 1000);
-            this.innerText="STOP"; this.style.background="red";
-        }
-    });
+    document.getElementById('negociateur').addEventListener('change', (e) => state.nego = e.target.value);
 
     init();
   </script>
