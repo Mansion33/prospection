@@ -120,25 +120,29 @@
        1. CONFIGURATION & INITIALISATION
        ========================================= */
     
-    // 🔑 CLÉS SUPABASE (MISES À JOUR AVEC VOS VALEURS) 🔑
+    // 🔑 CLÉS SUPABASE
     const SUPABASE_URL = "https://wqujtckrvdhrwknplumq.supabase.co"; 
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndxdWp0Y2tydmRocndrbnBsdW1xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjMxMjcwOTQsImV4cCI6MjA3ODcwMzA5NH0.btJD5-yD_zRJ9niEvwYEF46iB18OJo8nNXHRTbc8opE";
 
-    // Initialisation Supabase
-    let supabaseClient;
+    // Initialisation Supabase avec logs d'erreur plus clairs
+    let supabaseClient = null;
     try {
-      const { createClient } = supabase;
-      // UTILISATION DES CLÉS FOURNIES
-      supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+      if (typeof supabase === "undefined") {
+        console.error("Le script Supabase JS ne s'est pas chargé (objet 'supabase' indisponible).");
+      } else {
+        const { createClient } = supabase;
+        supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+      }
     } catch (e) {
-      alert("Erreur config Supabase. Vérifiez les clés.");
+      console.error("Erreur lors de l'initialisation Supabase :", e);
+      alert("Erreur config Supabase. Vérifiez les clés ou le chargement du script.");
     }
 
     // Définition des secteurs
     const ZONES = [
       {
         id: 1, negociateur: "Alexis", color: "#e74c3c",
-        poly: [[-0.46, 45.003], [-0.445, 45.003], [-0.445, 44.994], [-0.46, 44.994], [-0.46, 45.003]] // GeoJSON format: [lng, lat]
+        poly: [[-0.46, 45.003], [-0.445, 45.003], [-0.445, 44.994], [-0.46, 44.994], [-0.46, 45.003]]
       },
       {
         id: 2, negociateur: "Nicolas", color: "#3498db",
@@ -154,9 +158,8 @@
       }
     ];
     
-    // DONNÉES STATIQUES DES RUES (Contournement Overpass)
+    // Données statiques des rues (contournement Overpass)
     const STATIC_STREETS = [
-      // Format : { name: "Nom Rue", coords: [[lat1, lng1], [lat2, lng2], ...] }
       { name: "Rue de la République", coords: [[45.000, -0.455], [44.998, -0.450], [44.996, -0.450]] },
       { name: "Avenue de l'Europe", coords: [[44.995, -0.458], [44.995, -0.440]] },
       { name: "Chemin des Vignes", coords: [[44.990, -0.450], [44.991, -0.445], [44.989, -0.442]] },
@@ -166,14 +169,12 @@
       { name: "Rue du Port", coords: [[44.990, -0.438], [44.988, -0.435]] },
       { name: "Rue du Château", coords: [[44.987, -0.450], [44.986, -0.452]] },
       { name: "Route de Virsac", coords: [[44.993, -0.460], [44.993, -0.455]] }
-      // Ajoutez d'autres rues au besoin pour couvrir la zone.
     ];
 
-
-    // État Global
+    // État global
     const state = {
       negociateur: "Alexis",
-      streets: {}, // Stocke les données des rues { nom: { layer, date, nego } }
+      streets: {},
       tourRunning: false,
       startTime: null,
       timerInterval: null,
@@ -209,32 +210,36 @@
        2. LOGIQUE MÉTIER
        ========================================= */
 
-    // Calcul de l'état d'une rue (Couleur)
     function getStreetColor(lastPassageDate) {
-      if (!lastPassageDate) return "#95a5a6"; // Gris (Jamais fait)
+      if (!lastPassageDate) return "#95a5a6";
       const diffTime = Math.abs(new Date() - new Date(lastPassageDate));
       const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
-
-      if (diffDays <= 20) return "#2ecc71"; // Vert (Fait récemment)
-      if (diffDays <= 45) return "#f39c12"; // Orange (À refaire bientôt)
-      return "#e74c3c"; // Rouge (À refaire urgence)
+      if (diffDays <= 20) return "#2ecc71";
+      if (diffDays <= 45) return "#f39c12";
+      return "#e74c3c";
     }
 
-    // Chargement des données (Utilise 'passage_date' qui doit maintenant exister)
     async function initApp() {
       try {
+        if (!supabaseClient) {
+          ui.loadText.textContent = "Erreur : Supabase non initialisé (clé/API ou script JS).";
+          console.error("Supabase client est null. Vérifiez l'URL, la clé et le chargement du script supabase-js.");
+          ui.loader.style.display = "none";
+          return;
+        }
+
         ui.loadText.textContent = "Récupération de l'historique Supabase...";
-        
-        // 1. Charger l'historique des passages 
+
         const { data: historyData, error: supabaseError } = await supabaseClient
           .from('street_passages')
-          // L'application cherche bien 'passage_date', qui est maintenant correcte dans la BDD
-          .select('street_name, passage_date, negociateur') 
-          .order('passage_date', { ascending: true }); 
-        
+          .select('street_name, passage_date, negociateur')
+          .order('passage_date', { ascending: true });
+
         if (supabaseError) {
-          // Ce bloc gère l'erreur "Invalid API key" si elle réapparaît, mais elle devrait être corrigée.
-          throw new Error("Erreur Supabase: " + supabaseError.message);
+          console.error("Supabase error detail:", supabaseError);
+          ui.loadText.textContent = "Erreur Supabase : " + (supabaseError.message || supabaseError.code || "inconnue");
+          ui.loader.style.display = "none";
+          return;
         }
 
         const historyMap = {};
@@ -246,22 +251,17 @@
 
         ui.loadText.textContent = "Construction de la carte à partir des données statiques...";
 
-        // 2. Dessiner les rues à partir de STATIC_STREETS
+        // Dessin des rues
         STATIC_STREETS.forEach(street => {
           const name = street.name;
-          const coords = street.coords; 
+          const coords = street.coords;
 
-          // Calculer le centre (simple) pour la vérification de zone
           const turfCoords = street.coords.map(pt => [pt[1], pt[0]]);
           const lineGeoJSON = turf.lineString(turfCoords); 
           const center = turf.center(lineGeoJSON);
             
           let zoneId = null;
-          // Vérifier dans quel polygone se trouve le centre de la rue
           for (let z of ZONES) {
-            // Poly Leaflet format: [[lat1, lng1], [lat2, lng2], ...]
-            // Poly GeoJSON/Turf format: [[lng1, lat1], [lng2, lat2], ...]
-            // La variable z.poly contient déjà le format GeoJSON [lng, lat]
             const polyGeoJSON = turf.polygon([z.poly]);
             if (turf.booleanPointInPolygon(center, polyGeoJSON)) {
               zoneId = z.id;
@@ -269,20 +269,16 @@
             }
           }
 
-          // Récupérer l'historique
           const hist = historyMap[name] || { date: null, nego: null };
           const color = getStreetColor(hist.date);
 
-          // Créer la ligne Leaflet (Ligne invisible large pour le clic)
           L.polyline(coords, { color: 'transparent', weight: 20, opacity: 0 }).addTo(map)
             .on('click', (e) => openStreetPopup(e, name, zoneId));
             
-          // Ligne visible
           const visibleLine = L.polyline(coords, { 
             color: color, weight: 4, opacity: 0.8, className: 'street-line' 
           }).addTo(map);
 
-          // Stocker dans l'état
           state.streets[name] = {
             layer: visibleLine,
             zoneId: zoneId,
@@ -291,9 +287,8 @@
           };
         });
 
-        // 3. Dessiner les zones (contour subtil)
+        // Dessin des zones
         ZONES.forEach(z => {
-          // Inverser [lng, lat] pour Leaflet [lat, lng]
           const leafPoly = z.poly.map(p => [p[1], p[0]]);
           L.polygon(leafPoly, { 
             color: z.color, fill: true, fillOpacity: 0.05, weight: 1, dashArray: '5, 5' 
@@ -301,18 +296,15 @@
         });
 
         updateInterface();
-        // Le loader disparaît
         ui.loader.style.display = 'none';
 
       } catch (err) {
-        console.error(err);
-        // Afficher l'erreur à l'utilisateur
-        alert("Impossible de charger l'application : " + err.message);
-        ui.loadText.textContent = "Erreur fatale : " + err.message;
+        console.error("Erreur générale initApp:", err);
+        ui.loadText.textContent = "Erreur fatale : " + (err.message || err);
+        ui.loader.style.display = 'none';
       }
     }
 
-    // Popup Rue
     function openStreetPopup(e, name, zoneId) {
       const st = state.streets[name];
       const dateStr = st.lastPassage ? new Date(st.lastPassage).toLocaleDateString() : "Jamais";
@@ -332,32 +324,33 @@
         .openOn(map);
     }
 
-    // Action : Marquer rue faite
     window.markStreetAsDone = async function(name) {
       const today = new Date().toISOString().split('T')[0];
-      
-      // 1. Update Visuel immédiat (Optimistic UI)
       const st = state.streets[name];
+
       if (st && st.layer) {
-        // Mettre à jour l'état et l'apparence
-        st.layer.setStyle({ color: '#2ecc71' }); // Vert
+        st.layer.setStyle({ color: '#2ecc71' });
         st.lastPassage = today;
         st.lastNego = state.negociateur;
       }
       map.closePopup();
       updateCoverage();
 
-      // 2. Envoi Supabase
+      if (!supabaseClient) {
+        console.warn("Supabase non initialisé, la rue n'est pas envoyée en base.");
+        return;
+      }
+
       const { error } = await supabaseClient.from('street_passages').insert({
         negociateur: state.negociateur,
         street_name: name,
-        passage_date: today, // Le nom de colonne est maintenant correct
+        passage_date: today,
         zone_id: st.zoneId
       });
 
       if (error) {
-        alert("Erreur de sauvegarde de rue !");
-        console.error(error);
+        console.error("Supabase insert street_passages error:", error);
+        alert("Erreur de sauvegarde de rue : " + (error.message || error.code));
       }
     };
 
@@ -366,9 +359,7 @@
        ========================================= */
 
     function updateInterface() {
-      // Filtrer l'opacité des rues selon le négociateur sélectionné
       const currentZoneId = ZONES.find(z => z.negociateur === state.negociateur)?.id;
-      
       Object.values(state.streets).forEach(st => {
         if (st.zoneId === currentZoneId) {
           st.layer.setStyle({ opacity: 1, weight: 4 });
@@ -388,7 +379,6 @@
         return;
       }
 
-      // Rues faites dans les 20 derniers jours
       const now = new Date();
       const doneCount = streetsInZone.filter(s => {
         if (!s.lastPassage) return false;
@@ -401,10 +391,8 @@
       ui.coverage.innerText = `${doneCount}/${streetsInZone.length} (${pct}%)`;
     }
 
-    // Timer
     function toggleTour() {
       if (state.tourRunning) {
-        // Arrêt
         clearInterval(state.timerInterval);
         state.tourRunning = false;
         ui.toggleBtn.textContent = "▶ Démarrer";
@@ -414,7 +402,6 @@
         ui.saveBtn.style.background = "#000";
         ui.saveBtn.style.color = "#fff";
       } else {
-        // Démarrage
         state.startTime = Date.now();
         state.tourRunning = true;
         ui.toggleBtn.textContent = "⏸ Pause";
@@ -436,16 +423,21 @@
 
     async function saveTour() {
       ui.saveBtn.textContent = "Enregistrement...";
-      
       const durationSec = state.startTime ? Math.floor((Date.now() - state.startTime) / 1000) : 0;
 
-      // Note : La table tours doit aussi avoir les politiques RLS correctes.
+      if (!supabaseClient) {
+        console.warn("Supabase non initialisé, la tournée n'est pas envoyée en base.");
+        showStatus("Tournée non envoyée (Supabase hors ligne).");
+        ui.saveBtn.textContent = "💾 Enregistrer";
+        return;
+      }
+
       const { error } = await supabaseClient.from('tours').insert({
         negociateur: state.negociateur,
         date: new Date().toISOString().split('T')[0],
         secteur_id: ZONES.find(z => z.negociateur === state.negociateur)?.id,
         flyers: parseInt(ui.flyers.value) || 0,
-        notes: "", // Conserver pour la compatibilité
+        notes: "",
         report: ui.report.value,
         duration_sec: durationSec
       });
@@ -457,7 +449,8 @@
         ui.timer.textContent = "00:00:00";
         state.startTime = null; 
       } else {
-        alert("Erreur sauvegarde tournée");
+        console.error("Supabase insert tours error:", error);
+        alert("Erreur sauvegarde tournée : " + (error.message || error.code));
       }
       ui.saveBtn.textContent = "💾 Enregistrer";
     }
@@ -477,18 +470,17 @@
         navigator.geolocation.clearWatch(state.gpsWatch);
         state.gpsWatch = null;
         if (state.userMarker) map.removeLayer(state.userMarker);
-        ui.gpsBtn.style.background = "#0066cc"; // bleu
+        ui.gpsBtn.style.background = "#0066cc";
         ui.gpsBtn.textContent = "📍 GPS";
       } else {
         if (!navigator.geolocation) return alert("GPS non supporté");
         
-        ui.gpsBtn.style.background = "#e74c3c"; // rouge (pour arrêter)
+        ui.gpsBtn.style.background = "#e74c3c";
         ui.gpsBtn.textContent = "🛑 Arrêt GPS";
         
         state.gpsWatch = navigator.geolocation.watchPosition(pos => {
           const lat = pos.coords.latitude;
           const lng = pos.coords.longitude;
-          const acc = pos.coords.accuracy;
 
           if (!state.userMarker) {
             state.userMarker = L.circleMarker([lat, lng], { radius: 8, color: 'white', fillColor: '#2980b9', fillOpacity: 1 }).addTo(map);
@@ -497,7 +489,7 @@
           }
           
         }, err => {
-          console.error(err);
+          console.error("Erreur GPS :", err);
           toggleGPS(); 
           alert("Accès GPS refusé ou impossible");
         }, { enableHighAccuracy: true });
@@ -520,7 +512,6 @@
     ui.centerZoneBtn.addEventListener('click', () => {
        const zone = ZONES.find(z => z.negociateur === state.negociateur);
        if (zone) {
-         // Inverser [lng, lat] pour Leaflet [lat, lng]
          const poly = L.polygon(zone.poly.map(p => [p[1], p[0]]));
          map.fitBounds(poly.getBounds());
        }
