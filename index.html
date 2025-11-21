@@ -2,50 +2,68 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8" />
-  <title>Mansion - Prospection Réelle</title>
+  <title>Mansion - Terrain V2</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
 
   <style>
+    /* --- ESTHÉTIQUE MOBILE APP --- */
     body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #fff; overflow: hidden; }
     
-    /* Header compact */
-    header { height: 50px; padding: 0 10px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #ddd; background: white; z-index: 1000; position: relative; }
-    .brand { font-weight: 900; letter-spacing: -0.5px; }
-    select { padding: 5px; border-radius: 4px; border: 1px solid #ccc; font-size: 13px; }
+    header { 
+      height: 55px; padding: 0 15px; display: flex; align-items: center; justify-content: space-between; 
+      border-bottom: 1px solid #eee; background: white; z-index: 1000; position: relative; box-shadow: 0 1px 5px rgba(0,0,0,0.05);
+    }
+    .brand { font-weight: 900; font-size: 18px; letter-spacing: -0.5px; color: #111; }
+    select { padding: 8px; border-radius: 8px; border: 1px solid #eee; font-size: 14px; background: #f9f9f9; font-weight: 500; }
     
-    /* Dashboard flottant transparent */
+    /* DASHBOARD FLOTTANT */
     #dashboard { 
-      position: absolute; top: 60px; left: 10px; right: 10px; 
-      background: rgba(255,255,255,0.9); backdrop-filter: blur(4px);
-      padding: 10px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-      z-index: 900; display: flex; flex-direction: column; gap: 8px;
+      position: absolute; top: 70px; left: 10px; right: 10px; 
+      background: rgba(255,255,255,0.95); backdrop-filter: blur(10px);
+      padding: 12px; border-radius: 12px; box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+      z-index: 900; display: flex; flex-direction: column; gap: 10px;
+      border: 1px solid rgba(0,0,0,0.05);
     }
     
-    .stats-row { display: flex; justify-content: space-between; font-size: 12px; font-weight: 600; color: #555; }
-    .actions { display: flex; gap: 5px; }
-    button { flex: 1; padding: 8px; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 13px; }
-    .btn-start { background: #000; color: #fff; }
-    .btn-gps { background: #007AFF; color: #fff; }
+    .stats-row { display: flex; justify-content: space-between; font-size: 13px; font-weight: 600; color: #333; }
+    .actions { display: flex; gap: 8px; }
+    
+    button { flex: 1; padding: 10px; border: none; border-radius: 8px; cursor: pointer; font-weight: 700; font-size: 13px; transition: transform 0.1s; }
+    button:active { transform: scale(0.98); }
+    
+    .btn-start { background: #111; color: #fff; }
+    .btn-gps { background: #007AFF; color: #fff; display: flex; align-items: center; justify-content: center; gap: 5px;}
+    .gps-active { background: #34c759 !important; box-shadow: 0 0 10px rgba(52, 199, 89, 0.4); }
 
-    /* Carte plein écran */
-    #map { width: 100%; height: calc(100vh - 50px); z-index: 1; }
+    /* MAP & POPUP */
+    #map { width: 100%; height: calc(100vh - 55px); z-index: 1; background: #f0f0f0; }
+    
+    .leaflet-popup-content-wrapper { border-radius: 12px; }
+    .street-name { display: block; font-weight: 800; font-size: 15px; margin-bottom: 4px; text-transform: capitalize; }
+    .street-meta { display: block; font-size: 12px; color: #888; margin-bottom: 12px; }
+    
+    .btn-validate { background: #2ecc71; color: white; width: 100%; padding: 12px; border-radius: 8px; margin-bottom: 8px; font-size: 14px; }
+    .btn-view { background: #e1e1e1; color: #333; width: 100%; padding: 10px; border-radius: 8px; }
 
-    /* Popup stylisée */
-    .leaflet-popup-content { text-align: center; margin: 10px; min-width: 200px; }
-    .street-name { display: block; font-weight: 800; font-size: 14px; margin-bottom: 4px; }
-    .street-meta { display: block; font-size: 11px; color: #777; margin-bottom: 10px; }
-    .btn-validate { background: #2ecc71; color: white; width: 100%; padding: 10px; border-radius: 6px; margin-bottom: 5px; }
-    .btn-view { background: #34495e; color: white; width: 100%; padding: 8px; border-radius: 6px; }
+    /* LOADER */
+    #loader { 
+        position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%); 
+        background: #111; color: white; padding: 8px 20px; border-radius: 30px; 
+        font-size: 12px; font-weight: 600; z-index: 2000; 
+        display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+    }
+    .spinner { width: 12px; height: 12px; border: 2px solid #fff; border-top-color: transparent; border-radius: 50%; animation: spin 1s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
 
-    /* Indicateur de chargement discret */
-    #loader { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); background: #000; color: white; padding: 5px 15px; border-radius: 20px; font-size: 11px; z-index: 2000; display: none; }
+    /* Legendes Zones */
+    .legend-dot { height: 10px; width: 10px; border-radius: 50%; display: inline-block; margin-right: 5px; }
   </style>
 </head>
 <body>
 
   <header>
-    <div class="brand">MANSION</div>
+    <div class="brand">MANSION <span style="font-size:10px; color:#888; font-weight:400">V2</span></div>
     <select id="negociateur">
       <option value="Alexis">Alexis (NO)</option>
       <option value="Nicolas">Nicolas (NE)</option>
@@ -57,15 +75,15 @@
   <div id="dashboard">
     <div class="stats-row">
       <span id="timer">00:00:00</span>
-      <span id="coverage">0 rues faites</span>
+      <span id="coverage">Chargement...</span>
     </div>
     <div class="actions">
-      <button class="btn-start" id="btnStart">▶ GO</button>
-      <button class="btn-gps" id="btnGps">📍 Ma Position</button>
+      <button class="btn-start" id="btnStart">▶️ GO</button>
+      <button class="btn-gps" id="btnGps">📍 Suivi GPS</button>
     </div>
   </div>
 
-  <div id="loader">Chargement des rues...</div>
+  <div id="loader"><div class="spinner"></div>Récupération des rues...</div>
   <div id="map"></div>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
@@ -73,229 +91,248 @@
   <script src="https://cdn.jsdelivr.net/npm/@turf/turf@6/turf.min.js"></script>
 
   <script>
-    // 1. CENTRE DE ST ANDRE DE CUBZAC
+    // CONFIGURATION
     const CENTER_LAT = 44.9945;
     const CENTER_LNG = -0.4465;
+    
+    // SUPABASE (Tes clés sont exposées ici côté client, assure-toi d'avoir activé RLS si possible, sinon OK pour prototype)
+    const SB_URL = "https://wqujtckrvdhrwknplumq.supabase.co";
+    const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndxdWp0Y2tydmRocndrbnBsdW1xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjMxMjcwOTQsImV4cCI6MjA3ODcwMzA5NH0.btJD5-yD_zRJ9niEvwYEF46iB18OJo8nNXHRTbc8opE";
+    const supabaseClient = supabase.createClient(SB_URL, SB_KEY);
 
-    // 2. DEFINITION DES SECTEURS (Quadrants géants pour tout couvrir)
-    // On dessine des rectangles immenses qui partent du centre
+    // ZONES (Logique Turf.js: [Lng, Lat])
     const ZONES = [
-      {
-        id: 1, nego: "Alexis", color: "#e74c3c", // Nord-Ouest
-        poly: [[CENTER_LAT, CENTER_LNG], [45.10, CENTER_LNG], [45.10, -0.60], [CENTER_LAT, -0.60]]
-      },
-      {
-        id: 2, nego: "Nicolas", color: "#3498db", // Nord-Est
-        poly: [[CENTER_LAT, CENTER_LNG], [45.10, CENTER_LNG], [45.10, -0.30], [CENTER_LAT, -0.30]]
-      },
-      {
-        id: 3, nego: "Thibault", color: "#f1c40f", // Sud-Ouest
-        poly: [[CENTER_LAT, CENTER_LNG], [44.90, CENTER_LNG], [44.90, -0.60], [CENTER_LAT, -0.60]]
-      },
-      {
-        id: 4, nego: "Laurent", color: "#9b59b6", // Sud-Est
-        poly: [[CENTER_LAT, CENTER_LNG], [44.90, CENTER_LNG], [44.90, -0.30], [CENTER_LAT, -0.30]]
-      }
+      { id: 1, nego: "Alexis", color: "#e74c3c", poly: [[CENTER_LNG, CENTER_LAT], [CENTER_LNG, 45.10], [-0.60, 45.10], [-0.60, CENTER_LAT], [CENTER_LNG, CENTER_LAT]] }, // NO
+      { id: 2, nego: "Nicolas", color: "#3498db", poly: [[CENTER_LNG, CENTER_LAT], [CENTER_LNG, 45.10], [-0.30, 45.10], [-0.30, CENTER_LAT], [CENTER_LNG, CENTER_LAT]] }, // NE
+      { id: 3, nego: "Thibault", color: "#f1c40f", poly: [[CENTER_LNG, CENTER_LAT], [CENTER_LNG, 44.90], [-0.60, 44.90], [-0.60, CENTER_LAT], [CENTER_LNG, CENTER_LAT]] }, // SO
+      { id: 4, nego: "Laurent", color: "#9b59b6", poly: [[CENTER_LNG, CENTER_LAT], [CENTER_LNG, 44.90], [-0.30, 44.90], [-0.30, CENTER_LAT], [CENTER_LNG, CENTER_LAT]] }  // SE
     ];
 
-    // Init Map
-    const map = L.map('map', { zoomControl: false }).setView([CENTER_LAT, CENTER_LNG], 15);
+    // ETAT DE L'APP
+    const state = { 
+      streets: {}, 
+      nego: "Alexis", 
+      gpsId: null, 
+      userMarker: null, 
+      timer: null, 
+      seconds: 0 
+    };
+
+    // INIT MAP
+    const map = L.map('map', { zoomControl: false }).setView([CENTER_LAT, CENTER_LNG], 14);
     L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-      maxZoom: 20, attribution: '&copy; OpenStreetMap'
+      maxZoom: 20, attribution: '© OpenStreetMap'
     }).addTo(map);
 
-    // Init Supabase
-    let supabaseClient = null;
-    try {
-        const SB_URL = "https://wqujtckrvdhrwknplumq.supabase.co";
-        const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndxdWp0Y2tydmRocndrbnBsdW1xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjMxMjcwOTQsImV4cCI6MjA3ODcwMzA5NH0.btJD5-yD_zRJ9niEvwYEF46iB18OJo8nNXHRTbc8opE";
-        if(typeof supabase !== 'undefined') supabaseClient = supabase.createClient(SB_URL, SB_KEY);
-    } catch(e) {}
-
-    // Variables Etat
-    const state = { streets: {}, nego: "Alexis", gps: null, marker: null, timer: null, seconds: 0 };
-
-    // --- FONCTIONS CLÉS ---
-
-    // A. Dessiner les zones (Fond très discret)
+    // DESSIN DES ZONES (Visuel Discret)
     ZONES.forEach(z => {
-      L.polygon(z.poly, { color: z.color, stroke: false, fillOpacity: 0.05, interactive: false }).addTo(map);
+      // Inversion Lng/Lat pour Leaflet
+      const leafPoly = z.poly.map(p => [p[1], p[0]]);
+      L.polygon(leafPoly, { color: z.color, weight: 1, fillOpacity: 0.05, interactive: false }).addTo(map);
     });
 
-    // B. Déterminer la couleur (Règle des 20 jours)
+    // --- FONCTIONS CORE ---
+
     function getStatusColor(date) {
-      if(!date) return "#ff3b30"; // ROUGE (Jamais)
+      if(!date) return "#ff3b30"; // Rouge (Jamais)
       const diff = (new Date() - new Date(date)) / (1000 * 3600 * 24);
-      if(diff <= 20) return "#2ecc71"; // VERT (Fait < 20j)
-      return "#f39c12"; // ORANGE (A refaire)
+      if(diff <= 20) return "#2ecc71"; // Vert (Frais)
+      return "#f39c12"; // Orange (A refaire)
     }
 
-    // C. Dessiner une rue
+    function getZoneForPoint(lat, lng) {
+      const pt = turf.point([lng, lat]);
+      const found = ZONES.find(z => turf.booleanPointInPolygon(pt, turf.polygon([z.poly])));
+      return found ? found.id : 0;
+    }
+
     function drawStreet(name, latlngs, lastDate) {
-      if(state.streets[name]) return; // Eviter doublons
+      if(state.streets[name]) return; // Doublons OSM
 
-      // 1. Calculer le secteur (Turf)
-      let zoneId = "Hors Zone";
-      try {
-        const center = latlngs[Math.floor(latlngs.length/2)];
-        const pt = turf.point([center[1], center[0]]); // Lon, Lat
-        const found = ZONES.find(z => {
-             // Conversion polygone pour Turf
-             const polyCoords = z.poly.map(p => [p[1], p[0]]); // [Lon, Lat]
-             polyCoords.push(polyCoords[0]); // Fermer la boucle
-             return turf.booleanPointInPolygon(pt, turf.polygon([polyCoords]));
-        });
-        if(found) zoneId = found.id;
-      } catch(e){}
-
+      // Calcul du centre pour la zone
+      const center = latlngs[Math.floor(latlngs.length/2)];
+      const zoneId = getZoneForPoint(center[0], center[1]);
+      
       const color = getStatusColor(lastDate);
 
-      // 2. Layer INVISIBLE (Large pour le clic)
-      const hitLine = L.polyline(latlngs, { weight: 20, opacity: 0 }).addTo(map);
+      // Zone Cliquable (Invisible mais large)
+      const hitLine = L.polyline(latlngs, { weight: 25, opacity: 0 }).addTo(map);
+      
+      // Ligne Visuelle
+      const visLine = L.polyline(latlngs, { color: color, weight: 4, opacity: 0.8, interactive: false }).addTo(map);
 
-      // 3. Layer VISIBLE (Fin et coloré)
-      const visLine = L.polyline(latlngs, { 
-        color: color, weight: 4, opacity: 0.8, interactive: false 
-      }).addTo(map);
-
-      // 4. Interaction
+      // Interaction
       hitLine.on('click', (e) => {
-         // Zoom automatique
-         map.fitBounds(hitLine.getBounds(), { padding: [50, 50], maxZoom: 18 });
-         
-         // Popup
          const safeName = name.replace(/'/g, "\\'");
-         const dateStr = lastDate ? new Date(lastDate).toLocaleDateString() : "Jamais";
+         const dateStr = lastDate ? new Date(lastDate).toLocaleDateString('fr-FR') : "Jamais";
          
          const popupHtml = `
             <span class="street-name">${name}</span>
-            <span class="street-meta">Secteur ${zoneId} • ${dateStr}</span>
+            <span class="street-meta">Secteur ${zoneId} • Dernier : ${dateStr}</span>
             <button class="btn-validate" onclick="validate('${safeName}', ${zoneId})">✅ MARQUER FAIT</button>
-            <button class="btn-view" onclick="streetView(${e.latlng.lat}, ${e.latlng.lng})">👁️ STREET VIEW</button>
+            <button class="btn-view" onclick="openStreetView(${e.latlng.lat}, ${e.latlng.lng})">👁️ STREET VIEW</button>
          `;
-         L.popup({offset:[0,-10]}).setLatLng(e.latlng).setContent(popupHtml).openOn(map);
+         L.popup({offset:[0,-5], minWidth: 220}).setLatLng(e.latlng).setContent(popupHtml).openOn(map);
       });
 
       state.streets[name] = { vis: visLine, hit: hitLine, zoneId: zoneId, date: lastDate };
     }
 
-    // --- LOGIQUE GLOBALE ---
+    // --- ACTIONS ---
 
     window.validate = async (name, zoneId) => {
         const today = new Date().toISOString().split('T')[0];
+        
+        // Update UI immédiat
         if(state.streets[name]) {
-            state.streets[name].vis.setStyle({ color: '#2ecc71' });
+            state.streets[name].vis.setStyle({ color: '#2ecc71' }); // Devient Vert
             state.streets[name].date = today;
         }
         map.closePopup();
         updateUI();
-        if(supabaseClient) {
-            await supabaseClient.from('street_passages').upsert({
-                street_name: name, passage_date: today, negociateur: state.nego, zone_id: zoneId
-            }, { onConflict: 'street_name' });
-        }
+
+        // Sauvegarde Supabase
+        const { error } = await supabaseClient.from('street_passages').upsert({
+             street_name: name, 
+             passage_date: today, 
+             negociateur: state.nego, 
+             zone_id: zoneId
+        }, { onConflict: 'street_name' });
+        
+        if(error) alert("Erreur de sauvegarde: " + error.message);
     };
 
-    window.streetView = (lat, lng) => {
-        window.open(`https://www.google.com/maps?layer=c&cbll=${lat},${lng}`, '_blank');
+    window.openStreetView = (lat, lng) => {
+        // Lien officiel API Google Maps pour Mobile
+        const url = `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
+        window.open(url, '_blank');
     };
 
     function updateUI() {
-        const myZoneId = ZONES.find(z => z.nego === state.nego)?.id;
-        let count = 0;
+        const currentZoneObj = ZONES.find(z => z.nego === state.nego);
+        const myZoneId = currentZoneObj ? currentZoneObj.id : 0;
+        
+        let countTotal = 0;
+        let countDone = 0;
         
         Object.values(state.streets).forEach(st => {
             const isMine = (st.zoneId === myZoneId);
-            // Opacité : 1 si c'est mon secteur, 0.2 sinon
-            st.vis.setStyle({ opacity: isMine ? 1 : 0.2, weight: isMine ? 4 : 2 });
-            if(isMine) st.hit.bringToFront(); // Priorité au clic
-
-            if(isMine && st.date && (new Date() - new Date(st.date))/(8.64e7) <= 20) count++;
+            
+            // Focus visuel sur mon secteur
+            if(isMine) {
+                st.vis.setStyle({ opacity: 1, weight: 4 });
+                st.hit.bringToFront();
+                countTotal++;
+                if(st.date && (new Date() - new Date(st.date))/(8.64e7) <= 20) countDone++;
+            } else {
+                st.vis.setStyle({ opacity: 0.15, weight: 2 }); // Grise les autres
+            }
         });
-        document.getElementById('coverage').innerText = `${count} rues faites (20j)`;
+        
+        const percent = countTotal > 0 ? Math.round((countDone / countTotal) * 100) : 0;
+        document.getElementById('coverage').innerHTML = 
+            `<span style="color:${currentZoneObj.color}">●</span> ${countDone}/${countTotal} rues (${percent}%)`;
     }
 
-    // --- CHARGEMENT AUTOMATIQUE DES VRAIES RUES ---
-    async function autoLoadStreets() {
-        const loader = document.getElementById('loader');
-        loader.style.display = 'block';
-        
-        // On récupère d'abord l'historique
-        let history = {};
-        if(supabaseClient) {
-            const { data } = await supabaseClient.from('street_passages').select('*');
-            if(data) data.forEach(d => history[d.street_name] = d.passage_date);
-        }
+    // --- CHARGEMENT DONNEES ---
 
-        // Requête Overpass API (Zone LARGE autour de St André)
-        // Bbox: sud, ouest, nord, est
+    async function initData() {
+        const loader = document.getElementById('loader');
+        
+        // 1. Historique Supabase
+        let history = {};
+        const { data, error } = await supabaseClient.from('street_passages').select('*');
+        if(data) data.forEach(d => history[d.street_name] = d.passage_date);
+
+        // 2. Rues OSM (Overpass)
+        // Bbox plus large pour bien couvrir
         const query = `[out:json][timeout:25];
-            way["highway"~"residential|unclassified|living_street"](44.95,-0.50,45.05,-0.38);
+            way["highway"~"residential|living_street"](44.92,-0.55,45.05,-0.35);
             out geom;`;
             
         try {
             const res = await fetch("https://overpass-api.de/api/interpreter?data=" + encodeURIComponent(query));
-            const data = await res.json();
+            const osmData = await res.json();
             
-            data.elements.forEach(el => {
-                if(el.tags && el.tags.name) {
-                    const latlngs = el.geometry.map(p => [p.lat, p.lon]);
-                    drawStreet(el.tags.name, latlngs, history[el.tags.name]);
-                }
-            });
+            if(osmData.elements) {
+                osmData.elements.forEach(el => {
+                    if(el.tags && el.tags.name) {
+                        const latlngs = el.geometry.map(p => [p.lat, p.lon]);
+                        drawStreet(el.tags.name, latlngs, history[el.tags.name]);
+                    }
+                });
+            }
             updateUI();
             loader.style.display = 'none';
         } catch(e) {
-            loader.innerText = "Erreur réseau (réessayer)";
+            loader.innerText = "Erreur réseau. Recharge la page.";
             console.error(e);
         }
     }
 
-    // --- EVENTS ---
-    
-    // Changement Négociateur
+    // --- LISTENERS ---
+
     document.getElementById('negociateur').addEventListener('change', (e) => {
         state.nego = e.target.value;
         updateUI();
     });
 
-    // Bouton Start / Stop
     document.getElementById('btnStart').addEventListener('click', function() {
         if(state.timer) {
             clearInterval(state.timer); state.timer = null;
-            this.innerText = "▶ GO"; this.style.background = "#000";
+            this.innerText = "▶️ GO"; this.style.background = "#111";
         } else {
             state.seconds = 0;
             state.timer = setInterval(() => {
                 state.seconds++;
-                const d = new Date(state.seconds * 1000).toISOString().substr(11, 8);
-                document.getElementById('timer').innerText = d;
+                const date = new Date(0); date.setSeconds(state.seconds);
+                document.getElementById('timer').innerText = date.toISOString().substr(11, 8);
             }, 1000);
             this.innerText = "⏹ STOP"; this.style.background = "#ff3b30";
         }
     });
 
-    // Bouton GPS
-    document.getElementById('btnGps').addEventListener('click', () => {
-        if(navigator.geolocation) {
-            navigator.geolocation.getCurrentPosition(pos => {
+    // GPS TRACKING AVANCÉ
+    document.getElementById('btnGps').addEventListener('click', function() {
+        if (state.gpsId) {
+            // Désactiver
+            navigator.geolocation.clearWatch(state.gpsId);
+            state.gpsId = null;
+            this.classList.remove('gps-active');
+            this.innerHTML = "📍 Suivi GPS";
+            if(state.userMarker) map.removeLayer(state.userMarker);
+        } else {
+            // Activer
+            if (!navigator.geolocation) return alert("GPS non supporté");
+            this.classList.add('gps-active');
+            this.innerHTML = "📡 Recherche...";
+            
+            state.gpsId = navigator.geolocation.watchPosition((pos) => {
                 const ll = [pos.coords.latitude, pos.coords.longitude];
-                map.setView(ll, 16);
-                if(!state.marker) state.marker = L.circleMarker(ll, {radius:8, color:'white', fillColor:'#007AFF', fillOpacity:1}).addTo(map);
-                else state.marker.setLatLng(ll);
-            });
+                
+                // Création ou MAJ du marqueur
+                if (!state.userMarker) {
+                    state.userMarker = L.circleMarker(ll, {
+                        radius: 10, color: 'white', weight: 3, 
+                        fillColor: '#007AFF', fillOpacity: 1
+                    }).addTo(map);
+                    map.setView(ll, 17); // Zoom fort au début
+                } else {
+                    state.userMarker.setLatLng(ll);
+                }
+                
+                document.getElementById('btnGps').innerHTML = "🎯 Suivi actif";
+                
+            }, (err) => {
+                console.error(err);
+                alert("Impossible d'avoir la position");
+                this.classList.remove('gps-active');
+            }, { enableHighAccuracy: true });
         }
     });
 
-    // Appui long pour Street View (Simulation)
-    let pressTimer;
-    map.on('mousedown touchstart', (e) => {
-        pressTimer = setTimeout(() => streetView(e.latlng.lat, e.latlng.lng), 800);
-    });
-    map.on('mouseup touchend mousemove touchmove', () => clearTimeout(pressTimer));
-
-    // LANCEMENT
-    autoLoadStreets();
+    // START
+    initData();
 
   </script>
 </body>
