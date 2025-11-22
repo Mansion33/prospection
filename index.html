@@ -2,120 +2,153 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8" />
-  <title>Mansion V6 - Precise & Premium</title>
+  <title>Mansion V7 - Pro UX</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
   
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;700;800&display=swap" rel="stylesheet">
 
   <style>
-    /* --- 1. CONFIGURATION DESIGN --- */
+    /* --- VARIABLES & THEME --- */
     :root {
-      --bg-color: #F4F4F6;
-      --card-bg: rgba(255, 255, 255, 0.95);
-      --text-main: #111;
-      --text-sec: #666;
+      --bg: #F4F4F6;
+      --card: rgba(255, 255, 255, 0.98);
+      --text: #111;
+      --text-sub: #666;
       --primary: #111;
       --success: #2ecc71;
-      --shadow: 0 8px 30px rgba(0,0,0,0.08);
+      --warning: #f1c40f;
+      --danger: #ff4757;
+      --shadow: 0 10px 40px rgba(0,0,0,0.08);
+      --radius: 20px;
     }
+
     [data-theme="dark"] {
-      --bg-color: #121212;
-      --card-bg: rgba(30, 30, 30, 0.95);
-      --text-main: #fff;
-      --text-sec: #aaa;
+      --bg: #121212;
+      --card: rgba(30, 30, 30, 0.98);
+      --text: #fff;
+      --text-sub: #aaa;
       --primary: #fff;
-      --shadow: 0 8px 30px rgba(0,0,0,0.4);
+      --shadow: 0 10px 40px rgba(0,0,0,0.5);
     }
 
     * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; user-select: none; }
-    body { margin: 0; font-family: 'Plus Jakarta Sans', sans-serif; background: var(--bg-color); overflow: hidden; color: var(--text-main); }
+    body { margin: 0; font-family: 'Plus Jakarta Sans', sans-serif; background: var(--bg); overflow: hidden; color: var(--text); }
 
-    /* --- CARTE --- */
+    /* --- MAP --- */
     #map { width: 100vw; height: 100vh; position: fixed; top: 0; left: 0; z-index: 1; }
     [data-theme="dark"] #map { filter: invert(1) hue-rotate(180deg) brightness(0.7) contrast(1.2); }
 
-    /* --- UI HEADER --- */
+    /* --- HEADER EVOLUÉ --- */
     header {
       position: absolute; top: 0; left: 0; right: 0; z-index: 1000;
-      background: var(--card-bg); backdrop-filter: blur(10px);
-      padding: 15px 20px 20px; border-bottom-left-radius: 30px; border-bottom-right-radius: 30px;
-      box-shadow: var(--shadow);
+      background: var(--card); padding: 15px 20px 15px;
+      border-bottom-left-radius: 25px; border-bottom-right-radius: 25px;
+      box-shadow: var(--shadow); display: flex; flex-direction: column; gap: 15px;
     }
-    .header-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
-    .brand { font-weight: 900; font-size: 22px; letter-spacing: -1px; }
-    .theme-btn { font-size: 20px; background:none; border:none; cursor:pointer; }
 
-    .user-zone { display: flex; align-items: center; gap: 8px; background: rgba(0,0,0,0.05); padding: 5px 15px; border-radius: 50px; }
-    select { background: transparent; border: none; font-weight: 700; font-size: 14px; color: var(--text-main); outline: none; }
+    .top-row { display: flex; justify-content: space-between; align-items: center; }
+    .brand { font-weight: 800; font-size: 20px; letter-spacing: -0.5px; }
+    .theme-btn { background:none; border:none; font-size: 20px; cursor: pointer; }
 
-    /* Progress Bar */
-    .progress-wrap { margin-top: 10px; }
-    .progress-info { display: flex; justify-content: space-between; font-size: 11px; font-weight: 600; color: var(--text-sec); margin-bottom: 4px; }
-    .bar-bg { height: 8px; background: rgba(0,0,0,0.1); border-radius: 10px; overflow: hidden; }
-    .bar-fill { height: 100%; width: 0%; background: linear-gradient(90deg, #ff6b6b, #feca57, #48dbfb); transition: width 0.5s; }
+    .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; align-items: start; }
+    
+    .stat-box { display: flex; flex-direction: column; gap: 2px; }
+    .stat-label { font-size: 11px; color: var(--text-sub); font-weight: 700; text-transform: uppercase; display: flex; align-items: center; gap: 4px; }
+    
+    /* Selecteur Nego Style */
+    .nego-wrap { display: flex; align-items: center; gap: 5px; font-weight: 800; font-size: 15px; margin-top: 2px; }
+    select { background: transparent; border: none; font-weight: 800; font-size: 15px; color: var(--text); outline: none; padding: 0; margin: 0; }
+
+    /* Objectif & Progress */
+    .obj-val { font-size: 16px; font-weight: 800; }
+    .daily-bar-bg { height: 6px; background: rgba(0,0,0,0.05); border-radius: 10px; margin-top: 6px; overflow: hidden; width: 100%; }
+    .daily-bar-fill { height: 100%; width: 0%; background: var(--success); transition: width 0.5s cubic-bezier(0.34, 1.56, 0.64, 1); }
+
+    /* Filtres */
+    .filters { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 2px; }
+    .f-btn { padding: 6px 12px; border-radius: 20px; border: 1px solid rgba(0,0,0,0.1); background: transparent; color: var(--text-sub); font-size: 11px; font-weight: 700; white-space: nowrap; transition: 0.2s; }
+    .f-btn.active { background: var(--primary); color: var(--bg); border-color: var(--primary); }
 
     /* --- WIDGETS --- */
-    .widgets { position: absolute; top: 140px; right: 15px; z-index: 900; display: flex; flex-direction: column; gap: 10px; }
-    .w-btn { width: 45px; height: 45px; border-radius: 50%; background: var(--card-bg); color: var(--text-main); border: none; box-shadow: var(--shadow); font-size: 18px; display: flex; align-items: center; justify-content: center; transition: 0.2s; }
+    .widgets { position: absolute; top: 180px; right: 15px; z-index: 900; display: flex; flex-direction: column; gap: 12px; }
+    .w-btn { width: 44px; height: 44px; border-radius: 50%; background: var(--card); color: var(--text); border: none; box-shadow: var(--shadow); font-size: 18px; display: flex; align-items: center; justify-content: center; transition: 0.2s; cursor: pointer; }
     .w-btn:active { transform: scale(0.9); }
-    .gps-on { color: #007AFF; box-shadow: 0 0 0 4px rgba(0,122,255,0.2); }
+    .gps-on { color: #007AFF; box-shadow: 0 0 0 3px rgba(0,122,255,0.2); }
 
-    /* --- BARRE MOBILE --- */
+    /* --- BOTTOM BAR (POPUP) --- */
     #bottom-bar {
-      position: absolute; bottom: 20px; left: 20px; right: 20px; z-index: 1100;
-      background: var(--card-bg); backdrop-filter: blur(12px);
+      position: absolute; bottom: 20px; left: 15px; right: 15px; z-index: 1100;
+      background: var(--card); backdrop-filter: blur(15px);
       padding: 20px; border-radius: 25px; box-shadow: var(--shadow);
       display: none; flex-direction: column; gap: 15px;
-      transform: translateY(100px); opacity: 0; transition: 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      transform: translateY(120%); transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     }
-    #bottom-bar.active { transform: translateY(0); opacity: 1; }
-    
-    .street-title { font-weight: 800; font-size: 18px; text-align: center; display: block; }
-    .street-meta { font-size: 12px; color: var(--text-sec); text-align: center; display: block; margin-bottom: 10px; }
-    
-    .btn-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-    .btn-act { padding: 15px; border-radius: 15px; border: none; color: white; font-weight: 700; font-size: 13px; display: flex; flex-direction: column; align-items: center; gap: 5px; cursor: pointer; }
-    .btn-boitage { background: var(--success); }
-    .btn-note { background: var(--primary); }
-    .btn-close { position: absolute; top: -10px; right: -10px; background: var(--text-main); color: var(--bg-color); width: 30px; height: 30px; border-radius: 50%; border: none; font-weight: bold; }
+    #bottom-bar.active { transform: translateY(0); display: flex; }
 
-    /* --- FEEDBACK VISUEL --- */
-    .sv-feedback {
-      position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0);
-      background: rgba(0,0,0,0.8); color: white; padding: 15px 25px; border-radius: 50px;
-      font-weight: 700; z-index: 5000; transition: transform 0.2s; pointer-events: none;
-      display: flex; align-items: center; gap: 10px;
+    .bar-header { display: flex; justify-content: space-between; align-items: flex-start; }
+    .street-title { font-weight: 800; font-size: 18px; margin: 0; line-height: 1.2; }
+    
+    /* Badges */
+    .badge { display: inline-block; padding: 4px 10px; border-radius: 8px; font-size: 11px; font-weight: 700; margin-top: 5px; }
+    .badge-todo { background: rgba(255, 71, 87, 0.15); color: #ff4757; }
+    .badge-old { background: rgba(241, 196, 15, 0.15); color: #f39c12; }
+    .badge-done { background: rgba(46, 204, 113, 0.15); color: #2ecc71; }
+
+    .meta-info { font-size: 12px; color: var(--text-sub); margin-top: 5px; }
+
+    /* Boutons Actions */
+    .actions { display: grid; grid-template-columns: 2fr 1fr; gap: 10px; }
+    .btn-main { background: var(--success); color: white; border: none; padding: 14px; border-radius: 14px; font-weight: 700; font-size: 14px; display: flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer; box-shadow: 0 4px 15px rgba(46, 204, 113, 0.3); }
+    .btn-sec { background: transparent; color: var(--text); border: 2px solid rgba(0,0,0,0.1); padding: 14px; border-radius: 14px; font-weight: 700; font-size: 14px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 5px; }
+
+    .btn-close { width: 30px; height: 30px; background: rgba(0,0,0,0.05); border-radius: 50%; border: none; font-weight: bold; cursor: pointer; color: var(--text); }
+
+    /* --- UI ELEMENTS --- */
+    .sv-tip {
+      position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%);
+      background: rgba(0,0,0,0.7); color: white; padding: 6px 14px; border-radius: 20px;
+      font-size: 11px; font-weight: 600; pointer-events: none; z-index: 1000;
+      backdrop-filter: blur(4px); display: flex; align-items: center; gap: 6px;
+      opacity: 0.8; transition: opacity 0.3s;
     }
-    .sv-feedback.show { transform: translate(-50%, -50%) scale(1); }
+    .sv-tip.hidden { opacity: 0; }
 
-    .toast { position: absolute; top: 150px; left: 50%; transform: translateX(-50%); background: var(--primary); color: var(--bg-color); padding: 10px 20px; border-radius: 20px; font-size: 13px; font-weight: 700; z-index: 2000; opacity: 0; transition: 0.3s; pointer-events: none; }
-    .toast.show { opacity: 1; margin-top: 10px; }
+    /* Toast */
+    .toast { position: absolute; top: 160px; left: 50%; transform: translateX(-50%); background: var(--primary); color: var(--bg); padding: 12px 24px; border-radius: 30px; font-size: 13px; font-weight: 700; z-index: 2000; opacity: 0; transition: all 0.3s; pointer-events: none; box-shadow: var(--shadow); display: flex; align-items: center; gap: 8px; margin-top: 10px; }
+    .toast.show { opacity: 1; margin-top: 0; }
 
-    /* LOADER */
-    #loader { position: absolute; bottom: 50%; left: 50%; transform: translate(-50%, 50%); background: var(--card-bg); padding: 15px 30px; border-radius: 50px; font-weight: 800; z-index: 3000; box-shadow: var(--shadow); display: flex; gap: 10px; align-items: center; }
+    /* Loader */
+    #loader { position: absolute; bottom: 50%; left: 50%; transform: translate(-50%, 50%); background: var(--card); padding: 15px 30px; border-radius: 50px; font-weight: 800; z-index: 3000; box-shadow: var(--shadow); display: flex; gap: 10px; align-items: center; transition: opacity 0.5s; }
 
-    /* MODAL NOTE */
+    /* Modal Note */
     .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 5000; display: none; align-items: center; justify-content: center; backdrop-filter: blur(5px); }
-    .modal-card { background: var(--bg-color); width: 85%; max-width: 320px; padding: 20px; border-radius: 20px; }
-    textarea { width: 100%; padding: 10px; border-radius: 10px; border: 1px solid #ccc; font-family: inherit; margin: 15px 0; min-height: 80px; }
+    .modal-card { background: var(--bg); width: 85%; max-width: 320px; padding: 25px; border-radius: 25px; }
+    textarea { width: 100%; padding: 12px; border-radius: 12px; border: 2px solid rgba(0,0,0,0.1); background: rgba(0,0,0,0.02); font-family: inherit; margin: 15px 0; min-height: 80px; color: var(--text); }
     .m-btns { display: flex; gap: 10px; }
-    .m-btn { flex: 1; padding: 12px; border-radius: 10px; border: none; font-weight: 700; }
+    .m-btn { flex: 1; padding: 12px; border-radius: 12px; border: none; font-weight: 700; cursor: pointer; }
 
+    /* ANIMATIONS */
+    .street-pulse { animation: pulseStreet 0.6s ease-out; }
+    @keyframes pulseStreet {
+      0% { stroke-width: 15; stroke-opacity: 0.8; }
+      100% { stroke-width: 4; stroke-opacity: 0.9; }
+    }
   </style>
 </head>
 <body>
 
   <header>
-    <div class="header-top">
-      <div class="brand">MANSION V6</div>
+    <div class="top-row">
+      <div class="brand">MANSION V7</div>
       <button class="theme-btn" onclick="toggleTheme()">🌙</button>
     </div>
-    <div style="display:flex; justify-content:space-between; align-items:end;">
-      <div>
-        <div style="font-size:11px; color:var(--text-sec); margin-bottom:4px">Négociateur</div>
-        <div class="user-zone">
-          <span id="user-icon">👑</span>
+
+    <div class="stats-grid">
+      <div class="stat-box">
+        <div class="stat-label">🗺️ Secteur</div>
+        <div class="nego-wrap">
+          <span id="user-emoji">👑</span>
           <select id="negociateur">
             <option value="Alexis">Alexis</option>
             <option value="Nicolas">Nicolas</option>
@@ -123,15 +156,22 @@
             <option value="Laurent">Laurent</option>
           </select>
         </div>
+        <div style="font-size:11px; color:var(--text-sub); margin-top:2px"><span id="stats-done">0</span> rues faites (<span id="stats-pct">0%</span>)</div>
       </div>
-      <div style="text-align:right">
-        <div style="font-size:10px; color:var(--text-sec); font-weight:700">Objectif</div>
-        <div style="font-weight:800; font-size:15px">🎯 <span id="daily-c">0</span>/10 rues</div>
+
+      <div class="stat-box">
+        <div class="stat-label">🎯 Objectif Jour</div>
+        <div class="obj-val"><span id="daily-current">0</span> <span style="font-size:12px; color:var(--text-sub); font-weight:600">/ 10 rues</span></div>
+        <div class="daily-bar-bg">
+          <div class="daily-bar-fill" id="daily-bar"></div>
+        </div>
       </div>
     </div>
-    <div class="progress-wrap">
-      <div class="progress-info"><span>Secteur</span><span id="pct">0%</span></div>
-      <div class="bar-bg"><div class="bar-fill" id="fill"></div></div>
+
+    <div class="filters">
+      <button class="f-btn active" onclick="setFilter('all', this)">Tout voir</button>
+      <button class="f-btn" onclick="setFilter('todo', this)">À faire</button>
+      <button class="f-btn" onclick="setFilter('done', this)">Fait récem.</button>
     </div>
   </header>
 
@@ -140,32 +180,38 @@
   </div>
 
   <div id="loader"><span>⏳</span> Chargement...</div>
-  
-  <div id="sv-fb" class="sv-feedback"><span>👁️</span> Ouverture Street View...</div>
   <div id="toast" class="toast">Action enregistrée</div>
+  <div id="sv-tip" class="sv-tip"><span>👆</span> Appui long pour Street View</div>
 
   <div id="map"></div>
 
   <div id="bottom-bar">
-    <button class="btn-close" onclick="closeBar()">✕</button>
-    <div>
-      <span class="street-title" id="bar-name">Rue</span>
-      <span class="street-meta" id="bar-meta">Jamais faite</span>
+    <div class="bar-header">
+      <div>
+        <h3 class="street-title" id="bar-name">Rue Inconnue</h3>
+        <div id="bar-badge"></div>
+        <div class="meta-info" id="bar-meta">Dernier passage : —</div>
+      </div>
+      <button class="btn-close" onclick="closeBar()">✕</button>
     </div>
-    <div class="btn-grid">
-      <button class="btn-act btn-boitage" onclick="doBoitage()">📬 BOÎTAGE FAIT</button>
-      <button class="btn-act btn-note" onclick="openNote()">📝 NOTE</button>
+
+    <div class="actions">
+      <button class="btn-main" onclick="markBoitage()">
+        <span>✅</span> BOÎTAGE
+      </button>
+      <button class="btn-sec" onclick="openNote()">
+        <span>📝</span> Note
+      </button>
     </div>
-    <div style="text-align:center; font-size:10px; color:var(--text-sec); margin-top:5px">Appui long sur la carte pour Street View</div>
   </div>
 
   <div id="modal" class="modal-overlay">
     <div class="modal-card">
-      <h3 style="margin:0">📝 Note</h3>
-      <textarea id="note-txt" placeholder="Info..."></textarea>
+      <h3 style="margin:0">📝 Note sur la rue</h3>
+      <textarea id="note-txt" placeholder="Ex: Maison à vendre au n°4..."></textarea>
       <div class="m-btns">
-        <button class="m-btn" style="background:#ddd" onclick="closeModal()">Annuler</button>
-        <button class="m-btn" style="background:var(--primary); color:var(--bg-color)" onclick="saveNote()">Sauver</button>
+        <button class="m-btn" style="background:rgba(0,0,0,0.1); color:var(--text)" onclick="closeModal()">Annuler</button>
+        <button class="m-btn" style="background:var(--primary); color:var(--bg)" onclick="saveNote()">Enregistrer</button>
       </div>
     </div>
   </div>
@@ -175,251 +221,266 @@
   <script src="https://cdn.jsdelivr.net/npm/@turf/turf@6/turf.min.js"></script>
 
   <script>
-    // --- 1. CONFIG & ZONES ---
+    // --- CONFIG ---
     const CENTER_LAT = 44.9945;
     const CENTER_LNG = -0.4465;
     const SB_URL = "https://wqujtckrvdhrwknplumq.supabase.co";
     const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndxdWp0Y2tydmRocndrbnBsdW1xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjMxMjcwOTQsImV4cCI6MjA3ODcwMzA5NH0.btJD5-yD_zRJ9niEvwYEF46iB18OJo8nNXHRTbc8opE";
     const supabaseClient = supabase.createClient(SB_URL, SB_KEY);
 
-    // ZONES PRÉCISES (V3 Logic) - Affichage Subtil
-    const BOX_SIZE = 0.05; 
     const ZONES = [
-      { id: 1, nego: "Alexis", color: "#e74c3c", poly: [[CENTER_LAT, CENTER_LNG], [CENTER_LAT + BOX_SIZE, CENTER_LNG], [CENTER_LAT + BOX_SIZE, CENTER_LNG - BOX_SIZE], [CENTER_LAT, CENTER_LNG - BOX_SIZE]] },
-      { id: 2, nego: "Nicolas", color: "#3498db", poly: [[CENTER_LAT, CENTER_LNG], [CENTER_LAT + BOX_SIZE, CENTER_LNG], [CENTER_LAT + BOX_SIZE, CENTER_LNG + BOX_SIZE], [CENTER_LAT, CENTER_LNG + BOX_SIZE]] },
-      { id: 3, nego: "Thibault", color: "#f1c40f", poly: [[CENTER_LAT, CENTER_LNG], [CENTER_LAT - BOX_SIZE, CENTER_LNG], [CENTER_LAT - BOX_SIZE, CENTER_LNG - BOX_SIZE], [CENTER_LAT, CENTER_LNG - BOX_SIZE]] },
-      { id: 4, nego: "Laurent", color: "#9b59b6", poly: [[CENTER_LAT, CENTER_LNG], [CENTER_LAT - BOX_SIZE, CENTER_LNG], [CENTER_LAT - BOX_SIZE, CENTER_LNG + BOX_SIZE], [CENTER_LAT, CENTER_LNG + BOX_SIZE]] }
+      { id: 1, nego: "Alexis", color: "#e74c3c", poly: [[CENTER_LAT, CENTER_LNG], [CENTER_LAT + 0.05, CENTER_LNG], [CENTER_LAT + 0.05, CENTER_LNG - 0.05], [CENTER_LAT, CENTER_LNG - 0.05]] },
+      { id: 2, nego: "Nicolas", color: "#3498db", poly: [[CENTER_LAT, CENTER_LNG], [CENTER_LAT + 0.05, CENTER_LNG], [CENTER_LAT + 0.05, CENTER_LNG + 0.05], [CENTER_LAT, CENTER_LNG + 0.05]] },
+      { id: 3, nego: "Thibault", color: "#f1c40f", poly: [[CENTER_LAT, CENTER_LNG], [CENTER_LAT - 0.05, CENTER_LNG], [CENTER_LAT - 0.05, CENTER_LNG - 0.05], [CENTER_LAT, CENTER_LNG - 0.05]] },
+      { id: 4, nego: "Laurent", color: "#9b59b6", poly: [[CENTER_LAT, CENTER_LNG], [CENTER_LAT - 0.05, CENTER_LNG], [CENTER_LAT - 0.05, CENTER_LNG + 0.05], [CENTER_LAT, CENTER_LNG + 0.05]] }
     ];
 
-    const state = { streets: {}, nego: "Alexis", selected: null, gpsId: null, marker: null, daily: 0 };
     const EMOJIS = { "Alexis": "👑", "Nicolas": "🚀", "Thibault": "🦁", "Laurent": "⚡" };
+    const state = { streets: {}, nego: "Alexis", selected: null, gpsId: null, marker: null, daily: 0, filter: 'all' };
 
-    // --- 2. INIT MAP ---
-    // Désactiver le menu contextuel par défaut pour le long press
+    // --- INIT MAP ---
     const map = L.map('map', { zoomControl: false, tap: false }).setView([CENTER_LAT, CENTER_LNG], 15);
     L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', { maxZoom: 20 }).addTo(map);
 
-    // DESSIN DES ZONES (Polygones)
-    ZONES.forEach(z => {
-      L.polygon(z.poly, { color: z.color, weight: 1, fillOpacity: 0.05, interactive: false }).addTo(map);
-    });
+    ZONES.forEach(z => L.polygon(z.poly, { color: z.color, weight: 1, fillOpacity: 0.03, interactive: false }).addTo(map));
 
-    // --- 3. GESTION STREET VIEW LONG PRESS (Robustesse V6) ---
-    let longPressTimer;
-    let isDrag = false;
-
-    function startPress(e) {
-       isDrag = false;
-       // Si 2 doigts, c'est un zoom, on annule
-       if(e.originalEvent.touches && e.originalEvent.touches.length > 1) return;
-       
-       longPressTimer = setTimeout(() => {
-           if(!isDrag) {
-               // Feedback
-               document.getElementById('sv-fb').classList.add('show');
-               if(navigator.vibrate) navigator.vibrate(50);
-               setTimeout(() => document.getElementById('sv-fb').classList.remove('show'), 2000);
-               
-               // Open URL avec coordonnées précises du clic
-               const lat = e.latlng.lat;
-               const lng = e.latlng.lng;
-               window.open(`https://www.google.com/maps/search/?api=1&query=$${lat},${lng}`, '_blank');
-           }
-       }, 800);
+    // --- LOGIQUE METIER ---
+    
+    // Status Logic
+    function getStatus(dbData) {
+      if(!dbData) return 'todo';
+      if(dbData.method === 'boitage') {
+         const days = (new Date() - new Date(dbData.passage_date)) / 8.64e7;
+         return days <= 20 ? 'done' : 'old';
+      }
+      return 'todo';
     }
 
-    function cancelPress() { clearTimeout(longPressTimer); }
-    
-    // On écoute sur la MAP entière
-    map.on('mousedown touchstart', startPress);
-    map.on('mouseup touchend', cancelPress);
-    map.on('dragstart', () => { isDrag = true; cancelPress(); });
-    // Bloquer le menu contextuel natif (clic droit / appui long)
-    document.getElementById('map').addEventListener('contextmenu', e => e.preventDefault());
-
-
-    // --- 4. LOGIQUE RUES ---
-
-    function getStatusColor(dbData) {
-      if(!dbData) return "#ff4757"; // Rouge
-      if(dbData.method === 'boitage') {
-         const diff = (new Date() - new Date(dbData.passage_date)) / 8.64e7;
-         return diff <= 20 ? "#2ecc71" : "#feca57"; // Vert ou Orange
-      }
-      return "#ff4757";
+    function getStatusColor(status) {
+       if(status === 'done') return '#2ecc71'; // Vert
+       if(status === 'old') return '#f39c12';  // Orange
+       return '#ff4757'; // Rouge
     }
 
     function drawStreet(name, latlngs, dbData, noteData) {
-      // Pas de filtre doublon strict ici pour éviter les trous
-      // On groupe juste les segments dans l'objet state
-      
-      const color = getStatusColor(dbData);
+      const status = getStatus(dbData);
+      const color = getStatusColor(status);
 
-      // Ligne Cliquable (Invisible)
-      const hit = L.polyline(latlngs, { weight: 25, opacity: 0 }).addTo(map);
-      // Ligne Visuelle
+      // Hit Line (Invisible, large)
+      const hit = L.polyline(latlngs, { weight: 22, opacity: 0 }).addTo(map);
+      // Visual Line
       const vis = L.polyline(latlngs, { color: color, weight: 4, opacity: 0.9, lineCap: 'round' }).addTo(map);
 
-      // Marqueur Note (Etoile)
+      // Star Marker
       let star = null;
       if(noteData) {
          const center = latlngs[Math.floor(latlngs.length/2)];
-         star = L.marker(center, { icon: L.divIcon({ html: '⭐', className:'', iconSize:[20,20] }) }).addTo(map);
+         star = L.marker(center, { icon: L.divIcon({ html: '⭐', className:'', iconSize:[18,18] }) }).addTo(map);
       }
 
-      if(!state.streets[name]) state.streets[name] = { segments: [], dbData: dbData };
+      if(!state.streets[name]) state.streets[name] = { segments: [], dbData: dbData, status: status };
       state.streets[name].segments.push({ vis: vis, hit: hit, star: star });
 
-      // Clic Rue
+      // Interaction
       hit.on('click', (e) => {
-         L.DomEvent.stopPropagation(e); // Empêche le street view de se lancer
+         L.DomEvent.stopPropagation(e);
          openBar(name);
+         // Feedback Visuel Clic
+         vis.setStyle({ weight: 7 });
+         setTimeout(() => vis.setStyle({ weight: 4 }), 300);
       });
-      // Touchstart aussi pour stopper propagation sur mobile
       hit.on('touchstart', (e) => L.DomEvent.stopPropagation(e));
     }
 
-    // --- 5. UI ACTIONS ---
-
+    // --- UI POPUP & ACTIONS ---
+    
     function openBar(name) {
        state.selected = name;
+       const st = state.streets[name];
+       
        document.getElementById('bar-name').innerText = name;
        
-       const st = state.streets[name];
-       let meta = "Jamais fait";
-       if(st.dbData) {
-           const d = new Date(st.dbData.passage_date).toLocaleDateString();
-           meta = st.dbData.method === 'boitage' ? `Boité le ${d}` : `Vu le ${d}`;
+       // Badge & Meta
+       const badgeEl = document.getElementById('bar-badge');
+       const metaEl = document.getElementById('bar-meta');
+       
+       if(st.status === 'done') {
+           badgeEl.innerHTML = '<span class="badge badge-done">🟢 À jour</span>';
+           metaEl.innerText = `Fait le ${new Date(st.dbData.passage_date).toLocaleDateString()} par ${st.dbData.negociateur}`;
+       } else if(st.status === 'old') {
+           badgeEl.innerHTML = '<span class="badge badge-old">🟠 À refaire</span>';
+           metaEl.innerText = `Dernier : ${new Date(st.dbData.passage_date).toLocaleDateString()}`;
+       } else {
+           badgeEl.innerHTML = '<span class="badge badge-todo">🔴 Jamais faite</span>';
+           metaEl.innerText = "Aucun passage enregistré";
        }
-       document.getElementById('bar-meta').innerText = meta;
 
+       // Ouvrir Barre
        const bar = document.getElementById('bottom-bar');
-       bar.style.display = 'flex';
-       setTimeout(() => bar.classList.add('active'), 10);
+       bar.classList.add('active');
+       document.getElementById('sv-tip').classList.add('hidden'); // Cacher le tip
     }
 
     function closeBar() {
-       const bar = document.getElementById('bottom-bar');
-       bar.classList.remove('active');
-       setTimeout(() => bar.style.display = 'none', 300);
+       document.getElementById('bottom-bar').classList.remove('active');
+       document.getElementById('sv-tip').classList.remove('hidden');
     }
 
-    window.doBoitage = async () => {
+    window.markBoitage = async () => {
        const name = state.selected;
        if(!name) return;
 
-       // Visuel Vert Immédiat
-       if(state.streets[name]) {
-           state.streets[name].segments.forEach(s => s.vis.setStyle({ color: '#2ecc71' }));
-           state.streets[name].dbData = { method: 'boitage', passage_date: new Date() };
-       }
+       // 1. Animation "Reward"
+       state.streets[name].segments.forEach(s => {
+           s.vis.setStyle({ color: '#2ecc71', className: 'street-pulse' }); // Animation CSS
+       });
+       state.streets[name].status = 'done';
        
-       state.daily++;
-       document.getElementById('daily-c').innerText = state.daily;
-       showToast("✅ Validé !");
+       // 2. Gamification
+       updateDaily(1);
+       if(state.daily === 3) showToast("🔥 Belle lancée !");
+       else if(state.daily === 10) showToast("🎉 Objectif atteint !");
+       else showToast("✅ Rue validée !");
+
+       // 3. UI Update
        closeBar();
        updateStats();
 
+       // 4. DB
        const today = new Date().toISOString().split('T')[0];
+       state.streets[name].dbData = { method: 'boitage', passage_date: today, negociateur: state.nego }; // Optimistic update
        await supabaseClient.from('street_passages').upsert({
            street_name: name, passage_date: today, negociateur: state.nego, method: 'boitage'
        }, { onConflict: 'street_name' });
     };
 
-    window.openNote = () => { document.getElementById('modal').style.display = 'flex'; };
-    window.closeModal = () => { document.getElementById('modal').style.display = 'none'; document.getElementById('note-txt').value = ''; };
-    
-    window.saveNote = async () => {
-       const txt = document.getElementById('note-txt').value;
-       const name = state.selected;
-       if(txt && name) {
-           await supabaseClient.from('street_history').insert({
-               street_name: name, action_type: 'note', action_data: { note: txt }, negociateur: state.nego
-           });
-           showToast("Note sauvée");
-           closeModal();
-           closeBar();
-       }
+    // --- FILTRES ---
+    window.setFilter = (type, btn) => {
+        state.filter = type;
+        // UI Boutons
+        document.querySelectorAll('.f-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+
+        // Appliquer Filtre
+        Object.values(state.streets).forEach(st => {
+             const visible = (type === 'all') 
+                || (type === 'done' && st.status === 'done')
+                || (type === 'todo' && st.status !== 'done');
+             
+             st.segments.forEach(s => {
+                 if(visible) { s.vis.addTo(map); s.hit.addTo(map); if(s.star) s.star.addTo(map); }
+                 else { map.removeLayer(s.vis); map.removeLayer(s.hit); if(s.star) map.removeLayer(s.star); }
+             });
+        });
     };
 
-    function showToast(msg) {
-        const t = document.getElementById('toast');
-        t.innerText = msg; t.classList.add('show');
-        setTimeout(() => t.classList.remove('show'), 2000);
+    // --- NOTES ---
+    window.openNote = () => document.getElementById('modal').style.display = 'flex';
+    window.closeModal = () => document.getElementById('modal').style.display = 'none';
+    window.saveNote = async () => {
+        const txt = document.getElementById('note-txt').value;
+        if(txt) {
+            await supabaseClient.from('street_history').insert({ street_name: state.selected, action_type: 'note', action_data: { note: txt }, negociateur: state.nego });
+            showToast("📝 Note ajoutée");
+            closeModal(); closeBar();
+            // Add star visual
+            if(!state.streets[state.selected].segments[0].star) { /* Add logic if needed, complex to redraw dynamic */ }
+        }
     }
 
-    // --- 6. CHARGEMENT DONNÉES ---
-    
-    async function init() {
-       const loader = document.getElementById('loader');
-       
-       // 1. Load DB
-       const { data: passages } = await supabaseClient.from('street_passages').select('*');
-       let pHist = {}; if(passages) passages.forEach(p => pHist[p.street_name] = p);
+    // --- STREET VIEW LONG PRESS ---
+    let longPress;
+    let isDrag = false;
+    map.on('mousedown touchstart', (e) => {
+        isDrag = false;
+        if(e.originalEvent.touches && e.originalEvent.touches.length > 1) return;
+        longPress = setTimeout(() => {
+            if(!isDrag) {
+                if(navigator.vibrate) navigator.vibrate(50);
+                showToast("🌐 Street View ouvert");
+                window.open(`https://www.google.com/maps/search/?api=1&query=$${e.latlng.lat},${e.latlng.lng}`, '_blank');
+            }
+        }, 800);
+    });
+    map.on('mouseup touchend', () => clearTimeout(longPress));
+    map.on('dragstart', () => { isDrag = true; clearTimeout(longPress); });
+    document.getElementById('map').addEventListener('contextmenu', e => e.preventDefault());
 
-       const { data: notes } = await supabaseClient.from('street_history').select('*').eq('action_type', 'note');
-       let nHist = {}; if(notes) notes.forEach(n => nHist[n.street_name] = true);
-
-       // 2. Load OSM (Zone large + tous types de rues)
-       const query = `[out:json][timeout:25];
-         way["highway"~"residential|unclassified|living_street|tertiary|secondary|service|track"](44.96,-0.50,45.04,-0.40);
-         out geom;`;
-
-       try {
-           const res = await fetch("https://overpass-api.de/api/interpreter?data=" + encodeURIComponent(query));
-           const json = await res.json();
-           
-           json.elements.forEach(el => {
-               if(el.tags && el.tags.name) {
-                   const latlngs = el.geometry.map(p => [p.lat, p.lon]);
-                   // APPEL SANS FILTRE DOUBLON (Correctif V6)
-                   drawStreet(el.tags.name, latlngs, pHist[el.tags.name], nHist[el.tags.name]);
-               }
-           });
-           
-           updateStats();
-           loader.style.display = 'none';
-       } catch(e) { console.error(e); loader.innerText = "Erreur chargement"; }
+    // --- UTILS & LOAD ---
+    function updateDaily(n) {
+        state.daily += n;
+        document.getElementById('daily-current').innerText = state.daily;
+        const pct = Math.min((state.daily / 10) * 100, 100);
+        document.getElementById('daily-bar').style.width = pct + "%";
     }
 
     function updateStats() {
-       let total=0, done=0;
-       // On compte par nom de rue unique pour les stats
-       Object.values(state.streets).forEach(st => {
-           total++;
-           if(getStatusColor(st.dbData) === '#2ecc71') done++;
-       });
-       const pct = total ? Math.round((done/total)*100) : 0;
-       document.getElementById('pct').innerText = pct + "%";
-       document.getElementById('fill').style.width = pct + "%";
+        let total = 0, done = 0;
+        Object.values(state.streets).forEach(st => { total++; if(st.status === 'done') done++; });
+        document.getElementById('stats-done').innerText = done;
+        document.getElementById('stats-pct').innerText = total ? Math.round((done/total)*100) + '%' : '0%';
     }
 
-    // --- 7. UTILS ---
+    function showToast(msg) {
+        const t = document.getElementById('toast');
+        t.innerHTML = `<span>🔔</span> ${msg}`;
+        t.classList.add('show');
+        setTimeout(() => t.classList.remove('show'), 2500);
+    }
+
+    async function init() {
+        const loader = document.getElementById('loader');
+        
+        // Load Data
+        const { data: passages } = await supabaseClient.from('street_passages').select('*');
+        let pHist = {}; if(passages) passages.forEach(p => pHist[p.street_name] = p);
+        
+        const { data: notes } = await supabaseClient.from('street_history').select('*').eq('action_type', 'note');
+        let nHist = {}; if(notes) notes.forEach(n => nHist[n.street_name] = true);
+
+        // Load OSM
+        const query = `[out:json][timeout:25];
+         way["highway"~"residential|unclassified|living_street|tertiary|secondary"](44.96,-0.50,45.04,-0.40);
+         out geom;`;
+
+        try {
+            const res = await fetch("https://overpass-api.de/api/interpreter?data=" + encodeURIComponent(query));
+            const json = await res.json();
+            json.elements.forEach(el => {
+                if(el.tags && el.tags.name) {
+                    const ll = el.geometry.map(p => [p.lat, p.lon]);
+                    drawStreet(el.tags.name, ll, pHist[el.tags.name], nHist[el.tags.name]);
+                }
+            });
+            updateStats();
+            loader.innerHTML = "<span>✅</span> C'est parti !";
+            setTimeout(() => loader.style.opacity = 0, 800);
+            setTimeout(() => loader.style.display = 'none', 1300);
+        } catch(e) { console.error(e); }
+    }
+
     window.toggleTheme = () => {
        const b = document.body;
-       const next = b.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
-       b.setAttribute('data-theme', next);
+       b.setAttribute('data-theme', b.getAttribute('data-theme') === 'dark' ? 'light' : 'dark');
     };
-
+    
     window.toggleGPS = () => {
-       const btn = document.getElementById('btnGps');
-       if(state.gpsId) {
-           navigator.geolocation.clearWatch(state.gpsId); state.gpsId=null; btn.classList.remove('gps-on');
-           if(state.marker) map.removeLayer(state.marker);
-       } else {
-           if(!navigator.geolocation) return alert("Pas de GPS");
-           btn.classList.add('gps-on');
-           state.gpsId = navigator.geolocation.watchPosition(pos => {
-               const ll = [pos.coords.latitude, pos.coords.longitude];
-               if(!state.marker) { state.marker = L.circleMarker(ll, {radius:8, color:'white', fillColor:'#007AFF', fillOpacity:1}).addTo(map); map.setView(ll, 16); }
-               else state.marker.setLatLng(ll);
-           }, null, {enableHighAccuracy:true});
-       }
+        const btn = document.getElementById('btnGps');
+        if(state.gpsId) { navigator.geolocation.clearWatch(state.gpsId); state.gpsId=null; btn.classList.remove('gps-on'); if(state.marker) map.removeLayer(state.marker); }
+        else {
+            if(!navigator.geolocation) return alert("Pas de GPS");
+            btn.classList.add('gps-on');
+            state.gpsId = navigator.geolocation.watchPosition(pos => {
+                const ll = [pos.coords.latitude, pos.coords.longitude];
+                if(!state.marker) { state.marker = L.circleMarker(ll, {radius:8, color:'white', fillColor:'#007AFF', fillOpacity:1}).addTo(map); map.setView(ll, 16); }
+                else state.marker.setLatLng(ll);
+            }, null, {enableHighAccuracy:true});
+        }
     };
 
     document.getElementById('negociateur').addEventListener('change', (e) => {
-       state.nego = e.target.value;
-       document.getElementById('user-icon').innerText = EMOJIS[state.nego] || "👤";
+        state.nego = e.target.value;
+        document.getElementById('user-emoji').innerText = EMOJIS[state.nego] || "👤";
     });
 
     init();
