@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8" />
-  <title>Mansion V14 - Robust</title>
+  <title>Mansion V15 - Ultimate Fix</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
   
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -21,7 +21,11 @@
 
     /* MAP */
     #map { width: 100vw; height: 100vh; position: fixed; top: 0; left: 0; z-index: 1; }
+    
+    /* Gestion fine du Dark Mode sur la carte */
     body.dark #map { filter: invert(1) hue-rotate(180deg) brightness(0.6) contrast(1.1); }
+    /* IMPORTANT : Si Satellite activé, on annule l'inversion pour avoir les vraies couleurs */
+    body.sat-mode #map { filter: none !important; }
 
     /* HEADER */
     header {
@@ -47,6 +51,7 @@
     }
     .fab:active { transform: scale(0.92); }
     .gps-active { color: var(--accent); border: 2px solid var(--accent); }
+    .sat-active { border: 2px solid var(--success); color: var(--success); }
 
     /* TOUR MENU */
     .tour-container { display: flex; flex-direction: column; gap: 10px; align-items: flex-end; }
@@ -112,9 +117,6 @@
     .toast.show { opacity: 1; margin-top: 10px; }
     
     #loader { position: absolute; bottom: 50%; left: 50%; transform: translate(-50%, 50%); background: var(--card); padding: 15px 30px; border-radius: 50px; font-weight: 800; z-index: 3000; box-shadow: var(--shadow); transition: opacity 0.5s; }
-    
-    /* SV TARGET */
-    .sv-target { width: 20px; height: 20px; background: transparent; border: 4px solid #FF3B30; border-radius: 50%; position: absolute; transform: translate(-50%, -50%); pointer-events: none; z-index: 9999; display: none; box-shadow: 0 0 0 4px rgba(255,255,255,0.5); }
 
   </style>
 </head>
@@ -144,13 +146,11 @@
     </div>
 
     <button class="fab" id="btn-gps" onclick="toggleGPS()">📍</button>
-    <button class="fab" onclick="toggleSat()">🛰️</button>
+    <button class="fab" id="btn-sat" onclick="toggleSat()">🛰️</button>
   </div>
 
   <div id="loader">Chargement...</div>
   <div id="toast" class="toast">Action enregistrée</div>
-  
-  <div id="sv-target" class="sv-target"></div>
 
   <div id="map"></div>
 
@@ -241,12 +241,13 @@
     // --- MAP INIT ---
     const map = L.map('map', { zoomControl: false, tap: false }).setView([CENTER_LAT, CENTER_LNG], 15);
     
-    // PANES (Solution "Rues sous les polygones" corrigée)
+    // PANES (Z-INDEX)
     map.createPane('zonesPane'); map.getPane('zonesPane').style.zIndex = 350;
     map.createPane('streetsPane'); map.getPane('streetsPane').style.zIndex = 450;
     map.createPane('markersPane'); map.getPane('markersPane').style.zIndex = 650;
 
     const lPlan = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', { maxZoom: 20 }).addTo(map);
+    // Use Esri for better quality than OSM standard
     const lSat = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { maxZoom: 19 });
     const polyLayer = L.layerGroup().addTo(map);
 
@@ -267,12 +268,12 @@
             else color = "#FF9500";
         }
 
-        // Ajout au Pane spécifique pour être TOUJOURS au dessus des zones
         const vis = L.polyline(latlngs, { color: color, weight: weight, opacity: opacity, interactive: false, pane: 'streetsPane' }).addTo(map);
         const hit = L.polyline(latlngs, { weight: 25, opacity: 0 }).addTo(map);
 
         state.streets[name] = { vis, hit, dbData, defColor: color, defOp: opacity };
         hit.on('click', (e) => { L.DomEvent.stopPropagation(e); selectStreet(name); });
+        // Prevent touch bubbling
         hit.on('touchstart', (e) => L.DomEvent.stopPropagation(e));
     }
 
@@ -379,46 +380,23 @@
         else activateGPS();
     };
 
-    // --- STREET VIEW (PRECISION ALIGNEMENT) ---
-    let lpTimer;
-    const mapContainer = document.getElementById('map');
-    
-    // Gestionnaire Touchstart
-    mapContainer.addEventListener('touchstart', (e) => {
-        if(e.touches.length > 1) return;
-        const touch = e.touches[0];
-        const screenX = touch.clientX;
-        const screenY = touch.clientY;
+    // --- STREET VIEW (EVENT NATIVE CONTEXTMENU) ---
+    // This is the robust way to handle long press on mobile & right click on desktop
+    map.on('contextmenu', (e) => {
+        if(navigator.vibrate) navigator.vibrate(50);
         
-        lpTimer = setTimeout(() => {
-            if(navigator.vibrate) navigator.vibrate(50);
-            
-            // Afficher la cible visuelle sous le doigt
-            const target = document.getElementById('sv-target');
-            target.style.left = screenX + 'px';
-            target.style.top = (screenY - 20) + 'px'; // Léger décalage haut pour visibilité
-            target.style.display = 'block';
-
-            showToast("Relâchez pour ouvrir Street View 🌍");
-            
-            // Attendre le relâchement (touchend)
-            const handleEnd = () => {
-                const pt = L.point(screenX, screenY);
-                const ll = map.containerPointToLatLng(pt); // Conversion précise Pixel -> GPS
-                
-                window.open(`https://www.google.com/maps/search/?api=1&query=$${ll.lat},${ll.lng}`, '_blank');
-                
-                target.style.display = 'none';
-                mapContainer.removeEventListener('touchend', handleEnd);
-            };
-            
-            mapContainer.addEventListener('touchend', handleEnd, {once: true});
-
-        }, 800); // 800ms appui long
-    }, {passive: false});
-
-    mapContainer.addEventListener('touchmove', () => { clearTimeout(lpTimer); document.getElementById('sv-target').style.display = 'none'; });
-    mapContainer.addEventListener('touchend', () => { clearTimeout(lpTimer); });
+        // Visual feedback at the EXACT location
+        const marker = L.circleMarker(e.latlng, {
+            radius: 12, color: 'white', fillColor: '#FF3B30', fillOpacity: 1, pane: 'markersPane'
+        }).addTo(map);
+        
+        showToast("Ouverture Street View... 🌍");
+        
+        setTimeout(() => {
+            map.removeLayer(marker);
+            window.open(`https://www.google.com/maps/search/?api=1&query=$${e.latlng.lat},${e.latlng.lng}`, '_blank');
+        }, 600);
+    });
 
 
     // --- WIZARD ---
@@ -435,8 +413,15 @@
     };
     window.nextStep = async () => {
         if(!state.wizard.num) return alert("Numéro requis");
-        if(state.wizard.tag !== '🤝 Intéressé') { await saveHistory(); closeWizard(); return; }
-        document.getElementById('step-1').style.display='none'; document.getElementById('step-2').style.display='block';
+        // LOGIQUE CORRIGEE ICI : Seuls 'Intéressé' et 'Vente' vont au formulaire
+        if(state.wizard.tag === '🤝 Intéressé' || state.wizard.tag === '🏠 À Vendre') { 
+            document.getElementById('step-1').style.display='none'; 
+            document.getElementById('step-2').style.display='block';
+        } else {
+            // Refus, etc -> Sauvegarde immédiate
+            await saveHistory(); 
+            closeWizard(); 
+        }
     };
     window.selCiv = (el,v) => { document.querySelectorAll('.radio-btn').forEach(b=>b.classList.remove('selected')); el.classList.add('selected'); state.wizard.civ=v; };
     window.finishWizard = async () => {
@@ -455,44 +440,40 @@
         const { data } = await supabaseClient.from('street_passages').select('*');
         let hist = {}; if(data) data.forEach(d => hist[d.street_name] = d);
         
-        // REQUETE ROBUSTE (Serveur principal + Fallback)
-        const servers = ["https://overpass-api.de/api/interpreter", "https://lz4.overpass-api.de/api/interpreter"];
-        const q = `[out:json][timeout:25]; way["highway"](44.96,-0.50,45.04,-0.40); (._;>;); out;`; // Requete simplifiée mais large
-
+        // REQUETE LARGE
+        const q = `[out:json][timeout:90]; way["highway"~"residential|unclassified|living_street|tertiary|secondary|primary|service|track|pedestrian"](44.96,-0.50,45.04,-0.40); out geom;`;
+        
         try {
-            const res = await fetch(servers[0] + "?data=" + encodeURIComponent(q));
-            if(!res.ok) throw new Error("Server 1 fail");
+            const res = await fetch("https://overpass-api.de/api/interpreter?data=" + encodeURIComponent(q));
             const json = await res.json();
-            json.elements.forEach(el => { 
-                // Filtre simple pour garder les rues nommées et utiles
-                if(el.type === 'way' && el.tags && el.tags.name && !el.tags.highway.includes('motorway')) {
-                   // On construit la géométrie si Overpass ne la donne pas direct (mode standard)
-                   // Ici on suppose le mode 'geom' ou on mappe les nodes si on avait le full json
-                   // Pour simplifier V14, on utilise le mode [out geom] dans la query
-                }
-            });
-            
-            // Note: Le fetch ci-dessus utilise la syntaxe standard.
-            // Pour V14, reprenons la méthode simple geom qui marchait en V13 mais avec le bon endpoint
-             const qGeom = `[out:json][timeout:25]; way["highway"~"residential|unclassified|living_street|tertiary|secondary|primary"](44.96,-0.50,45.04,-0.40); out geom;`;
-             const resGeom = await fetch(servers[0] + "?data=" + encodeURIComponent(qGeom));
-             const jsonGeom = await resGeom.json();
-             
-             if(jsonGeom.elements.length === 0) showToast("Aucune rue trouvée (API Vide)");
-             
-             jsonGeom.elements.forEach(el => {
-                if(el.tags && el.tags.name) drawStreet(el.tags.name, el.geometry.map(p=>[p.lat,p.lon]), hist[el.tags.name]);
-             });
-
-        } catch(e) { 
-            console.error(e); 
-            showToast("Erreur Chargement Carte (Réessayer)");
-        }
+            json.elements.forEach(el => { if(el.tags && el.tags.name) drawStreet(el.tags.name, el.geometry.map(p=>[p.lat,p.lon]), hist[el.tags.name]); });
+        } catch(e) { console.error(e); }
         document.getElementById('loader').style.display='none';
     }
 
-    window.toggleSat = () => { state.sat=!state.sat; if(state.sat) { map.removeLayer(lPlan); map.addLayer(lSat); document.body.classList.add('dark'); } else { map.removeLayer(lSat); map.addLayer(lPlan); document.body.classList.remove('dark'); } };
-    document.getElementById('user-pick').addEventListener('change', (e) => { state.nego = e.target.value; document.getElementById('user-emoji').innerText = EMOJIS[state.nego]; });
+    // TOGGLE SATELLITE & DARK MODE
+    window.toggleSat = () => { 
+        state.sat=!state.sat; 
+        const btn = document.getElementById('btn-sat');
+        
+        if(state.sat) { 
+            map.removeLayer(lPlan); 
+            map.addLayer(lSat); 
+            document.body.classList.add('sat-mode'); // Force normal colors for map
+            btn.classList.add('sat-active');
+        } else { 
+            map.removeLayer(lSat); 
+            map.addLayer(lPlan); 
+            document.body.classList.remove('sat-mode'); 
+            btn.classList.remove('sat-active');
+        } 
+    };
+    
+    document.getElementById('user-pick').addEventListener('change', (e) => { 
+        state.nego = e.target.value; 
+        document.getElementById('user-emoji').innerText = EMOJIS[state.nego];
+        map.flyTo(USERS[state.nego].center, 15);
+    });
     
     init();
   </script>
