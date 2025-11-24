@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8" />
-  <title>Mansion V10 - Platinum</title>
+  <title>Mansion V11 - Precision</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
   
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -12,7 +12,7 @@
     :root {
       --bg: #F4F4F6; --card: rgba(255, 255, 255, 0.98); --text: #1C1C1E;
       --primary: #000; --accent: #007AFF; --success: #34C759; --danger: #FF3B30;
-      --shadow: 0 8px 30px rgba(0,0,0,0.12);
+      --shadow: 0 4px 20px rgba(0,0,0,0.15);
     }
     body.dark { --bg: #000; --card: rgba(28, 28, 30, 0.98); --text: #FFF; --primary: #FFF; }
     
@@ -20,138 +20,209 @@
     body { margin: 0; font-family: 'Plus Jakarta Sans', sans-serif; background: var(--bg); overflow: hidden; color: var(--text); }
 
     /* MAP */
-    #map { width: 100vw; height: 100vh; position: fixed; top: 0; left: 0; z-index: 1; transition: filter 0.3s; }
+    #map { width: 100vw; height: 100vh; position: fixed; top: 0; left: 0; z-index: 1; }
     body.dark #map { filter: invert(1) hue-rotate(180deg) brightness(0.6) contrast(1.1); }
 
-    /* HEADER */
+    /* HEADER COMPACT */
     header {
       position: absolute; top: 0; left: 0; right: 0; z-index: 1000;
-      background: var(--card); padding: 15px 20px 10px;
+      background: var(--card); padding: 10px 20px;
       border-bottom-left-radius: 24px; border-bottom-right-radius: 24px;
       box-shadow: var(--shadow); backdrop-filter: blur(20px);
+      display: flex; justify-content: space-between; align-items: center;
     }
-    .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
-    .brand { font-weight: 900; font-size: 20px; }
-    .theme-toggle { background:none; border:none; font-size: 20px; cursor:pointer; }
+    .user-select { background: rgba(120,120,128,0.1); padding: 6px 12px; border-radius: 20px; font-weight: 700; display: flex; gap: 8px; align-items: center; font-size: 13px; }
+    select { background: transparent; border: none; font-weight: 700; color: var(--text); outline: none; font-size: 13px; }
+    .obj-counter { font-weight: 800; font-size: 14px; }
+
+    /* WIDGETS (RIGHT COLUMN) */
+    .widgets { 
+      position: absolute; right: 15px; top: 80px; z-index: 900; 
+      display: flex; flex-direction: column; gap: 15px; align-items: flex-end; 
+    }
     
-    .user-row { display: flex; align-items: center; justify-content: space-between; }
-    .user-select { background: rgba(120,120,128,0.1); padding: 6px 12px; border-radius: 20px; font-weight: 700; display: flex; gap: 8px; align-items: center; }
-    select { background: transparent; border: none; font-weight: 700; color: var(--text); outline: none; font-size: 14px; }
-
-    /* TOUR BAR (CHRONO) */
-    .tour-bar {
-      position: absolute; top: 110px; left: 50%; transform: translateX(-50%); z-index: 900;
-      background: var(--primary); color: var(--bg); padding: 8px 20px; border-radius: 30px;
-      display: flex; align-items: center; gap: 15px; box-shadow: var(--shadow);
-      font-feature-settings: "tnum"; font-variant-numeric: tabular-nums;
-      opacity: 0; pointer-events: none; transition: 0.3s;
+    .fab { 
+      width: 44px; height: 44px; border-radius: 50%; background: var(--card); color: var(--text); 
+      border: none; box-shadow: var(--shadow); font-size: 18px; cursor: pointer; 
+      display: flex; align-items: center; justify-content: center; position: relative;
     }
-    .tour-bar.active { opacity: 1; pointer-events: auto; top: 120px; }
-    .chrono { font-weight: 800; font-size: 16px; letter-spacing: 1px; min-width: 60px; }
-    .tour-btn { background: rgba(255,255,255,0.2); border: none; width: 32px; height: 32px; border-radius: 50%; color: white; display: flex; align-items: center; justify-content: center; cursor: pointer; }
-    .tour-stop { background: var(--danger); }
+    .fab:active { transform: scale(0.92); }
+    .gps-active { color: var(--accent); border: 2px solid var(--accent); }
 
-    /* WIDGETS */
-    .widgets { position: absolute; right: 15px; top: 180px; z-index: 900; display: flex; flex-direction: column; gap: 12px; }
-    .fab { width: 48px; height: 48px; border-radius: 50%; background: var(--card); color: var(--text); border: none; box-shadow: var(--shadow); font-size: 20px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
-    .gps-on { color: var(--accent); border: 2px solid var(--accent); }
+    /* TOUR MENU (Discrete) */
+    .tour-container { display: flex; flex-direction: column; gap: 10px; align-items: flex-end; }
+    .tour-timer-badge { 
+      background: var(--primary); color: var(--bg); padding: 4px 10px; border-radius: 12px; 
+      font-size: 12px; font-weight: 800; display: none; margin-bottom: 5px; box-shadow: var(--shadow);
+    }
+    .tour-controls { 
+      display: none; flex-direction: column; gap: 10px; 
+      background: rgba(0,0,0,0.5); padding: 5px; border-radius: 30px; backdrop-filter: blur(5px);
+    }
+    .tour-controls.visible { display: flex; }
+    .btn-stop { background: var(--danger); color: white; }
 
     /* BOTTOM SHEET */
     #sheet {
       position: absolute; bottom: 0; left: 0; right: 0; z-index: 1100;
       background: var(--card); border-top-left-radius: 32px; border-top-right-radius: 32px;
-      padding: 25px 20px 40px; box-shadow: 0 -10px 40px rgba(0,0,0,0.2);
-      transform: translateY(110%); transition: transform 0.4s cubic-bezier(0.32, 0.72, 0, 1);
+      padding: 20px 20px 30px; box-shadow: 0 -10px 40px rgba(0,0,0,0.2);
+      transform: translateY(110%); transition: transform 0.3s cubic-bezier(0.32, 0.72, 0, 1);
     }
     #sheet.open { transform: translateY(0); }
     
-    .street-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px; }
-    .st-name { font-size: 20px; font-weight: 800; line-height: 1.1; margin-bottom: 5px; }
-    .st-meta { font-size: 12px; font-weight: 600; opacity: 0.6; }
-    .close-sheet { background: rgba(120,120,128,0.1); width: 30px; height: 30px; border-radius: 50%; border: none; color: var(--text); font-weight: bold; cursor: pointer; }
+    .sheet-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+    .st-name { font-size: 18px; font-weight: 800; line-height: 1.1; max-width: 80%; }
+    .close-sheet { background: rgba(120,120,128,0.1); width: 28px; height: 28px; border-radius: 50%; border: none; font-weight: bold; cursor: pointer; }
 
-    /* TAGS RAPIDES */
-    .quick-tags { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 5px; margin-bottom: 20px; }
-    .tag { padding: 8px 16px; border-radius: 12px; border: 1px solid rgba(120,120,128,0.2); background: transparent; color: var(--text); font-size: 12px; font-weight: 700; white-space: nowrap; cursor: pointer; }
-    .tag:active { background: var(--text); color: var(--bg); }
+    /* QUICK ACTIONS ROW */
+    .quick-actions { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 15px; }
+    .q-btn { 
+      display: flex; flex-direction: column; align-items: center; gap: 5px; 
+      background: rgba(120,120,128,0.05); border: 1px solid rgba(120,120,128,0.1); 
+      border-radius: 12px; padding: 10px 5px; cursor: pointer; transition: 0.2s;
+    }
+    .q-btn span { font-size: 20px; }
+    .q-btn div { font-size: 9px; font-weight: 700; text-transform: uppercase; }
+    .q-btn:active { background: var(--text); color: var(--bg); }
 
-    /* ACTION BUTTON */
     .btn-main { width: 100%; padding: 16px; border-radius: 18px; background: var(--success); color: white; border: none; font-weight: 800; font-size: 16px; box-shadow: 0 4px 15px rgba(52, 199, 89, 0.4); cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; }
-    
-    /* MODAL FIN TOURNEE */
-    .modal-overlay { position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); z-index: 5000; display:none; align-items:center; justify-content:center; backdrop-filter: blur(5px); }
-    .modal { background: var(--card); width: 85%; max-width: 320px; padding: 25px; border-radius: 24px; text-align: center; }
-    .stat-result { font-size: 30px; font-weight: 800; margin: 10px 0; }
-    .input-qty { width: 100%; padding: 15px; border-radius: 12px; border: 2px solid rgba(0,0,0,0.1); font-size: 18px; text-align: center; margin: 15px 0; font-weight: bold; }
 
+    /* MODAL TUNNEL (Wizard) */
+    .modal-overlay { position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); z-index: 5000; display:none; align-items:flex-end; justify-content:center; backdrop-filter: blur(5px); }
+    .wizard-card { background: var(--bg); width: 100%; max-width: 400px; padding: 25px; border-top-left-radius: 30px; border-top-right-radius: 30px; animation: slideUp 0.3s ease-out; }
+    @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+
+    .wiz-title { font-size: 18px; font-weight: 800; margin-bottom: 15px; text-align: center; }
+    
+    /* Keypad */
+    .keypad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 15px; }
+    .key { background: var(--card); padding: 15px; border-radius: 12px; border: none; font-size: 20px; font-weight: 700; box-shadow: 0 2px 5px rgba(0,0,0,0.05); cursor: pointer; }
+    .key:active { background: var(--text); color: var(--bg); }
+    .num-display { width: 100%; padding: 15px; font-size: 24px; text-align: center; font-weight: 800; background: rgba(0,0,0,0.05); border-radius: 12px; margin-bottom: 15px; border: none; }
+
+    /* Form Contact */
+    .form-group { margin-bottom: 15px; }
+    .form-input { width: 100%; padding: 14px; border-radius: 12px; border: 1px solid rgba(120,120,128,0.2); font-size: 16px; background: var(--card); }
+    .radio-group { display: flex; gap: 10px; margin-bottom: 15px; }
+    .radio-btn { flex: 1; padding: 10px; border-radius: 10px; border: 1px solid #ccc; background: transparent; font-weight: 600; cursor: pointer; }
+    .radio-btn.selected { background: var(--text); color: var(--bg); border-color: var(--text); }
+
+    /* Toast & Loader */
+    .toast { position: absolute; top: 100px; left: 50%; transform: translateX(-50%); background: var(--primary); color: var(--bg); padding: 10px 20px; border-radius: 30px; font-weight: 700; font-size: 13px; opacity: 0; pointer-events: none; transition: 0.3s; z-index: 2000; display: flex; gap: 8px; }
+    .toast.show { opacity: 1; margin-top: 10px; }
+    #loader { position: absolute; bottom: 50%; left: 50%; transform: translate(-50%, 50%); background: var(--card); padding: 15px 30px; border-radius: 50px; font-weight: 800; z-index: 3000; box-shadow: var(--shadow); }
+
+    /* SV Overlay */
+    .sv-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 6000; display: none; align-items: center; justify-content: center; color: white; flex-direction: column; font-weight: 800; }
   </style>
 </head>
 <body>
 
   <header>
-    <div class="top-bar">
-      <div class="brand">MANSION V10</div>
-      <button class="theme-toggle" onclick="toggleTheme()">🌗</button>
+    <div class="user-select">
+      <span id="user-emoji">👑</span>
+      <select id="user-pick">
+        <option value="Alexis">Alexis</option>
+        <option value="Nicolas">Nicolas</option>
+        <option value="Thibault">Thibault</option>
+        <option value="Laurent">Laurent</option>
+      </select>
     </div>
-    <div class="user-row">
-      <div class="user-select">
-        <span id="user-icon">👑</span>
-        <select id="user-pick">
-          <option value="Alexis">Alexis</option>
-          <option value="Nicolas">Nicolas</option>
-          <option value="Thibault">Thibault</option>
-          <option value="Laurent">Laurent</option>
-        </select>
-      </div>
-      <button class="user-select" style="background:var(--text); color:var(--bg); border:none;" id="btn-start" onclick="toggleTour()">
-        ▶️ START
-      </button>
-    </div>
+    <div class="obj-counter">🎯 <span id="daily-c">0</span>/10</div>
   </header>
 
-  <div class="tour-bar" id="tour-bar">
-    <span class="chrono" id="chrono">00:00</span>
-    <button class="tour-btn" onclick="pauseTour()">⏸</button>
-    <button class="tour-btn tour-stop" onclick="endTour()">⏹</button>
+  <div class="widgets">
+    <div class="tour-container">
+      <div id="chrono-badge" class="tour-timer-badge">00:00</div>
+      <div class="tour-controls" id="tour-menu">
+        <button class="fab btn-stop" onclick="endTour()">⏹</button>
+        <button class="fab" onclick="pauseTour()">⏸</button>
+      </div>
+      <button class="fab" id="btn-tour-main" onclick="toggleTourMenu()">▶️</button>
+    </div>
+
+    <button class="fab" id="btn-gps" onclick="toggleGPS()">📍</button>
+    <button class="fab" onclick="toggleSat()">🛰️</button>
   </div>
 
-  <div class="widgets">
-    <button class="fab" id="btn-sat" onclick="toggleSat()">🛰️</button>
-    <button class="fab" id="btn-gps" onclick="centerGPS()">📍</button>
-  </div>
+  <div id="loader">Chargement...</div>
+  <div id="toast" class="toast">Action enregistrée</div>
+  <div id="sv-ov" class="sv-overlay">🌍 Ouverture Street View...</div>
 
   <div id="map"></div>
 
   <div id="sheet">
-    <div class="street-header">
-      <div>
-        <div class="st-name" id="st-name">Rue...</div>
-        <div class="st-meta" id="st-meta">Jamais faite</div>
-      </div>
+    <div class="sheet-header">
+      <div class="st-name" id="st-name">Rue...</div>
       <button class="close-sheet" onclick="closeSheet()">✕</button>
     </div>
 
-    <div style="font-size:11px; font-weight:700; color:var(--text); opacity:0.5; margin-bottom:8px">NOTE RAPIDE</div>
-    <div class="quick-tags">
-      <button class="tag" onclick="addTag('⛔ Refus')">⛔ Refus</button>
-      <button class="tag" onclick="addTag('🤝 Intéressé')">🤝 Intéressé</button>
-      <button class="tag" onclick="addTag('🏠 À Vendre')">🏠 À Vendre</button>
-      <button class="tag" onclick="addTag('🐶 Chien')">🐶 Chien</button>
+    <div class="quick-actions">
+      <button class="q-btn" onclick="startWizard('⛔ Refus')">
+        <span>⛔</span><div>Refus</div>
+      </button>
+      <button class="q-btn" onclick="startWizard('🤝 Intéressé')">
+        <span>🤝</span><div>Intéressé</div>
+      </button>
+      <button class="q-btn" onclick="startWizard('🏠 À Vendre')">
+        <span>🏠</span><div>Vente</div>
+      </button>
+      <button class="q-btn" onclick="startWizard('🐶 Chien')">
+        <span>🐶</span><div>Chien</div>
+      </button>
     </div>
 
-    <button class="btn-main" onclick="validateStreet()">📬 BOÎTAGE FAIT</button>
+    <button class="btn-main" onclick="validateBoitage()">📬 BOÎTAGE FAIT</button>
   </div>
 
-  <div id="modal-end" class="modal-overlay">
-    <div class="modal">
-      <h2>Tournée Terminée !</h2>
-      <div style="font-size:12px; color:#888">CALORIES ESTIMÉES</div>
-      <div class="stat-result" id="cal-result">0 kcal</div>
+  <div id="wizard-modal" class="modal-overlay">
+    
+    <div class="wizard-card" id="step-1">
+      <div class="wiz-title">Numéro de rue ?</div>
+      <input type="text" id="wiz-num" class="num-display" placeholder="N°" readonly>
+      <div class="keypad">
+        <button class="key" onclick="kp('1')">1</button>
+        <button class="key" onclick="kp('2')">2</button>
+        <button class="key" onclick="kp('3')">3</button>
+        <button class="key" onclick="kp('4')">4</button>
+        <button class="key" onclick="kp('5')">5</button>
+        <button class="key" onclick="kp('6')">6</button>
+        <button class="key" onclick="kp('7')">7</button>
+        <button class="key" onclick="kp('8')">8</button>
+        <button class="key" onclick="kp('9')">9</button>
+        <button class="key" style="background:#eee" onclick="kp('C')">C</button>
+        <button class="key" onclick="kp('0')">0</button>
+        <button class="key" style="background:var(--success); color:white" onclick="nextStep()">OK</button>
+      </div>
+      <button onclick="closeWizard()" style="width:100%; padding:10px; background:none; border:none; color:gray">Annuler</button>
+    </div>
+
+    <div class="wizard-card" id="step-2" style="display:none">
+      <div class="wiz-title">Fiche Contact</div>
       
-      <div style="text-align:left; margin-top:20px; font-weight:700; font-size:13px">STOCK FLYERS</div>
-      <input type="number" id="flyer-input" class="input-qty" placeholder="Quantité distibuée ?" inputmode="numeric">
+      <div class="radio-group">
+        <button class="radio-btn selected" onclick="selCiv(this, 'M')">M.</button>
+        <button class="radio-btn" onclick="selCiv(this, 'Mme')">Mme</button>
+      </div>
       
-      <button class="btn-main" onclick="saveTourData()">ENREGISTRER</button>
+      <div class="form-group"><input id="c-name" class="form-input" placeholder="Nom"></div>
+      <div class="form-group"><input id="c-tel" class="form-input" type="tel" placeholder="Téléphone"></div>
+      <div class="form-group"><input id="c-mail" class="form-input" type="email" placeholder="Email"></div>
+      <div class="form-group"><input id="c-note" class="form-input" placeholder="Note (Projet, dispo...)"></div>
+
+      <button class="btn-main" onclick="finishWizard()">ENREGISTRER</button>
+      <button onclick="closeWizard()" style="width:100%; margin-top:10px; padding:10px; background:none; border:none; color:gray">Annuler</button>
+    </div>
+
+  </div>
+
+  <div id="end-modal" class="modal-overlay">
+    <div class="wizard-card" style="text-align:center">
+      <div class="wiz-title">Fin de tournée 🎉</div>
+      <div style="font-size:30px; margin:20px 0" id="res-cal">0 kcal</div>
+      <input type="number" id="res-fly" class="form-input" placeholder="Nb Flyers distribués ?" style="text-align:center">
+      <button class="btn-main" style="margin-top:20px" onclick="saveTour()">VALIDER</button>
     </div>
   </div>
 
@@ -160,54 +231,62 @@
   <script src="https://cdn.jsdelivr.net/npm/@turf/turf@6/turf.min.js"></script>
 
   <script>
-    // --- 1. CONFIG & DATA ---
+    // --- CONFIG ---
     const CENTER_LAT = 44.9945;
     const CENTER_LNG = -0.4465;
     const SB_URL = "https://wqujtckrvdhrwknplumq.supabase.co";
     const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndxdWp0Y2tydmRocndrbnBsdW1xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjMxMjcwOTQsImV4cCI6MjA3ODcwMzA5NH0.btJD5-yD_zRJ9niEvwYEF46iB18OJo8nNXHRTbc8opE";
     const supabaseClient = supabase.createClient(SB_URL, SB_KEY);
 
-    // CONFIG UTILISATEURS (Poids pour calories + Zone pour centrage)
+    // USERS
     const USERS = {
-      "Alexis":   { w: 79, color: '#e74c3c', center: [45.005, -0.455] }, // Nord-Ouest
-      "Nicolas":  { w: 90, color: '#3498db', center: [45.005, -0.435] }, // Nord-Est
-      "Thibault": { w: 72, color: '#f1c40f', center: [44.985, -0.455] }, // Sud-Ouest
-      "Laurent":  { w: 75, color: '#9b59b6', center: [44.985, -0.435] }  // Sud-Est (Default 75kg)
+      "Alexis":   { w: 79, color: '#e74c3c', zone: [[CENTER_LAT, CENTER_LNG], [CENTER_LAT+0.05, CENTER_LNG], [CENTER_LAT+0.05, CENTER_LNG-0.05], [CENTER_LAT, CENTER_LNG-0.05]] },
+      "Nicolas":  { w: 90, color: '#3498db', zone: [[CENTER_LAT, CENTER_LNG], [CENTER_LAT+0.05, CENTER_LNG], [CENTER_LAT+0.05, CENTER_LNG+0.05], [CENTER_LAT, CENTER_LNG+0.05]] },
+      "Thibault": { w: 72, color: '#f1c40f', zone: [[CENTER_LAT, CENTER_LNG], [CENTER_LAT-0.05, CENTER_LNG], [CENTER_LAT-0.05, CENTER_LNG-0.05], [CENTER_LAT, CENTER_LNG-0.05]] },
+      "Laurent":  { w: 75, color: '#9b59b6', zone: [[CENTER_LAT, CENTER_LNG], [CENTER_LAT-0.05, CENTER_LNG], [CENTER_LAT-0.05, CENTER_LNG+0.05], [CENTER_LAT, CENTER_LNG+0.05]] }
     };
-
     const EMOJIS = { "Alexis": "👑", "Nicolas": "🚀", "Thibault": "🦁", "Laurent": "⚡" };
 
     const state = { 
-        streets: {}, nego: "Alexis", selected: null, 
-        tour: { active: false, paused: false, startTime: 0, distance: 0, lastPos: null, timerId: null },
-        satMode: false, gpsWatch: null, userMarker: null
+        streets: {}, nego: "Alexis", selected: null, daily: 0, 
+        tour: { active: false, paused: false, start: 0, dist: 0, last: null, int: null },
+        wizard: { tag: '', num: '' },
+        sat: false, gps: null, me: null
     };
 
-    // --- 2. MAP INIT ---
-    const map = L.map('map', { zoomControl: false, tap: false }).setView(USERS["Alexis"].center, 15);
-    
-    // Layers
-    const layerPlan = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', { maxZoom: 20 }).addTo(map);
-    const layerSat = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { maxZoom: 19 });
+    // --- MAP INIT ---
+    const map = L.map('map', { zoomControl: false, tap: false }).setView([CENTER_LAT, CENTER_LNG], 15);
+    const lPlan = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', { maxZoom: 20 }).addTo(map);
+    const lSat = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { maxZoom: 19 });
 
-    // --- 3. LOGIQUE METIER ---
+    // POLYGONES (SECTEURS)
+    const polyLayer = L.layerGroup().addTo(map);
+    function drawZones() {
+        polyLayer.clearLayers();
+        Object.values(USERS).forEach(u => {
+            L.polygon(u.zone, { color: u.color, weight: 1, fillOpacity: 0.08, interactive: false }).addTo(polyLayer);
+        });
+    }
+    drawZones();
 
-    // Dessin Rues
+    // --- LOGIQUE RUE ---
     function drawStreet(name, latlngs, dbData) {
-        // Statut Couleur
-        let color = "#ff4757"; let opacity = 0.6;
+        let color = "#ff3b30"; 
+        let opacity = 0.5;
+        let weight = 3;
+
         if(dbData && dbData.method === 'boitage') {
             const diff = (new Date() - new Date(dbData.passage_date)) / 8.64e7;
             if(diff <= 20) { color = "#34C759"; opacity = 0.8; }
             else color = "#FF9500";
         }
 
-        // Ligne Visuelle (Fine)
-        const vis = L.polyline(latlngs, { color: color, weight: 3, opacity: opacity, interactive: false }).addTo(map);
-        // Ligne Clic (Large)
-        const hit = L.polyline(latlngs, { weight: 22, opacity: 0 }).addTo(map);
+        // VISUEL
+        const vis = L.polyline(latlngs, { color: color, weight: weight, opacity: opacity, interactive: false }).addTo(map);
+        // CLIC
+        const hit = L.polyline(latlngs, { weight: 25, opacity: 0 }).addTo(map);
 
-        state.streets[name] = { vis, hit, dbData, latlngs };
+        state.streets[name] = { vis, hit, dbData, defColor: color, defOp: opacity };
 
         hit.on('click', (e) => {
             L.DomEvent.stopPropagation(e);
@@ -216,206 +295,262 @@
         hit.on('touchstart', (e) => L.DomEvent.stopPropagation(e));
     }
 
-    // Zoom & Ouverture Fiche
     function selectStreet(name) {
+        // Reset ancien
+        if(state.selected && state.streets[state.selected]) {
+            const old = state.streets[state.selected];
+            old.vis.setStyle({ color: old.defColor, weight: 3, opacity: old.defOp });
+        }
+        
         state.selected = name;
         const st = state.streets[name];
-        
-        // 1. Zoom Progressif (FlyTo) avec padding pour le bottom sheet
-        map.fitBounds(st.vis.getBounds(), { 
-            paddingBottomRight: [0, 300], // Laisse place au sheet
-            paddingTopLeft: [20, 20],
-            maxZoom: 18,
-            duration: 1 
-        });
 
-        // 2. Remplir Sheet
+        // Highlight BLUE
+        st.vis.setStyle({ color: '#007AFF', weight: 6, opacity: 1 });
+        st.vis.bringToFront();
+
+        // Zoom Fly
+        map.fitBounds(st.vis.getBounds(), { paddingBottomRight: [0, 200], maxZoom: 18, animate: true });
+
+        // Sheet
         document.getElementById('st-name').innerText = name;
-        if(st.dbData) {
-            document.getElementById('st-meta').innerText = `Dernier: ${new Date(st.dbData.passage_date).toLocaleDateString()}`;
-            document.getElementById('st-meta').style.color = st.vis.options.color;
-        } else {
-            document.getElementById('st-meta').innerText = "Jamais faite";
-            document.getElementById('st-meta').style.color = "#ff4757";
-        }
-
         document.getElementById('sheet').classList.add('open');
     }
 
-    // Validation Boitage
-    window.validateStreet = async () => {
+    window.closeSheet = () => {
+        if(state.selected) {
+            const st = state.streets[state.selected];
+            st.vis.setStyle({ color: st.defColor, weight: 3, opacity: st.defOp });
+            state.selected = null;
+        }
+        document.getElementById('sheet').classList.remove('open');
+    };
+
+    window.validateBoitage = async () => {
         const name = state.selected;
         if(!name) return;
         
-        state.streets[name].vis.setStyle({ color: '#34C759', opacity: 1, weight: 5 }); // Feedback
-        setTimeout(() => state.streets[name].vis.setStyle({ weight: 3 }), 400);
+        // Update Visuel Vert
+        const st = state.streets[name];
+        st.defColor = "#34C759"; st.defOp = 0.8; // Save new defaults
+        st.vis.setStyle({ color: "#34C759", weight: 3, opacity: 0.8 });
         
+        // Stats
+        state.daily++;
+        document.getElementById('daily-c').innerText = state.daily;
+        showToast("✅ Boîtage validé");
         closeSheet();
-        
+
         const today = new Date().toISOString().split('T')[0];
         await supabaseClient.from('street_passages').upsert({
             street_name: name, passage_date: today, negociateur: state.nego, method: 'boitage'
         }, { onConflict: 'street_name' });
     };
 
-    // Note Rapide (Ingénieuse)
-    window.addTag = async (tag) => {
-        const name = state.selected;
-        await supabaseClient.from('street_history').insert({
-            street_name: name, action_type: 'tag', action_data: { note: tag }, negociateur: state.nego
-        });
-        alert(`Tag "${tag}" ajouté !`);
+    // --- TUNNEL WIZARD ---
+
+    window.startWizard = (tag) => {
+        state.wizard = { tag: tag, num: '' };
+        document.getElementById('wiz-num').value = '';
+        
+        document.getElementById('step-1').style.display = 'block';
+        document.getElementById('step-2').style.display = 'none';
+        document.getElementById('wizard-modal').style.display = 'flex';
     };
 
-    window.closeSheet = () => document.getElementById('sheet').classList.remove('open');
+    window.kp = (k) => {
+        if(k === 'C') state.wizard.num = '';
+        else state.wizard.num += k;
+        document.getElementById('wiz-num').value = state.wizard.num;
+    };
 
-    // --- 4. GPS & TOURNEE & CALORIES ---
+    window.nextStep = async () => {
+        if(!state.wizard.num) return alert("Numéro requis");
+        
+        // Si c'est juste un tag simple (Chien, Refus...), on sauve direct
+        if(state.wizard.tag !== '🤝 Intéressé') {
+            await saveHistory();
+            closeWizard();
+            return;
+        }
 
-    window.toggleTour = () => {
-        if(state.tour.active) return; // Déjà actif
-        
-        // Démarrage
-        state.tour.active = true;
-        state.tour.startTime = Date.now();
-        state.tour.distance = 0;
-        state.tour.lastPos = null;
-        
-        document.getElementById('btn-start').style.display = 'none';
-        document.getElementById('tour-bar').classList.add('active');
-        
-        // Active GPS auto
-        activateGPS();
-        
-        // Chrono
-        state.tour.timerId = setInterval(() => {
-            if(state.tour.paused) return;
-            const diff = Date.now() - state.tour.startTime; // Simple chrono
-            const d = new Date(diff);
-            document.getElementById('chrono').innerText = d.toISOString().substr(11, 5);
-        }, 1000);
+        // Si Intéressé, suite formulaire
+        document.getElementById('step-1').style.display = 'none';
+        document.getElementById('step-2').style.display = 'block';
+    };
+
+    window.selCiv = (el, val) => {
+        document.querySelectorAll('.radio-btn').forEach(b => b.classList.remove('selected'));
+        el.classList.add('selected');
+        state.wizard.civ = val;
+    };
+
+    window.finishWizard = async () => {
+        state.wizard.contact = {
+            nom: document.getElementById('c-name').value,
+            tel: document.getElementById('c-tel').value,
+            mail: document.getElementById('c-mail').value,
+            note: document.getElementById('c-note').value,
+            civ: state.wizard.civ || 'M'
+        };
+        await saveHistory();
+        closeWizard();
+    };
+
+    async function saveHistory() {
+        const data = {
+            num: state.wizard.num,
+            contact: state.wizard.contact || null
+        };
+        await supabaseClient.from('street_history').insert({
+            street_name: state.selected,
+            action_type: state.wizard.tag,
+            action_data: data,
+            negociateur: state.nego
+        });
+        showToast(`Note "${state.wizard.tag}" enregistrée`);
+    }
+
+    window.closeWizard = () => document.getElementById('wizard-modal').style.display = 'none';
+
+
+    // --- TOURNEE MANAGER ---
+    
+    window.toggleTourMenu = () => {
+        if(!state.tour.active) {
+            // Start
+            state.tour.active = true;
+            state.tour.start = Date.now();
+            state.tour.dist = 0;
+            state.tour.paused = false;
+            
+            document.getElementById('btn-tour-main').innerHTML = "⏱️";
+            document.getElementById('chrono-badge').style.display = 'block';
+            activateGPS();
+            
+            state.tour.int = setInterval(() => {
+                if(state.tour.paused) return;
+                const d = new Date(Date.now() - state.tour.start);
+                document.getElementById('chrono-badge').innerText = d.toISOString().substr(11, 5);
+            }, 1000);
+        } else {
+            // Toggle Menu
+            const m = document.getElementById('tour-menu');
+            m.classList.toggle('visible');
+        }
     };
 
     window.pauseTour = () => {
         state.tour.paused = !state.tour.paused;
-        const btn = document.querySelector('#tour-bar button');
-        btn.innerText = state.tour.paused ? "▶️" : "⏸";
+        document.getElementById('chrono-badge').style.opacity = state.tour.paused ? 0.5 : 1;
+        document.getElementById('tour-menu').classList.remove('visible');
     };
 
     window.endTour = () => {
-        clearInterval(state.tour.timerId);
-        document.getElementById('modal-end').style.display = 'flex';
+        clearInterval(state.tour.int);
+        state.tour.active = false;
         
-        // Calcul Calories : (Distance km * Poids * 0.75 coeff marche active)
-        const km = state.tour.distance;
-        const weight = USERS[state.nego]?.w || 75;
-        const cals = Math.round(km * weight * 0.75); // Formule approx marche
+        const km = state.tour.dist;
+        const w = USERS[state.nego].w;
+        const cal = Math.round(km * w * 0.75);
         
-        document.getElementById('cal-result').innerText = `${cals} kcal`;
-        // Stockage temp pour save
-        state.tour.finalCals = cals;
-        state.tour.finalKm = km;
+        document.getElementById('res-cal').innerText = cal + " kcal";
+        document.getElementById('end-modal').style.display = 'flex';
     };
 
-    window.saveTourData = async () => {
-        const qty = document.getElementById('flyer-input').value || 0;
-        
+    window.saveTour = async () => {
+        const qty = document.getElementById('res-fly').value;
         await supabaseClient.from('tours').insert({
             negociateur: state.nego,
-            duration: document.getElementById('chrono').innerText,
+            duration: document.getElementById('chrono-badge').innerText,
             flyers_count: qty,
-            distance_km: state.tour.finalKm.toFixed(2),
-            calories: state.tour.finalCals
+            distance_km: state.tour.dist.toFixed(2),
+            calories: parseInt(document.getElementById('res-cal').innerText)
         });
-        
-        alert("Tournée enregistrée. Repos bien mérité !");
-        location.reload(); // Reset complet
+        location.reload();
     };
 
-    // Gestion GPS (Tracking Distance)
-    function activateGPS() {
-        if(!navigator.geolocation) return;
-        document.getElementById('btn-gps').classList.add('gps-on');
-        
-        state.gpsWatch = navigator.geolocation.watchPosition(pos => {
-            const lat = pos.coords.latitude;
-            const lng = pos.coords.longitude;
-            const ll = [lat, lng];
 
-            // Update Marker
-            if(!state.userMarker) {
-                state.userMarker = L.circleMarker(ll, {radius: 8, color: 'white', fillColor: '#007AFF', fillOpacity: 1}).addTo(map);
-                map.setView(ll, 17);
-            } else {
-                state.userMarker.setLatLng(ll);
-            }
-
-            // Calcul Distance si Tournée Active
-            if(state.tour.active && !state.tour.paused && state.tour.lastPos) {
-                const dist = turf.distance(
-                    turf.point(state.tour.lastPos), 
-                    turf.point([lng, lat]), 
-                    {units: 'kilometers'}
-                );
-                // Filtre bruit GPS (ne compte pas les sauts < 2m ou > 100m en 1s)
-                if(dist > 0.002 && dist < 0.1) {
-                    state.tour.distance += dist;
-                }
-            }
-            state.tour.lastPos = [lng, lat];
-
-        }, err => console.error(err), { enableHighAccuracy: true });
+    // --- UTILS & LOAD ---
+    function showToast(m) {
+        const t = document.getElementById('toast');
+        t.innerText = m; t.classList.add('show');
+        setTimeout(() => t.classList.remove('show'), 2000);
     }
 
-    window.centerGPS = () => {
-        if(state.gpsWatch) {
-            // Déjà actif, on coupe
-            navigator.geolocation.clearWatch(state.gpsWatch);
-            state.gpsWatch = null;
-            document.getElementById('btn-gps').classList.remove('gps-on');
-        } else {
-            activateGPS();
-        }
-    };
-
-    // --- 5. UTILS & INIT ---
-
-    window.toggleSat = () => {
-        state.satMode = !state.satMode;
-        if(state.satMode) { map.removeLayer(layerPlan); map.addLayer(layerSat); document.body.classList.add('dark'); }
-        else { map.removeLayer(layerSat); map.addLayer(layerPlan); document.body.classList.remove('dark'); }
-    };
-
-    window.toggleTheme = () => document.body.classList.toggle('dark');
-
-    // Changement Négociateur = Centrage Zone
-    document.getElementById('user-pick').addEventListener('change', (e) => {
-        state.nego = e.target.value;
-        document.getElementById('user-icon').innerText = EMOJIS[state.nego];
-        
-        // FlyTo Zone
-        const target = USERS[state.nego].center;
-        if(target) map.setView(target, 15, { animate: true, duration: 1.5 });
+    // Street View Long Press (Smart Touch)
+    let tTimer;
+    map.getContainer().addEventListener('touchstart', (e) => {
+        if(e.touches.length > 1) return;
+        tTimer = setTimeout(() => {
+            if(navigator.vibrate) navigator.vibrate(50);
+            const t = e.touches[0];
+            const pt = L.point(t.clientX, t.clientY);
+            const ll = map.containerPointToLatLng(pt);
+            
+            document.getElementById('sv-ov').style.display = 'flex';
+            setTimeout(() => {
+                 document.getElementById('sv-ov').style.display = 'none';
+                 window.open(`https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${ll.lat},${ll.lng}`, '_blank');
+            }, 100);
+        }, 600);
     });
+    map.getContainer().addEventListener('touchend', () => clearTimeout(tTimer));
+    map.getContainer().addEventListener('touchmove', () => clearTimeout(tTimer));
 
-    // Chargement Données
+
+    // Init
     async function init() {
-        // Load DB
         const { data } = await supabaseClient.from('street_passages').select('*');
         let hist = {}; if(data) data.forEach(d => hist[d.street_name] = d);
 
-        // Load OSM (Toutes les rues)
-        const query = `[out:json][timeout:25]; way["highway"~"residential|unclassified|living_street|tertiary|secondary|service|track"](44.96,-0.50,45.04,-0.40); out geom;`;
+        const q = `[out:json][timeout:25]; way["highway"~"residential|unclassified|living_street"](44.96,-0.50,45.04,-0.40); out geom;`;
+        const res = await fetch("https://overpass-api.de/api/interpreter?data=" + encodeURIComponent(q));
+        const json = await res.json();
         
-        try {
-            const res = await fetch("https://overpass-api.de/api/interpreter?data=" + encodeURIComponent(query));
-            const json = await res.json();
-            json.elements.forEach(el => {
-                if(el.tags && el.tags.name) {
-                    drawStreet(el.tags.name, el.geometry.map(p=>[p.lat,p.lon]), hist[el.tags.name]);
-                }
-            });
-        } catch(e) { console.error("Erreur OSM", e); }
+        json.elements.forEach(el => {
+            if(el.tags && el.tags.name) drawStreet(el.tags.name, el.geometry.map(p=>[p.lat,p.lon]), hist[el.tags.name]);
+        });
+        document.getElementById('loader').style.display='none';
     }
+
+    // Toggle Sat
+    window.toggleSat = () => {
+        state.sat = !state.sat;
+        if(state.sat) { map.removeLayer(lPlan); map.addLayer(lSat); document.body.classList.add('dark'); }
+        else { map.removeLayer(lSat); map.addLayer(lPlan); document.body.classList.remove('dark'); }
+    };
+
+    // Toggle GPS
+    function activateGPS() {
+        if(!navigator.geolocation) return;
+        document.getElementById('btn-gps').classList.add('gps-active');
+        
+        state.gps = navigator.geolocation.watchPosition(pos => {
+            const ll = [pos.coords.latitude, pos.coords.longitude];
+            
+            // Marker
+            if(!state.me) { state.me = L.circleMarker(ll, {radius:8,color:'white',fillColor:'#007AFF',fillOpacity:1}).addTo(map); map.setView(ll,17); }
+            else state.me.setLatLng(ll);
+
+            // Dist
+            if(state.tour.active && !state.tour.paused && state.tour.last) {
+                state.tour.dist += turf.distance(turf.point(state.tour.last), turf.point([ll[1],ll[0]]));
+            }
+            state.tour.last = [ll[1],ll[0]];
+
+        }, null, {enableHighAccuracy:true});
+    }
+
+    window.toggleGPS = () => {
+        if(state.gps) { navigator.geolocation.clearWatch(state.gps); state.gps=null; document.getElementById('btn-gps').classList.remove('gps-active'); }
+        else activateGPS();
+    };
+
+    document.getElementById('user-pick').addEventListener('change', (e) => {
+        state.nego = e.target.value;
+        document.getElementById('user-emoji').innerText = EMOJIS[state.nego];
+    });
 
     init();
   </script>
