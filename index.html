@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8" />
-  <title>Mansion V12 - Stable</title>
+  <title>Mansion V13 - Final Fix</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
   
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -90,7 +90,7 @@
 
     .btn-main { width: 100%; padding: 16px; border-radius: 18px; background: var(--success); color: white; border: none; font-weight: 800; font-size: 16px; box-shadow: 0 4px 15px rgba(52, 199, 89, 0.4); cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; }
 
-    /* WIZARD MODAL */
+    /* WIZARD & MODALS */
     .modal-overlay { position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); z-index: 5000; display:none; align-items:flex-end; justify-content:center; backdrop-filter: blur(5px); }
     .wizard-card { background: var(--bg); width: 100%; max-width: 400px; padding: 25px; border-top-left-radius: 30px; border-top-right-radius: 30px; animation: slideUp 0.3s ease-out; }
     @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
@@ -111,7 +111,6 @@
     .toast { position: absolute; top: 100px; left: 50%; transform: translateX(-50%); background: var(--primary); color: var(--bg); padding: 10px 20px; border-radius: 30px; font-weight: 700; font-size: 13px; opacity: 0; pointer-events: none; transition: 0.3s; z-index: 2000; }
     .toast.show { opacity: 1; margin-top: 10px; }
     #loader { position: absolute; bottom: 50%; left: 50%; transform: translate(-50%, 50%); background: var(--card); padding: 15px 30px; border-radius: 50px; font-weight: 800; z-index: 3000; box-shadow: var(--shadow); }
-    .sv-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 6000; display: none; align-items: center; justify-content: center; color: white; flex-direction: column; font-weight: 800; }
 
   </style>
 </head>
@@ -146,7 +145,6 @@
 
   <div id="loader">Chargement...</div>
   <div id="toast" class="toast">Action enregistrée</div>
-  <div id="sv-ov" class="sv-overlay">🌍 Ouverture Street View...</div>
 
   <div id="map"></div>
 
@@ -219,7 +217,6 @@
   <script src="https://cdn.jsdelivr.net/npm/@turf/turf@6/turf.min.js"></script>
 
   <script>
-    // --- CONFIG ---
     const CENTER_LAT = 44.9945;
     const CENTER_LNG = -0.4465;
     const SB_URL = "https://wqujtckrvdhrwknplumq.supabase.co";
@@ -227,26 +224,26 @@
     const supabaseClient = supabase.createClient(SB_URL, SB_KEY);
 
     const USERS = {
-      "Alexis":   { w: 79, color: '#e74c3c', zone: [[CENTER_LAT, CENTER_LNG], [CENTER_LAT+0.05, CENTER_LNG], [CENTER_LAT+0.05, CENTER_LNG-0.05], [CENTER_LAT, CENTER_LNG-0.05]] },
-      "Nicolas":  { w: 90, color: '#3498db', zone: [[CENTER_LAT, CENTER_LNG], [CENTER_LAT+0.05, CENTER_LNG], [CENTER_LAT+0.05, CENTER_LNG+0.05], [CENTER_LAT, CENTER_LNG+0.05]] },
-      "Thibault": { w: 72, color: '#f1c40f', zone: [[CENTER_LAT, CENTER_LNG], [CENTER_LAT-0.05, CENTER_LNG], [CENTER_LAT-0.05, CENTER_LNG-0.05], [CENTER_LAT, CENTER_LNG-0.05]] },
-      "Laurent":  { w: 75, color: '#9b59b6', zone: [[CENTER_LAT, CENTER_LNG], [CENTER_LAT-0.05, CENTER_LNG], [CENTER_LAT-0.05, CENTER_LNG+0.05], [CENTER_LAT, CENTER_LNG+0.05]] }
+      "Alexis":   { w: 79, color: '#e74c3c', center: [45.005, -0.455], zone: [[CENTER_LAT, CENTER_LNG], [CENTER_LAT+0.05, CENTER_LNG], [CENTER_LAT+0.05, CENTER_LNG-0.05], [CENTER_LAT, CENTER_LNG-0.05]] },
+      "Nicolas":  { w: 90, color: '#3498db', center: [45.005, -0.435], zone: [[CENTER_LAT, CENTER_LNG], [CENTER_LAT+0.05, CENTER_LNG], [CENTER_LAT+0.05, CENTER_LNG+0.05], [CENTER_LAT, CENTER_LNG+0.05]] },
+      "Thibault": { w: 72, color: '#f1c40f', center: [44.985, -0.455], zone: [[CENTER_LAT, CENTER_LNG], [CENTER_LAT-0.05, CENTER_LNG], [CENTER_LAT-0.05, CENTER_LNG-0.05], [CENTER_LAT, CENTER_LNG-0.05]] },
+      "Laurent":  { w: 75, color: '#9b59b6', center: [44.985, -0.435], zone: [[CENTER_LAT, CENTER_LNG], [CENTER_LAT-0.05, CENTER_LNG], [CENTER_LAT-0.05, CENTER_LNG+0.05], [CENTER_LAT, CENTER_LNG+0.05]] }
     };
     const EMOJIS = { "Alexis": "👑", "Nicolas": "🚀", "Thibault": "🦁", "Laurent": "⚡" };
     const state = { streets: {}, nego: "Alexis", selected: null, daily: 0, tour: { active: false, paused: false, start: 0, int: null, dist: 0 }, wizard: { tag: '', num: '' } };
 
-    // --- MAP INIT (FIX LAYERS) ---
-    const map = L.map('map', { zoomControl: false, tap: false }).setView([CENTER_LAT, CENTER_LNG], 15);
+    // --- MAP ---
+    const map = L.map('map', { zoomControl: false, tap: false }).setView(USERS["Alexis"].center, 15);
     
-    // CREATION DES PANES (La solution miracle pour l'ordre d'affichage)
+    // Z-INDEX PANES (LA SOLUTION RUES MANQUANTES)
     map.createPane('zonesPane'); map.getPane('zonesPane').style.zIndex = 350;
     map.createPane('streetsPane'); map.getPane('streetsPane').style.zIndex = 450;
+    map.createPane('markersPane'); map.getPane('markersPane').style.zIndex = 650;
 
     const lPlan = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', { maxZoom: 20 }).addTo(map);
     const lSat = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { maxZoom: 19 });
-
-    // DESSIN ZONES (Dans le pane arrière-plan)
     const polyLayer = L.layerGroup().addTo(map);
+
     function drawZones() {
         polyLayer.clearLayers();
         Object.values(USERS).forEach(u => {
@@ -263,17 +260,12 @@
             if(diff <= 20) { color = "#34C759"; opacity = 0.8; }
             else color = "#FF9500";
         }
-
-        // DESSIN RUE (Dans le pane premier-plan)
+        // Force l'affichage dans le pane 'streetsPane'
         const vis = L.polyline(latlngs, { color: color, weight: weight, opacity: opacity, interactive: false, pane: 'streetsPane' }).addTo(map);
         const hit = L.polyline(latlngs, { weight: 25, opacity: 0 }).addTo(map);
 
         state.streets[name] = { vis, hit, dbData, defColor: color, defOp: opacity };
-
-        hit.on('click', (e) => {
-            L.DomEvent.stopPropagation(e);
-            selectStreet(name);
-        });
+        hit.on('click', (e) => { L.DomEvent.stopPropagation(e); selectStreet(name); });
         hit.on('touchstart', (e) => L.DomEvent.stopPropagation(e));
     }
 
@@ -308,6 +300,7 @@
         state.streets[name].defColor = "#34C759";
         state.daily++; document.getElementById('daily-c').innerText = state.daily;
         closeSheet();
+        showToast("✅ Boîtage OK");
         const today = new Date().toISOString().split('T')[0];
         await supabaseClient.from('street_passages').upsert({ street_name: name, passage_date: today, negociateur: state.nego, method: 'boitage' }, { onConflict: 'street_name' });
     };
@@ -334,12 +327,10 @@
             document.getElementById('tour-menu').classList.toggle('visible');
         }
     };
-
+    
     window.pauseTour = () => {
         state.tour.paused = !state.tour.paused;
-        const badge = document.getElementById('chrono-badge');
-        badge.style.opacity = state.tour.paused ? 0.5 : 1;
-        badge.style.animation = state.tour.paused ? 'none' : 'pulseRed 2s infinite';
+        document.getElementById('chrono-badge').style.opacity = state.tour.paused ? 0.5 : 1;
         document.getElementById('tour-menu').classList.remove('visible');
     };
 
@@ -364,13 +355,13 @@
         location.reload();
     };
 
-    // --- GPS & STREET VIEW ---
+    // --- GPS ---
     function activateGPS() {
         if(!navigator.geolocation) return;
         document.getElementById('btn-gps').classList.add('gps-active');
         state.gps = navigator.geolocation.watchPosition(pos => {
             const ll = [pos.coords.latitude, pos.coords.longitude];
-            if(!state.me) { state.me = L.circleMarker(ll, {radius:8,color:'white',fillColor:'#007AFF',fillOpacity:1}).addTo(map); map.setView(ll,17); }
+            if(!state.me) { state.me = L.circleMarker(ll, {radius:8,color:'white',fillColor:'#007AFF',fillOpacity:1,pane:'markersPane'}).addTo(map); map.setView(ll,17); }
             else state.me.setLatLng(ll);
             
             if(state.tour.active && !state.tour.paused && state.tour.last) {
@@ -379,25 +370,43 @@
             state.tour.last = [ll[1],ll[0]];
         }, null, {enableHighAccuracy:true});
     }
-
     window.toggleGPS = () => {
         if(state.gps) { navigator.geolocation.clearWatch(state.gps); state.gps=null; document.getElementById('btn-gps').classList.remove('gps-active'); }
         else activateGPS();
     };
 
-    let tTimer;
-    map.getContainer().addEventListener('touchstart', (e) => {
+    // --- STREET VIEW (Long Press) ---
+    let lpTimer, lpMarker;
+    const mapContainer = document.getElementById('map');
+    
+    mapContainer.addEventListener('touchstart', (e) => {
         if(e.touches.length > 1) return;
-        tTimer = setTimeout(() => {
+        const t = e.touches[0];
+        
+        lpTimer = setTimeout(() => {
             if(navigator.vibrate) navigator.vibrate(50);
-            const t = e.touches[0];
             const pt = L.point(t.clientX, t.clientY);
             const ll = map.containerPointToLatLng(pt);
-            document.getElementById('sv-ov').style.display = 'flex';
-            setTimeout(() => { document.getElementById('sv-ov').style.display = 'none'; window.open(`https://www.google.com/maps/search/?api=1&query=$${ll.lat},${ll.lng}`, '_blank'); }, 100);
-        }, 600);
+            
+            // Marker temporaire pour dire "Lâche ici"
+            if(lpMarker) map.removeLayer(lpMarker);
+            lpMarker = L.circleMarker(ll, {radius:10, color:'white', fillColor:'#ff3b30', fillOpacity:1, pane:'markersPane'}).addTo(map);
+            showToast("Relâchez pour Street View 🌍");
+            
+            // Attente du relâchement
+            const onEnd = () => {
+                window.open(`https://www.google.com/maps/search/?api=1&query=$${ll.lat},${ll.lng}`, '_blank');
+                map.removeLayer(lpMarker);
+                mapContainer.removeEventListener('touchend', onEnd);
+            };
+            mapContainer.addEventListener('touchend', onEnd, {once:true});
+            
+        }, 800);
     });
-    map.getContainer().addEventListener('touchend', () => clearTimeout(tTimer));
+
+    mapContainer.addEventListener('touchmove', () => { clearTimeout(lpTimer); if(lpMarker) map.removeLayer(lpMarker); });
+    mapContainer.addEventListener('touchend', () => { clearTimeout(lpTimer); });
+
 
     // --- WIZARD ---
     window.startWizard = (tag) => {
@@ -423,22 +432,35 @@
     };
     async function saveHistory() {
         await supabaseClient.from('street_history').insert({ street_name: state.selected, action_type: state.wizard.tag, action_data: { num: state.wizard.num, contact: state.wizard.contact }, negociateur: state.nego });
-        alert(`Note ${state.wizard.tag} sauvée`);
+        showToast("Note enregistrée !");
     }
     window.closeWizard = () => document.getElementById('wizard-modal').style.display='none';
+    function showToast(m) { const t=document.getElementById('toast'); t.innerText=m; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2000); }
+
 
     // --- INIT ---
     async function init() {
         const { data } = await supabaseClient.from('street_passages').select('*');
         let hist = {}; if(data) data.forEach(d => hist[d.street_name] = d);
-        const q = `[out:json][timeout:25]; way["highway"~"residential|unclassified|living_street"](44.96,-0.50,45.04,-0.40); out geom;`;
-        const res = await fetch("https://overpass-api.de/api/interpreter?data=" + encodeURIComponent(q));
-        const json = await res.json();
-        json.elements.forEach(el => { if(el.tags && el.tags.name) drawStreet(el.tags.name, el.geometry.map(p=>[p.lat,p.lon]), hist[el.tags.name]); });
+        
+        // REQUETE OSM LARGE (Route, chemin, residentiel...)
+        const q = `[out:json][timeout:90]; way["highway"~"residential|unclassified|living_street|tertiary|secondary|primary|service|track|pedestrian"](44.96,-0.50,45.04,-0.40); out geom;`;
+        
+        try {
+            const res = await fetch("https://overpass-api.de/api/interpreter?data=" + encodeURIComponent(q));
+            const json = await res.json();
+            json.elements.forEach(el => { if(el.tags && el.tags.name) drawStreet(el.tags.name, el.geometry.map(p=>[p.lat,p.lon]), hist[el.tags.name]); });
+        } catch(e) { console.error(e); }
         document.getElementById('loader').style.display='none';
     }
+
+    // UTILS
     window.toggleSat = () => { state.sat=!state.sat; if(state.sat) { map.removeLayer(lPlan); map.addLayer(lSat); document.body.classList.add('dark'); } else { map.removeLayer(lSat); map.addLayer(lPlan); document.body.classList.remove('dark'); } };
-    document.getElementById('user-pick').addEventListener('change', (e) => { state.nego = e.target.value; document.getElementById('user-emoji').innerText = EMOJIS[state.nego]; });
+    document.getElementById('user-pick').addEventListener('change', (e) => { 
+        state.nego = e.target.value; 
+        document.getElementById('user-emoji').innerText = EMOJIS[state.nego];
+        map.flyTo(USERS[state.nego].center, 15);
+    });
     
     init();
   </script>
