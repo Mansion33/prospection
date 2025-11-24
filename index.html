@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8" />
-  <title>Mansion V24 - Unlocked</title>
+  <title>Mansion V25 - Production</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
   
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -15,7 +15,7 @@
       --shadow: 0 4px 20px rgba(0,0,0,0.15);
     }
     
-    /* RESET TACTILE TOTAL */
+    /* RESET TOTAL */
     * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; user-select: none; -webkit-user-select: none; touch-action: none; }
     input, textarea { user-select: text; -webkit-user-select: text; touch-action: auto; }
 
@@ -40,11 +40,11 @@
     .widgets { position: absolute; right: 15px; top: 80px; z-index: 900; display: flex; flex-direction: column; gap: 15px; align-items: flex-end; }
     .fab { width: 44px; height: 44px; border-radius: 50%; background: var(--card); color: var(--text); border: none; box-shadow: var(--shadow); font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
     
-    /* Etats Actifs */
+    /* ETATS ACTIFS */
     .gps-active { color: var(--accent); border: 2px solid var(--accent); }
     .sat-active { border: 2px solid var(--success); color: var(--success); }
-    .cad-active { background: #FF9500; color: white; border: none; }
-    .dvf-active { background: #5856D6; color: white; border: none; }
+    .cad-active { background: #FF9500; color: white; }
+    .dvf-active { background: #5856D6; color: white; }
 
     /* TOUR MENU */
     .tour-container { display: flex; flex-direction: column; gap: 10px; align-items: flex-end; }
@@ -83,26 +83,32 @@
     .radio-btn { flex: 1; padding: 10px; border-radius: 10px; border: 1px solid #ccc; background: transparent; font-weight: 600; cursor: pointer; }
     .radio-btn.selected { background: var(--text); color: var(--bg); border-color: var(--text); }
 
-    /* STREET VIEW TARGET */
-    #touch-ring { position: absolute; width: 80px; height: 80px; border-radius: 50%; border: 4px solid rgba(255,255,255,0.5); transform: translate(-50%, -50%); pointer-events: none; z-index: 9999; display: none; }
-    #touch-ring .fill { width: 100%; height: 100%; background: rgba(255,255,255,0.3); border-radius: 50%; transform: scale(0); transition: transform 0.8s linear; }
-    #touch-ring.active { display: block; }
-    #touch-ring.active .fill { transform: scale(1); }
-    #touch-ring.success { border-color: #34C759; }
-    #touch-ring.success .fill { background: rgba(52, 199, 89, 0.5); transition: none; transform: scale(1); }
+    /* NOUVEAU VISEUR STREET VIEW (PIN) */
+    #touch-pin {
+        position: absolute; width: 50px; height: 50px; 
+        background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23FF3B30"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>');
+        background-size: contain; background-repeat: no-repeat;
+        transform: translate(-50%, -100%); pointer-events: none; z-index: 9999; 
+        display: none; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.5));
+    }
+    /* Effet d'ombre au sol */
+    #touch-shadow {
+        position: absolute; width: 10px; height: 4px; background: rgba(0,0,0,0.3);
+        border-radius: 50%; transform: translate(-50%, 0);
+        pointer-events: none; z-index: 9998; display: none;
+    }
 
-    /* DVF MARKER */
+    /* DVF MARKER (Visible par dessus tout) */
     .dvf-marker { 
         background: #5856D6; color: white; border-radius: 8px; padding: 4px 8px; 
         font-size: 11px; font-weight: 800; white-space: nowrap; border: 2px solid white; 
-        box-shadow: 0 2px 6px rgba(0,0,0,0.3); text-align:center; width: auto !important; height: auto !important;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.4); text-align:center; width: auto !important; height: auto !important;
+        z-index: 1000 !important;
     }
 
     /* UTILS */
     .toast { position: absolute; top: 100px; left: 50%; transform: translateX(-50%); background: var(--primary); color: var(--bg); padding: 10px 20px; border-radius: 30px; font-weight: 700; font-size: 13px; opacity: 0; pointer-events: none; transition: 0.3s; z-index: 2000; }
     .toast.show { opacity: 1; margin-top: 10px; }
-    
-    /* LOADER AVEC TIMER DE SECURITE */
     #loader { position: absolute; bottom: 50%; left: 50%; transform: translate(-50%, 50%); background: var(--card); padding: 15px 30px; border-radius: 50px; font-weight: 800; z-index: 3000; box-shadow: var(--shadow); }
 
   </style>
@@ -141,7 +147,8 @@
   <div id="loader">Chargement...</div>
   <div id="toast" class="toast">Action enregistrée</div>
   
-  <div id="touch-ring"><div class="fill"></div></div>
+  <div id="touch-pin"></div>
+  <div id="touch-shadow"></div>
 
   <div id="map"></div>
 
@@ -191,6 +198,7 @@
         <textarea id="c-note" class="form-input" placeholder="📝 Note importante..."></textarea>
       </div>
       <button class="btn-main" onclick="finishWizard()">ENREGISTRER</button>
+      <button onclick="closeWizard()" style="width:100%; margin-top:10px; background:none; border:none; color:gray">Fermer</button>
     </div>
   </div>
 
@@ -226,21 +234,21 @@
     // --- MAP INIT ---
     const map = L.map('map', { zoomControl: false, tap: false }).setView(USERS["Alexis"].center, 15);
     
-    // PANE MANAGEMENT
+    // Z-INDEX PANES
     map.createPane('zonesPane'); map.getPane('zonesPane').style.zIndex = 350;
-    map.createPane('cadastrePane'); map.getPane('cadastrePane').style.zIndex = 380; 
+    map.createPane('cadastrePane'); map.getPane('cadastrePane').style.zIndex = 400;
     map.createPane('streetsPane'); map.getPane('streetsPane').style.zIndex = 450;
     map.createPane('markersPane'); map.getPane('markersPane').style.zIndex = 650;
 
     const lPlan = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', { maxZoom: 20 }).addTo(map);
     const lSat = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { maxZoom: 19 });
     
-    // CADASTRE IGN
-    state.layers.cadastre = L.tileLayer.wms('https://data.geopf.fr/wms-r/wms', {
-        layers: 'CADASTRALPARCELS.PARCELS', format: 'image/png', transparent: true, pane: 'cadastrePane', opacity: 0.7
+    // LAYER CADASTRE (SERVEUR ESRI - PLUS STABLE QUE IGN)
+    state.layers.cadastre = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/France/Cadastre/MapServer/tile/{z}/{y}/{x}', {
+        pane: 'cadastrePane', opacity: 0.6
     });
     
-    state.layers.dvf = L.layerGroup(); // DVF
+    state.layers.dvf = L.layerGroup();
 
     const polyLayer = L.layerGroup().addTo(map);
     function drawZones() {
@@ -322,7 +330,7 @@
         state.layers.dvf.clearLayers();
         const center = map.getCenter();
         try {
-            const res = await fetch(`https://api-dvf.etalab.gouv.fr/api/mutations3/geocodage?lat=${center.lat}&lon=${center.lng}&dist=500`);
+            const res = await fetch(`https://api-dvf.etalab.gouv.fr/api/mutations3/geocodage?lat=${center.lat}&lon=${center.lng}&dist=300`);
             const json = await res.json();
             if(json.features && json.features.length > 0) {
                 json.features.forEach(f => {
@@ -339,43 +347,57 @@
         } catch(e) { console.error(e); showToast("Erreur DVF"); }
     }
 
-    // --- STREET VIEW (TACTILE) ---
+    // --- STREET VIEW (PIN DRAG & DROP) ---
     const mapEl = document.getElementById('map');
-    const ring = document.getElementById('touch-ring');
-    let pressTimer = null;
-    let isReady = false;
+    const pin = document.getElementById('touch-pin');
+    const shadow = document.getElementById('touch-shadow');
+    let isDragging = false;
 
+    // Bloquer menu contextuel
     window.oncontextmenu = (e) => { e.preventDefault(); return false; };
 
     mapEl.addEventListener('touchstart', (e) => {
-        if(e.touches.length > 1) return; 
+        if(e.touches.length > 1) return; // Ignore zoom
         const t = e.touches[0];
-        const x = t.clientX; const y = t.clientY;
-        isReady = false;
         
-        ring.style.left = x + 'px'; ring.style.top = (y - 40) + 'px';
-        ring.classList.remove('success'); ring.classList.add('active');
-
-        pressTimer = setTimeout(() => {
-            isReady = true; if(navigator.vibrate) navigator.vibrate(50);
-            ring.classList.add('success');
-        }, 800);
+        // Afficher Pin
+        isDragging = true;
+        updatePinPosition(t.clientX, t.clientY);
+        pin.style.display = 'block';
+        shadow.style.display = 'block';
+        
+        if(navigator.vibrate) navigator.vibrate(50);
     }, {passive: false});
 
-    mapEl.addEventListener('touchmove', () => { clearTimeout(pressTimer); ring.classList.remove('active'); isReady = false; }, {passive: false});
+    mapEl.addEventListener('touchmove', (e) => {
+        if(!isDragging) return;
+        const t = e.touches[0];
+        updatePinPosition(t.clientX, t.clientY);
+        // Prevent map dragging
+        e.preventDefault();
+    }, {passive: false});
 
     mapEl.addEventListener('touchend', (e) => {
-        clearTimeout(pressTimer); ring.classList.remove('active');
-        if(isReady) {
-            const t = e.changedTouches[0];
-            const pt = L.point(t.clientX, t.clientY);
-            const ll = map.containerPointToLatLng(pt);
-            window.open(`https://www.google.com/maps/search/?api=1&query=$${ll.lat},${ll.lng}`, '_blank');
-        }
-        isReady = false;
+        if(!isDragging) return;
+        isDragging = false;
+        pin.style.display = 'none';
+        shadow.style.display = 'none';
+        
+        // Open SV
+        const t = e.changedTouches[0];
+        const pt = L.point(t.clientX, t.clientY);
+        const ll = map.containerPointToLatLng(pt);
+        window.open(`https://www.google.com/maps/search/?api=1&query=$${ll.lat},${ll.lng}`, '_blank');
     });
 
-    // --- WIZARD ---
+    function updatePinPosition(x, y) {
+        pin.style.left = x + 'px';
+        pin.style.top = (y - 60) + 'px'; // Pin au dessus du doigt
+        shadow.style.left = x + 'px';
+        shadow.style.top = y + 'px';
+    }
+
+    // --- WIZARD & NOTES ---
     window.startWizard = (tag) => {
         state.wizard = { tag, num: '' };
         document.getElementById('wiz-num').value = '';
@@ -387,30 +409,56 @@
     
     window.nextStep = () => {
         if(!state.wizard.num) return alert("Numéro requis");
+        // ALL GO TO STEP 2
         document.getElementById('step-1').style.display='none';
         document.getElementById('step-2').style.display='block';
     };
     window.selCiv = (el,v) => { document.querySelectorAll('.radio-btn').forEach(b=>b.classList.remove('selected')); el.classList.add('selected'); state.wizard.civ=v; };
     
     window.finishWizard = async () => {
+        const noteContent = document.getElementById('c-note').value;
+        
         state.wizard.contact = { 
             nom: document.getElementById('c-name').value, 
             tel: document.getElementById('c-tel').value, 
             mail: document.getElementById('c-mail').value, 
-            note: document.getElementById('c-note').value, 
+            note: noteContent, // SAVE NOTE
             civ: state.wizard.civ||'M' 
         };
-        await saveHistory(); closeWizard();
+        
+        await saveHistory(); 
+        
+        // CLOSE & RESET
+        document.getElementById('c-note').value = "";
+        closeWizard();
     };
     
     async function saveHistory() {
-        await supabaseClient.from('street_history').insert({ street_name: state.selected, action_type: state.wizard.tag, action_data: { num: state.wizard.num, contact: state.wizard.contact }, negociateur: state.nego });
-        showToast("Note enregistrée !");
+        await supabaseClient.from('street_history').insert({ 
+            street_name: state.selected, 
+            action_type: state.wizard.tag, 
+            action_data: { num: state.wizard.num, contact: state.wizard.contact }, 
+            negociateur: state.nego 
+        });
+        showToast("✅ Note sauvegardée !");
     }
     window.closeWizard = () => document.getElementById('wizard-modal').style.display='none';
     function showToast(m) { const t=document.getElementById('toast'); t.innerText=m; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2000); }
 
     // --- TOURNEE & GPS ---
+    function activateGPS() {
+        if(!navigator.geolocation) return;
+        document.getElementById('btn-gps').classList.add('gps-active');
+        state.gps = navigator.geolocation.watchPosition(pos => {
+            const ll = [pos.coords.latitude, pos.coords.longitude];
+            if(!state.me) { state.me = L.circleMarker(ll, {radius:8,color:'white',fillColor:'#007AFF',fillOpacity:1}).addTo(map); map.setView(ll,17); }
+            else state.me.setLatLng(ll);
+            if(state.tour.active && !state.tour.paused && state.tour.last) { state.tour.dist += turf.distance(turf.point(state.tour.last), turf.point([ll[1],ll[0]])); }
+            state.tour.last = [ll[1],ll[0]];
+        }, null, {enableHighAccuracy:true});
+    }
+    window.toggleGPS = () => { if(state.gps) { navigator.geolocation.clearWatch(state.gps); state.gps=null; document.getElementById('btn-gps').classList.remove('gps-active'); } else activateGPS(); };
+
     window.toggleTourMenu = () => {
         if(!state.tour.active) {
             state.tour.active = true; state.tour.paused = false; state.tour.start = Date.now();
@@ -430,22 +478,9 @@
     window.endTour = () => { clearInterval(state.tour.int); state.tour.active = false; const km = state.tour.dist; const cal = Math.round(km * USERS[state.nego].w * 0.75); document.getElementById('res-cal').innerText = cal + " kcal"; document.getElementById('end-modal').style.display = 'flex'; };
     window.saveTour = async () => { const qty = document.getElementById('res-fly').value; await supabaseClient.from('tours').insert({ negociateur: state.nego, duration: document.getElementById('chrono-badge').innerText, flyers_count: qty, distance_km: state.tour.dist.toFixed(2), calories: parseInt(document.getElementById('res-cal').innerText) }); location.reload(); };
 
-    function activateGPS() {
-        if(!navigator.geolocation) return;
-        document.getElementById('btn-gps').classList.add('gps-active');
-        state.gps = navigator.geolocation.watchPosition(pos => {
-            const ll = [pos.coords.latitude, pos.coords.longitude];
-            if(!state.me) { state.me = L.circleMarker(ll, {radius:8,color:'white',fillColor:'#007AFF',fillOpacity:1}).addTo(map); map.setView(ll,17); }
-            else state.me.setLatLng(ll);
-            if(state.tour.active && !state.tour.paused && state.tour.last) { state.tour.dist += turf.distance(turf.point(state.tour.last), turf.point([ll[1],ll[0]])); }
-            state.tour.last = [ll[1],ll[0]];
-        }, null, {enableHighAccuracy:true});
-    }
-    window.toggleGPS = () => { if(state.gps) { navigator.geolocation.clearWatch(state.gps); state.gps=null; document.getElementById('btn-gps').classList.remove('gps-active'); } else activateGPS(); };
-
     // --- INIT ---
     async function init() {
-        // Force Hide Loader Safe
+        // TIMEOUT DE SECURITE
         setTimeout(() => document.getElementById('loader').style.display='none', 3000);
 
         const { data } = await supabaseClient.from('street_passages').select('*');
