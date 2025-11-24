@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8" />
-  <title>Mansion V20 - Terrain Ops</title>
+  <title>Mansion V21 - Stable & Complete</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
   
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -15,15 +15,17 @@
       --shadow: 0 4px 20px rgba(0,0,0,0.15);
     }
     
+    /* RESET TACTILE GLOBAL */
     * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; user-select: none; -webkit-user-select: none; touch-action: none; }
     input, textarea { user-select: text; -webkit-user-select: text; touch-action: auto; }
 
     body { margin: 0; font-family: 'Plus Jakarta Sans', sans-serif; background: var(--bg); overflow: hidden; color: var(--text); }
 
+    /* MAP & PANES */
     #map { width: 100vw; height: 100vh; position: fixed; top: 0; left: 0; z-index: 1; }
-    /* Filtres Dark Mode (Désactivés en mode Sat) */
-    body.dark #map { filter: invert(1) hue-rotate(180deg) brightness(0.6) contrast(1.1); }
     body.sat-mode #map { filter: none !important; }
+    body:not(.sat-mode) #map { filter: invert(1) hue-rotate(180deg) brightness(0.6) contrast(1.1); } /* Dark mode par défaut sur plan */
+    body:not(.sat-mode).light-theme #map { filter: none; }
 
     /* HEADER */
     header {
@@ -37,15 +39,14 @@
     .obj-counter { font-weight: 800; font-size: 14px; }
 
     /* WIDGETS */
-    .widgets { position: absolute; right: 15px; top: 80px; z-index: 900; display: flex; flex-direction: column; gap: 12px; align-items: flex-end; }
+    .widgets { position: absolute; right: 15px; top: 80px; z-index: 900; display: flex; flex-direction: column; gap: 15px; align-items: flex-end; }
     .fab { width: 44px; height: 44px; border-radius: 50%; background: var(--card); color: var(--text); border: none; box-shadow: var(--shadow); font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center; position: relative; }
-    .fab:active { transform: scale(0.92); }
     
-    /* États Actifs */
+    /* Etats Actifs */
     .gps-active { color: var(--accent); border: 2px solid var(--accent); }
     .sat-active { border: 2px solid var(--success); color: var(--success); }
-    .cad-active { background: #FF9500; color: white; } /* Cadastre */
-    .dvf-active { background: #5856D6; color: white; } /* DVF */
+    .cad-active { background: #FF9500; color: white; }
+    .dvf-active { background: #5856D6; color: white; }
 
     /* TOUR MENU */
     .tour-container { display: flex; flex-direction: column; gap: 10px; align-items: flex-end; }
@@ -65,8 +66,6 @@
     /* QUICK ACTIONS */
     .quick-actions { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 15px; }
     .q-btn { display: flex; flex-direction: column; align-items: center; gap: 5px; background: rgba(120,120,128,0.05); border: 1px solid rgba(120,120,128,0.1); border-radius: 12px; padding: 12px 5px; cursor: pointer; transition: 0.2s; }
-    .q-btn span { font-size: 20px; }
-    .q-btn div { font-size: 10px; font-weight: 700; text-transform: uppercase; }
     .q-btn:active { background: var(--text); color: var(--bg); }
     .btn-main { width: 100%; padding: 16px; border-radius: 18px; background: var(--success); color: white; border: none; font-weight: 800; font-size: 16px; box-shadow: 0 4px 15px rgba(52, 199, 89, 0.4); cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; }
 
@@ -79,19 +78,14 @@
     .key { background: var(--card); padding: 15px; border-radius: 12px; border: none; font-size: 20px; font-weight: 700; box-shadow: 0 2px 5px rgba(0,0,0,0.05); cursor: pointer; }
     .num-display { width: 100%; padding: 15px; font-size: 24px; text-align: center; font-weight: 800; background: rgba(0,0,0,0.05); border-radius: 12px; margin-bottom: 15px; border: none; }
 
-    .form-group { margin-bottom: 10px; position: relative; }
+    .form-group { margin-bottom: 10px; }
     .form-input { width: 100%; padding: 12px; border-radius: 12px; border: 1px solid rgba(120,120,128,0.2); font-size: 16px; background: var(--card); }
     textarea.form-input { min-height: 80px; font-family: inherit; resize: none; }
-    
-    /* Voice Button */
-    .voice-btn { position: absolute; right: 10px; top: 10px; background: var(--text); color: var(--bg); border: none; width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; }
-    .voice-active { background: #FF3B30; animation: pulseRed 1s infinite; }
-
     .radio-group { display: flex; gap: 10px; margin-bottom: 15px; }
     .radio-btn { flex: 1; padding: 10px; border-radius: 10px; border: 1px solid #ccc; background: transparent; font-weight: 600; cursor: pointer; }
     .radio-btn.selected { background: var(--text); color: var(--bg); border-color: var(--text); }
 
-    /* STREET VIEW TARGET */
+    /* STREET VIEW TARGET (RE-INTEGRATED) */
     #touch-ring { position: absolute; width: 80px; height: 80px; border-radius: 50%; border: 4px solid rgba(255,255,255,0.5); transform: translate(-50%, -50%); pointer-events: none; z-index: 9999; display: none; }
     #touch-ring .fill { width: 100%; height: 100%; background: rgba(255,255,255,0.3); border-radius: 50%; transform: scale(0); transition: transform 0.8s linear; }
     #touch-ring.active { display: block; }
@@ -99,16 +93,14 @@
     #touch-ring.success { border-color: #34C759; }
     #touch-ring.success .fill { background: rgba(52, 199, 89, 0.5); transition: none; transform: scale(1); }
 
+    /* DVF MARKER */
+    .dvf-marker { background: #5856D6; color: white; border-radius: 6px; padding: 2px 5px; font-size: 10px; font-weight: 800; white-space: nowrap; border: 1px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.2); text-align:center; width: auto !important; height: auto !important; }
+
     /* UTILS */
     .toast { position: absolute; top: 100px; left: 50%; transform: translateX(-50%); background: var(--primary); color: var(--bg); padding: 10px 20px; border-radius: 30px; font-weight: 700; font-size: 13px; opacity: 0; pointer-events: none; transition: 0.3s; z-index: 2000; }
     .toast.show { opacity: 1; margin-top: 10px; }
     #loader { position: absolute; bottom: 50%; left: 50%; transform: translate(-50%, 50%); background: var(--card); padding: 15px 30px; border-radius: 50px; font-weight: 800; z-index: 3000; box-shadow: var(--shadow); }
 
-    /* DVF MARKER */
-    .dvf-marker { 
-        background: #5856D6; color: white; border-radius: 6px; padding: 2px 5px; 
-        font-size: 10px; font-weight: 800; white-space: nowrap; border: 1px solid white;
-    }
   </style>
 </head>
 <body>
@@ -138,12 +130,13 @@
 
     <button class="fab" id="btn-cadastre" onclick="toggleCadastre()">📐</button>
     <button class="fab" id="btn-dvf" onclick="toggleDVF()">💰</button>
-    <button class="fab" id="btn-sat" onclick="toggleSat()">🛰️</button>
     <button class="fab" id="btn-gps" onclick="toggleGPS()">📍</button>
+    <button class="fab" id="btn-sat" onclick="toggleSat()">🛰️</button>
   </div>
 
   <div id="loader">Chargement...</div>
   <div id="toast" class="toast">Action enregistrée</div>
+  
   <div id="touch-ring"><div class="fill"></div></div>
 
   <div id="map"></div>
@@ -190,12 +183,7 @@
       </div>
       <div class="form-group"><input id="c-name" class="form-input" placeholder="Nom"></div>
       <div class="form-group"><input id="c-tel" class="form-input" type="tel" placeholder="Téléphone"></div>
-      
-      <div class="form-group">
-        <textarea id="c-note" class="form-input" placeholder="📝 Note importante..."></textarea>
-        <button class="voice-btn" onclick="startDictation()">🎙️</button>
-      </div>
-      
+      <div class="form-group"><textarea id="c-note" class="form-input" placeholder="📝 Note importante..."></textarea></div>
       <button class="btn-main" onclick="finishWizard()">ENREGISTRER</button>
     </div>
   </div>
@@ -232,25 +220,21 @@
     // --- MAP INIT ---
     const map = L.map('map', { zoomControl: false, tap: false }).setView(USERS["Alexis"].center, 15);
     
-    // PANES POUR SUPERPOSITION PARFAITE
+    // PANE MANAGEMENT (Couches)
     map.createPane('zonesPane'); map.getPane('zonesPane').style.zIndex = 350;
-    map.createPane('cadastrePane'); map.getPane('cadastrePane').style.zIndex = 400; // Cadastre sous les rues
+    map.createPane('cadastrePane'); map.getPane('cadastrePane').style.zIndex = 380; // CADASTRE
     map.createPane('streetsPane'); map.getPane('streetsPane').style.zIndex = 450;
     map.createPane('markersPane'); map.getPane('markersPane').style.zIndex = 650;
 
     const lPlan = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', { maxZoom: 20 }).addTo(map);
     const lSat = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { maxZoom: 19 });
     
-    // LAYER CADASTRE (IGN GEOPLATEFORME) - WMS Standard
+    // LAYER CADASTRE (IGN)
     state.layers.cadastre = L.tileLayer.wms('https://data.geopf.fr/wms-r/wms', {
-        layers: 'CADASTRALPARCELS.PARCELS',
-        format: 'image/png',
-        transparent: true,
-        pane: 'cadastrePane',
-        opacity: 0.8
+        layers: 'CADASTRALPARCELS.PARCELS', format: 'image/png', transparent: true, pane: 'cadastrePane', opacity: 0.7
     });
-
-    // LAYER DVF (Markers)
+    
+    // LAYER DVF
     state.layers.dvf = L.layerGroup();
 
     const polyLayer = L.layerGroup().addTo(map);
@@ -262,88 +246,7 @@
     }
     drawZones();
 
-    // --- GESTION TERRAIN (NOUVEAU) ---
-
-    // 1. Toggle Cadastre
-    window.toggleCadastre = () => {
-        const btn = document.getElementById('btn-cadastre');
-        if(map.hasLayer(state.layers.cadastre)) {
-            map.removeLayer(state.layers.cadastre);
-            btn.classList.remove('cad-active');
-        } else {
-            map.addLayer(state.layers.cadastre);
-            btn.classList.add('cad-active');
-            showToast("📐 Cadastre activé");
-        }
-    };
-
-    // 2. Toggle DVF (Valeurs Foncières)
-    window.toggleDVF = async () => {
-        const btn = document.getElementById('btn-dvf');
-        if(map.hasLayer(state.layers.dvf)) {
-            map.removeLayer(state.layers.dvf);
-            btn.classList.remove('dvf-active');
-        } else {
-            btn.classList.add('dvf-active');
-            showToast("💰 Chargement Ventes...");
-            await loadDVFData();
-            map.addLayer(state.layers.dvf);
-        }
-    };
-
-    async function loadDVFData() {
-        state.layers.dvf.clearLayers();
-        const center = map.getCenter();
-        // API Etalab : Ventes 500m autour
-        const url = `https://api-dvf.etalab.gouv.fr/api/mutations3/geocodage?lat=${center.lat}&lon=${center.lng}&dist=500`;
-        try {
-            const res = await fetch(url);
-            const json = await res.json();
-            if(json.features) {
-                json.features.forEach(f => {
-                    const p = f.properties;
-                    if(!p.valeur_fonciere) return;
-                    const prix = Math.round(p.valeur_fonciere / 1000) + "k€";
-                    const date = new Date(p.date_mutation).toLocaleDateString();
-                    
-                    const icon = L.divIcon({
-                        className: 'dvf-marker', 
-                        html: prix,
-                        iconSize: [null, null]
-                    });
-                    
-                    const m = L.marker([f.geometry.coordinates[1], f.geometry.coordinates[0]], {icon: icon})
-                        .bindPopup(`<b>${prix}</b><br>${date}<br>Surface: ${p.surface_reelle_bati || '?'} m²`);
-                    state.layers.dvf.addLayer(m);
-                });
-                showToast(`${json.features.length} ventes trouvées`);
-            }
-        } catch(e) { console.error(e); }
-    }
-
-    // 3. Dictée Vocale
-    window.startDictation = () => {
-        if (!('webkitSpeechRecognition' in window)) return alert("Fonction non supportée sur ce navigateur");
-        
-        const btn = document.querySelector('.voice-btn');
-        btn.classList.add('voice-active');
-        
-        const recognition = new webkitSpeechRecognition();
-        recognition.lang = "fr-FR";
-        recognition.start();
-
-        recognition.onresult = (event) => {
-            const text = event.results[0][0].transcript;
-            const note = document.getElementById('c-note');
-            note.value += (note.value ? " " : "") + text;
-            btn.classList.remove('voice-active');
-        };
-        recognition.onerror = () => btn.classList.remove('voice-active');
-        recognition.onend = () => btn.classList.remove('voice-active');
-    };
-
-
-    // --- DRAW STREETS ---
+    // --- STREET DRAW ---
     function drawStreet(name, latlngs, dbData) {
         let color = "#ff3b30"; let opacity = 0.5; let weight = 3;
         if(dbData && dbData.method === 'boitage') {
@@ -392,13 +295,49 @@
         await supabaseClient.from('street_passages').upsert({ street_name: name, passage_date: today, negociateur: state.nego, method: 'boitage' }, { onConflict: 'street_name' });
     };
 
-    // --- STREET VIEW (TACTILE NATIVE) ---
+    // --- TOOLS (CADASTRE / DVF) ---
+    window.toggleCadastre = () => {
+        const btn = document.getElementById('btn-cadastre');
+        if(map.hasLayer(state.layers.cadastre)) { map.removeLayer(state.layers.cadastre); btn.classList.remove('cad-active'); }
+        else { map.addLayer(state.layers.cadastre); btn.classList.add('cad-active'); showToast("📐 Cadastre activé"); }
+    };
+
+    window.toggleDVF = async () => {
+        const btn = document.getElementById('btn-dvf');
+        if(map.hasLayer(state.layers.dvf)) { map.removeLayer(state.layers.dvf); btn.classList.remove('dvf-active'); }
+        else { 
+            btn.classList.add('dvf-active'); 
+            showToast("💰 Chargement Ventes...");
+            await loadDVFData();
+            map.addLayer(state.layers.dvf);
+        }
+    };
+
+    async function loadDVFData() {
+        state.layers.dvf.clearLayers();
+        const center = map.getCenter();
+        try {
+            const res = await fetch(`https://api-dvf.etalab.gouv.fr/api/mutations3/geocodage?lat=${center.lat}&lon=${center.lng}&dist=500`);
+            const json = await res.json();
+            if(json.features) {
+                json.features.forEach(f => {
+                    const p = f.properties;
+                    if(!p.valeur_fonciere) return;
+                    const prix = Math.round(p.valeur_fonciere/1000) + "k";
+                    const icon = L.divIcon({ className: 'dvf-marker', html: prix, iconSize: [null,null] });
+                    L.marker([f.geometry.coordinates[1], f.geometry.coordinates[0]], {icon: icon, pane:'markersPane'}).bindPopup(`<b>${prix}€</b><br>${new Date(p.date_mutation).toLocaleDateString()}`).addTo(state.layers.dvf);
+                });
+            }
+        } catch(e) { console.error(e); }
+    }
+
+    // --- TOUCH ENGINE (STREET VIEW) ---
     const mapEl = document.getElementById('map');
     const ring = document.getElementById('touch-ring');
     let pressTimer = null;
     let isReady = false;
 
-    window.oncontextmenu = function(event) { event.preventDefault(); event.stopPropagation(); return false; };
+    window.oncontextmenu = (e) => { e.preventDefault(); return false; };
 
     mapEl.addEventListener('touchstart', (e) => {
         if(e.touches.length > 1) return; 
@@ -415,7 +354,7 @@
         }, 800);
     }, {passive: false});
 
-    mapEl.addEventListener('touchmove', (e) => { clearTimeout(pressTimer); ring.classList.remove('active'); isReady = false; }, {passive: false});
+    mapEl.addEventListener('touchmove', () => { clearTimeout(pressTimer); ring.classList.remove('active'); isReady = false; }, {passive: false});
 
     mapEl.addEventListener('touchend', (e) => {
         clearTimeout(pressTimer); ring.classList.remove('active');
@@ -428,7 +367,7 @@
         isReady = false;
     });
 
-    // --- WIZARD ---
+    // --- WIZARD & NOTES ---
     window.startWizard = (tag) => {
         state.wizard = { tag, num: '' };
         document.getElementById('wiz-num').value = '';
@@ -438,9 +377,10 @@
     };
     window.kp = (k) => { if(k==='C') state.wizard.num=''; else state.wizard.num+=k; document.getElementById('wiz-num').value = state.wizard.num; };
     
-    window.nextStep = async () => {
+    window.nextStep = () => {
         if(!state.wizard.num) return alert("Numéro requis");
-        document.getElementById('step-1').style.display='none'; 
+        // FORCE STEP 2 POUR NOTE
+        document.getElementById('step-1').style.display='none';
         document.getElementById('step-2').style.display='block';
     };
     window.selCiv = (el,v) => { document.querySelectorAll('.radio-btn').forEach(b=>b.classList.remove('selected')); el.classList.add('selected'); state.wizard.civ=v; };
@@ -461,7 +401,20 @@
     window.closeWizard = () => document.getElementById('wizard-modal').style.display='none';
     function showToast(m) { const t=document.getElementById('toast'); t.innerText=m; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2000); }
 
-    // --- TOURNEE & GPS ---
+    // --- GPS & TOUR ---
+    function activateGPS() {
+        if(!navigator.geolocation) return;
+        document.getElementById('btn-gps').classList.add('gps-active');
+        state.gps = navigator.geolocation.watchPosition(pos => {
+            const ll = [pos.coords.latitude, pos.coords.longitude];
+            if(!state.me) { state.me = L.circleMarker(ll, {radius:8,color:'white',fillColor:'#007AFF',fillOpacity:1}).addTo(map); map.setView(ll,17); }
+            else state.me.setLatLng(ll);
+            if(state.tour.active && !state.tour.paused && state.tour.last) { state.tour.dist += turf.distance(turf.point(state.tour.last), turf.point([ll[1],ll[0]])); }
+            state.tour.last = [ll[1],ll[0]];
+        }, null, {enableHighAccuracy:true});
+    }
+    window.toggleGPS = () => { if(state.gps) { navigator.geolocation.clearWatch(state.gps); state.gps=null; document.getElementById('btn-gps').classList.remove('gps-active'); } else activateGPS(); };
+
     window.toggleTourMenu = () => {
         if(!state.tour.active) {
             state.tour.active = true; state.tour.paused = false; state.tour.start = Date.now();
@@ -480,19 +433,6 @@
     window.pauseTour = () => { state.tour.paused = !state.tour.paused; document.getElementById('chrono-badge').style.opacity = state.tour.paused ? 0.5 : 1; document.getElementById('tour-menu').classList.remove('visible'); };
     window.endTour = () => { clearInterval(state.tour.int); state.tour.active = false; const km = state.tour.dist; const cal = Math.round(km * USERS[state.nego].w * 0.75); document.getElementById('res-cal').innerText = cal + " kcal"; document.getElementById('end-modal').style.display = 'flex'; };
     window.saveTour = async () => { const qty = document.getElementById('res-fly').value; await supabaseClient.from('tours').insert({ negociateur: state.nego, duration: document.getElementById('chrono-badge').innerText, flyers_count: qty, distance_km: state.tour.dist.toFixed(2), calories: parseInt(document.getElementById('res-cal').innerText) }); location.reload(); };
-
-    function activateGPS() {
-        if(!navigator.geolocation) return;
-        document.getElementById('btn-gps').classList.add('gps-active');
-        state.gps = navigator.geolocation.watchPosition(pos => {
-            const ll = [pos.coords.latitude, pos.coords.longitude];
-            if(!state.me) { state.me = L.circleMarker(ll, {radius:8,color:'white',fillColor:'#007AFF',fillOpacity:1}).addTo(map); map.setView(ll,17); }
-            else state.me.setLatLng(ll);
-            if(state.tour.active && !state.tour.paused && state.tour.last) { state.tour.dist += turf.distance(turf.point(state.tour.last), turf.point([ll[1],ll[0]])); }
-            state.tour.last = [ll[1],ll[0]];
-        }, null, {enableHighAccuracy:true});
-    }
-    window.toggleGPS = () => { if(state.gps) { navigator.geolocation.clearWatch(state.gps); state.gps=null; document.getElementById('btn-gps').classList.remove('gps-active'); } else activateGPS(); };
 
     // --- INIT ---
     async function init() {
