@@ -2,13 +2,14 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8" />
-  <title>Mansion V15 - Ultimate Fix</title>
+  <title>Mansion V16 - Perfect Touch</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
   
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;700;800&display=swap" rel="stylesheet">
 
   <style>
+    /* --- VARIABLES --- */
     :root {
       --bg: #F4F4F6; --card: rgba(255, 255, 255, 0.98); --text: #1C1C1E;
       --primary: #000; --accent: #007AFF; --success: #34C759; --danger: #FF3B30;
@@ -16,15 +17,20 @@
     }
     body.dark { --bg: #000; --card: rgba(28, 28, 30, 0.98); --text: #FFF; --primary: #FFF; }
     
-    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; user-select: none; }
+    /* --- RESET TACTILE TOTAL (Anti écran bleu) --- */
+    * { 
+        box-sizing: border-box; 
+        -webkit-tap-highlight-color: transparent; 
+        user-select: none; -webkit-user-select: none; /* Bloque la sélection de texte */
+        -webkit-touch-callout: none; /* Bloque le menu contextuel natif iOS */
+    }
+    input, textarea { user-select: text; -webkit-user-select: text; } /* Sauf pour écrire */
+
     body { margin: 0; font-family: 'Plus Jakarta Sans', sans-serif; background: var(--bg); overflow: hidden; color: var(--text); }
 
     /* MAP */
     #map { width: 100vw; height: 100vh; position: fixed; top: 0; left: 0; z-index: 1; }
-    
-    /* Gestion fine du Dark Mode sur la carte */
     body.dark #map { filter: invert(1) hue-rotate(180deg) brightness(0.6) contrast(1.1); }
-    /* IMPORTANT : Si Satellite activé, on annule l'inversion pour avoir les vraies couleurs */
     body.sat-mode #map { filter: none !important; }
 
     /* HEADER */
@@ -40,83 +46,67 @@
     .obj-counter { font-weight: 800; font-size: 14px; }
 
     /* WIDGETS */
-    .widgets { 
-      position: absolute; right: 15px; top: 80px; z-index: 900; 
-      display: flex; flex-direction: column; gap: 15px; align-items: flex-end; 
-    }
-    .fab { 
-      width: 44px; height: 44px; border-radius: 50%; background: var(--card); color: var(--text); 
-      border: none; box-shadow: var(--shadow); font-size: 18px; cursor: pointer; 
-      display: flex; align-items: center; justify-content: center;
-    }
+    .widgets { position: absolute; right: 15px; top: 80px; z-index: 900; display: flex; flex-direction: column; gap: 15px; align-items: flex-end; }
+    .fab { width: 44px; height: 44px; border-radius: 50%; background: var(--card); color: var(--text); border: none; box-shadow: var(--shadow); font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
     .fab:active { transform: scale(0.92); }
     .gps-active { color: var(--accent); border: 2px solid var(--accent); }
     .sat-active { border: 2px solid var(--success); color: var(--success); }
 
     /* TOUR MENU */
     .tour-container { display: flex; flex-direction: column; gap: 10px; align-items: flex-end; }
-    .tour-timer-badge { 
-      background: var(--primary); color: var(--bg); padding: 6px 12px; border-radius: 12px; 
-      font-size: 13px; font-weight: 800; display: none; margin-bottom: 5px; box-shadow: var(--shadow);
-      animation: pulseRed 2s infinite;
-    }
-    @keyframes pulseRed { 0% { box-shadow: 0 0 0 0 rgba(255, 59, 48, 0.4); } 70% { box-shadow: 0 0 0 6px rgba(255, 59, 48, 0); } 100% { box-shadow: 0 0 0 0 rgba(255, 59, 48, 0); } }
-
-    .tour-controls { 
-      display: none; flex-direction: column; gap: 10px; 
-      background: rgba(0,0,0,0.5); padding: 5px; border-radius: 30px; backdrop-filter: blur(5px);
-    }
+    .tour-timer-badge { background: var(--primary); color: var(--bg); padding: 6px 12px; border-radius: 12px; font-size: 13px; font-weight: 800; display: none; margin-bottom: 5px; box-shadow: var(--shadow); animation: pulseRed 2s infinite; }
+    @keyframes pulseRed { 0% { box-shadow: 0 0 0 0 rgba(255, 59, 48, 0.4); } 70% { box-shadow: 0 0 0 6px rgba(255, 59, 48, 0); } }
+    .tour-controls { display: none; flex-direction: column; gap: 10px; background: rgba(0,0,0,0.5); padding: 5px; border-radius: 30px; backdrop-filter: blur(5px); }
     .tour-controls.visible { display: flex; }
     .btn-stop { background: var(--danger); color: white; }
 
     /* BOTTOM SHEET */
-    #sheet {
-      position: absolute; bottom: 0; left: 0; right: 0; z-index: 1100;
-      background: var(--card); border-top-left-radius: 32px; border-top-right-radius: 32px;
-      padding: 20px 20px 30px; box-shadow: 0 -10px 40px rgba(0,0,0,0.2);
-      transform: translateY(110%); transition: transform 0.3s cubic-bezier(0.32, 0.72, 0, 1);
-    }
+    #sheet { position: absolute; bottom: 0; left: 0; right: 0; z-index: 1100; background: var(--card); border-top-left-radius: 32px; border-top-right-radius: 32px; padding: 20px 20px 30px; box-shadow: 0 -10px 40px rgba(0,0,0,0.2); transform: translateY(110%); transition: transform 0.3s cubic-bezier(0.32, 0.72, 0, 1); }
     #sheet.open { transform: translateY(0); }
-    
     .sheet-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
     .st-name { font-size: 18px; font-weight: 800; line-height: 1.1; max-width: 80%; }
     .close-sheet { background: rgba(120,120,128,0.1); width: 28px; height: 28px; border-radius: 50%; border: none; font-weight: bold; cursor: pointer; }
 
     /* QUICK ACTIONS */
     .quick-actions { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 15px; }
-    .q-btn { 
-      display: flex; flex-direction: column; align-items: center; gap: 5px; 
-      background: rgba(120,120,128,0.05); border: 1px solid rgba(120,120,128,0.1); 
-      border-radius: 12px; padding: 12px 5px; cursor: pointer; transition: 0.2s;
-    }
+    .q-btn { display: flex; flex-direction: column; align-items: center; gap: 5px; background: rgba(120,120,128,0.05); border: 1px solid rgba(120,120,128,0.1); border-radius: 12px; padding: 12px 5px; cursor: pointer; transition: 0.2s; }
     .q-btn span { font-size: 20px; }
     .q-btn div { font-size: 10px; font-weight: 700; text-transform: uppercase; }
     .q-btn:active { background: var(--text); color: var(--bg); }
-
     .btn-main { width: 100%; padding: 16px; border-radius: 18px; background: var(--success); color: white; border: none; font-weight: 800; font-size: 16px; box-shadow: 0 4px 15px rgba(52, 199, 89, 0.4); cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; }
 
-    /* WIZARD & MODALS */
+    /* WIZARD */
     .modal-overlay { position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); z-index: 5000; display:none; align-items:flex-end; justify-content:center; backdrop-filter: blur(5px); }
     .wizard-card { background: var(--bg); width: 100%; max-width: 400px; padding: 25px; border-top-left-radius: 30px; border-top-right-radius: 30px; animation: slideUp 0.3s ease-out; }
     @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
-
     .wiz-title { font-size: 18px; font-weight: 800; margin-bottom: 15px; text-align: center; }
     
     .keypad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 15px; }
     .key { background: var(--card); padding: 15px; border-radius: 12px; border: none; font-size: 20px; font-weight: 700; box-shadow: 0 2px 5px rgba(0,0,0,0.05); cursor: pointer; }
     .num-display { width: 100%; padding: 15px; font-size: 24px; text-align: center; font-weight: 800; background: rgba(0,0,0,0.05); border-radius: 12px; margin-bottom: 15px; border: none; }
 
-    .form-group { margin-bottom: 15px; }
-    .form-input { width: 100%; padding: 14px; border-radius: 12px; border: 1px solid rgba(120,120,128,0.2); font-size: 16px; background: var(--card); }
+    .form-group { margin-bottom: 10px; }
+    .form-input { width: 100%; padding: 12px; border-radius: 12px; border: 1px solid rgba(120,120,128,0.2); font-size: 16px; background: var(--card); }
+    textarea.form-input { min-height: 80px; font-family: inherit; resize: none; }
     .radio-group { display: flex; gap: 10px; margin-bottom: 15px; }
     .radio-btn { flex: 1; padding: 10px; border-radius: 10px; border: 1px solid #ccc; background: transparent; font-weight: 600; cursor: pointer; }
     .radio-btn.selected { background: var(--text); color: var(--bg); border-color: var(--text); }
 
+    /* TOUCH TARGET (Street View) */
+    #touch-target {
+        position: absolute; width: 60px; height: 60px; 
+        border: 4px solid rgba(255, 255, 255, 0.8); border-radius: 50%; 
+        transform: translate(-50%, -50%) scale(0); 
+        pointer-events: none; z-index: 9999; transition: transform 0.2s, border-color 0.2s;
+        background: rgba(0,0,0,0.1);
+    }
+    #touch-target.active { transform: translate(-50%, -50%) scale(1); }
+    #touch-target.ready { border-color: #34C759; background: rgba(52, 199, 89, 0.2); }
+
     /* UTILS */
     .toast { position: absolute; top: 100px; left: 50%; transform: translateX(-50%); background: var(--primary); color: var(--bg); padding: 10px 20px; border-radius: 30px; font-weight: 700; font-size: 13px; opacity: 0; pointer-events: none; transition: 0.3s; z-index: 2000; }
     .toast.show { opacity: 1; margin-top: 10px; }
-    
-    #loader { position: absolute; bottom: 50%; left: 50%; transform: translate(-50%, 50%); background: var(--card); padding: 15px 30px; border-radius: 50px; font-weight: 800; z-index: 3000; box-shadow: var(--shadow); transition: opacity 0.5s; }
+    #loader { position: absolute; bottom: 50%; left: 50%; transform: translate(-50%, 50%); background: var(--card); padding: 15px 30px; border-radius: 50px; font-weight: 800; z-index: 3000; box-shadow: var(--shadow); }
 
   </style>
 </head>
@@ -151,6 +141,8 @@
 
   <div id="loader">Chargement...</div>
   <div id="toast" class="toast">Action enregistrée</div>
+  
+  <div id="touch-target"></div>
 
   <div id="map"></div>
 
@@ -161,15 +153,9 @@
     </div>
 
     <div class="quick-actions">
-      <button class="q-btn" onclick="startWizard('⛔ Refus')">
-        <span>⛔</span><div>Refus</div>
-      </button>
-      <button class="q-btn" onclick="startWizard('🤝 Intéressé')">
-        <span>🤝</span><div>Intéressé</div>
-      </button>
-      <button class="q-btn" onclick="startWizard('🏠 À Vendre')">
-        <span>🏠</span><div>Vente</div>
-      </button>
+      <button class="q-btn" onclick="startWizard('⛔ Refus')"><span>⛔</span><div>Refus</div></button>
+      <button class="q-btn" onclick="startWizard('🤝 Intéressé')"><span>🤝</span><div>Intéressé</div></button>
+      <button class="q-btn" onclick="startWizard('🏠 À Vendre')"><span>🏠</span><div>Vente</div></button>
     </div>
 
     <button class="btn-main" onclick="validateBoitage()">📬 BOÎTAGE FAIT</button>
@@ -205,6 +191,9 @@
       <div class="form-group"><input id="c-name" class="form-input" placeholder="Nom"></div>
       <div class="form-group"><input id="c-tel" class="form-input" type="tel" placeholder="Téléphone"></div>
       <div class="form-group"><input id="c-mail" class="form-input" type="email" placeholder="Email"></div>
+      <div class="form-group">
+        <textarea id="c-note" class="form-input" placeholder="📝 Notes, besoins, info importante..."></textarea>
+      </div>
       <button class="btn-main" onclick="finishWizard()">ENREGISTRER</button>
     </div>
   </div>
@@ -230,24 +219,21 @@
     const supabaseClient = supabase.createClient(SB_URL, SB_KEY);
 
     const USERS = {
-      "Alexis":   { w: 79, color: '#e74c3c', zone: [[CENTER_LAT, CENTER_LNG], [CENTER_LAT+0.05, CENTER_LNG], [CENTER_LAT+0.05, CENTER_LNG-0.05], [CENTER_LAT, CENTER_LNG-0.05]] },
-      "Nicolas":  { w: 90, color: '#3498db', zone: [[CENTER_LAT, CENTER_LNG], [CENTER_LAT+0.05, CENTER_LNG], [CENTER_LAT+0.05, CENTER_LNG+0.05], [CENTER_LAT, CENTER_LNG+0.05]] },
-      "Thibault": { w: 72, color: '#f1c40f', zone: [[CENTER_LAT, CENTER_LNG], [CENTER_LAT-0.05, CENTER_LNG], [CENTER_LAT-0.05, CENTER_LNG-0.05], [CENTER_LAT, CENTER_LNG-0.05]] },
-      "Laurent":  { w: 75, color: '#9b59b6', zone: [[CENTER_LAT, CENTER_LNG], [CENTER_LAT-0.05, CENTER_LNG], [CENTER_LAT-0.05, CENTER_LNG+0.05], [CENTER_LAT, CENTER_LNG+0.05]] }
+      "Alexis":   { w: 79, color: '#e74c3c', center: [45.005, -0.455], zone: [[CENTER_LAT, CENTER_LNG], [CENTER_LAT+0.05, CENTER_LNG], [CENTER_LAT+0.05, CENTER_LNG-0.05], [CENTER_LAT, CENTER_LNG-0.05]] },
+      "Nicolas":  { w: 90, color: '#3498db', center: [45.005, -0.435], zone: [[CENTER_LAT, CENTER_LNG], [CENTER_LAT+0.05, CENTER_LNG], [CENTER_LAT+0.05, CENTER_LNG+0.05], [CENTER_LAT, CENTER_LNG+0.05]] },
+      "Thibault": { w: 72, color: '#f1c40f', center: [44.985, -0.455], zone: [[CENTER_LAT, CENTER_LNG], [CENTER_LAT-0.05, CENTER_LNG], [CENTER_LAT-0.05, CENTER_LNG-0.05], [CENTER_LAT, CENTER_LNG-0.05]] },
+      "Laurent":  { w: 75, color: '#9b59b6', center: [44.985, -0.435], zone: [[CENTER_LAT, CENTER_LNG], [CENTER_LAT-0.05, CENTER_LNG], [CENTER_LAT-0.05, CENTER_LNG+0.05], [CENTER_LAT, CENTER_LNG+0.05]] }
     };
     const EMOJIS = { "Alexis": "👑", "Nicolas": "🚀", "Thibault": "🦁", "Laurent": "⚡" };
     const state = { streets: {}, nego: "Alexis", selected: null, daily: 0, tour: { active: false, paused: false, start: 0, int: null, dist: 0 }, wizard: { tag: '', num: '' } };
 
     // --- MAP INIT ---
-    const map = L.map('map', { zoomControl: false, tap: false }).setView([CENTER_LAT, CENTER_LNG], 15);
+    const map = L.map('map', { zoomControl: false, tap: false }).setView(USERS["Alexis"].center, 15);
     
-    // PANES (Z-INDEX)
     map.createPane('zonesPane'); map.getPane('zonesPane').style.zIndex = 350;
     map.createPane('streetsPane'); map.getPane('streetsPane').style.zIndex = 450;
-    map.createPane('markersPane'); map.getPane('markersPane').style.zIndex = 650;
 
     const lPlan = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', { maxZoom: 20 }).addTo(map);
-    // Use Esri for better quality than OSM standard
     const lSat = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { maxZoom: 19 });
     const polyLayer = L.layerGroup().addTo(map);
 
@@ -267,14 +253,12 @@
             if(diff <= 20) { color = "#34C759"; opacity = 0.8; }
             else color = "#FF9500";
         }
-
         const vis = L.polyline(latlngs, { color: color, weight: weight, opacity: opacity, interactive: false, pane: 'streetsPane' }).addTo(map);
         const hit = L.polyline(latlngs, { weight: 25, opacity: 0 }).addTo(map);
 
         state.streets[name] = { vis, hit, dbData, defColor: color, defOp: opacity };
         hit.on('click', (e) => { L.DomEvent.stopPropagation(e); selectStreet(name); });
-        // Prevent touch bubbling
-        hit.on('touchstart', (e) => L.DomEvent.stopPropagation(e));
+        // IMPORTANT : On ne bloque plus le touchstart ici pour laisser le moteur tactile global gérer
     }
 
     function selectStreet(name) {
@@ -316,14 +300,10 @@
     // --- TOURNEE ---
     window.toggleTourMenu = () => {
         if(!state.tour.active) {
-            state.tour.active = true;
-            state.tour.paused = false;
-            state.tour.start = Date.now();
-            
+            state.tour.active = true; state.tour.paused = false; state.tour.start = Date.now();
             document.getElementById('btn-tour-main').innerText = "⏱️";
             document.getElementById('chrono-badge').style.display = 'block';
             activateGPS();
-            
             state.tour.int = setInterval(() => {
                 if(state.tour.paused) return;
                 const sec = Math.floor((Date.now() - state.tour.start) / 1000);
@@ -331,9 +311,7 @@
                 const s = (sec % 60).toString().padStart(2, '0');
                 document.getElementById('chrono-badge').innerText = `${m}:${s}`;
             }, 1000);
-        } else {
-            document.getElementById('tour-menu').classList.toggle('visible');
-        }
+        } else { document.getElementById('tour-menu').classList.toggle('visible'); }
     };
     window.pauseTour = () => {
         state.tour.paused = !state.tour.paused;
@@ -341,21 +319,16 @@
         document.getElementById('tour-menu').classList.remove('visible');
     };
     window.endTour = () => {
-        clearInterval(state.tour.int);
-        state.tour.active = false;
-        const km = state.tour.dist;
-        const cal = Math.round(km * USERS[state.nego].w * 0.75);
+        clearInterval(state.tour.int); state.tour.active = false;
+        const km = state.tour.dist; const cal = Math.round(km * USERS[state.nego].w * 0.75);
         document.getElementById('res-cal').innerText = cal + " kcal";
         document.getElementById('end-modal').style.display = 'flex';
     };
     window.saveTour = async () => {
         const qty = document.getElementById('res-fly').value;
         await supabaseClient.from('tours').insert({
-            negociateur: state.nego,
-            duration: document.getElementById('chrono-badge').innerText,
-            flyers_count: qty,
-            distance_km: state.tour.dist.toFixed(2),
-            calories: parseInt(document.getElementById('res-cal').innerText)
+            negociateur: state.nego, duration: document.getElementById('chrono-badge').innerText,
+            flyers_count: qty, distance_km: state.tour.dist.toFixed(2), calories: parseInt(document.getElementById('res-cal').innerText)
         });
         location.reload();
     };
@@ -366,9 +339,8 @@
         document.getElementById('btn-gps').classList.add('gps-active');
         state.gps = navigator.geolocation.watchPosition(pos => {
             const ll = [pos.coords.latitude, pos.coords.longitude];
-            if(!state.me) { state.me = L.circleMarker(ll, {radius:8,color:'white',fillColor:'#007AFF',fillOpacity:1,pane:'markersPane'}).addTo(map); map.setView(ll,17); }
+            if(!state.me) { state.me = L.circleMarker(ll, {radius:8,color:'white',fillColor:'#007AFF',fillOpacity:1}).addTo(map); map.setView(ll,17); }
             else state.me.setLatLng(ll);
-            
             if(state.tour.active && !state.tour.paused && state.tour.last) {
                 state.tour.dist += turf.distance(turf.point(state.tour.last), turf.point([ll[1],ll[0]]));
             }
@@ -380,22 +352,54 @@
         else activateGPS();
     };
 
-    // --- STREET VIEW (EVENT NATIVE CONTEXTMENU) ---
-    // This is the robust way to handle long press on mobile & right click on desktop
-    map.on('contextmenu', (e) => {
-        if(navigator.vibrate) navigator.vibrate(50);
+    // --- MOTEUR TACTILE (STREET VIEW ROBUSTE) ---
+    const mapEl = document.getElementById('map');
+    const targetEl = document.getElementById('touch-target');
+    let longPressTimer = null;
+    let isLongPressReady = false;
+    let startX, startY;
+
+    mapEl.addEventListener('touchstart', (e) => {
+        if(e.touches.length > 1) return; // Ignore zoom
+        const t = e.touches[0];
+        startX = t.clientX; startY = t.clientY;
+        isLongPressReady = false;
+
+        // Afficher cible
+        targetEl.style.left = startX + 'px';
+        targetEl.style.top = (startY - 30) + 'px'; // Décalage pour voir sous le doigt
+        targetEl.classList.add('active');
+        targetEl.classList.remove('ready');
+
+        longPressTimer = setTimeout(() => {
+            isLongPressReady = true;
+            if(navigator.vibrate) navigator.vibrate(50); // Vibration
+            targetEl.classList.add('ready'); // Devient vert
+        }, 800); // 800ms d'attente
+    }, {passive: false});
+
+    mapEl.addEventListener('touchmove', (e) => {
+        if(!startX) return;
+        const t = e.touches[0];
+        // Si on bouge trop, on annule tout
+        if(Math.abs(t.clientX - startX) > 10 || Math.abs(t.clientY - startY) > 10) {
+            clearTimeout(longPressTimer);
+            targetEl.classList.remove('active');
+            isLongPressReady = false;
+        }
+    }, {passive: false});
+
+    mapEl.addEventListener('touchend', (e) => {
+        clearTimeout(longPressTimer);
+        targetEl.classList.remove('active');
         
-        // Visual feedback at the EXACT location
-        const marker = L.circleMarker(e.latlng, {
-            radius: 12, color: 'white', fillColor: '#FF3B30', fillOpacity: 1, pane: 'markersPane'
-        }).addTo(map);
-        
-        showToast("Ouverture Street View... 🌍");
-        
-        setTimeout(() => {
-            map.removeLayer(marker);
-            window.open(`https://www.google.com/maps/search/?api=1&query=$${e.latlng.lat},${e.latlng.lng}`, '_blank');
-        }, 600);
+        if(isLongPressReady) {
+            // C'est un succès !
+            const pt = L.point(startX, startY);
+            const ll = map.containerPointToLatLng(pt);
+            window.open(`https://www.google.com/maps/search/?api=1&query=$${ll.lat},${ll.lng}`, '_blank');
+        }
+        // Sinon c'est un simple clic géré par Leaflet
     });
 
 
@@ -413,19 +417,24 @@
     };
     window.nextStep = async () => {
         if(!state.wizard.num) return alert("Numéro requis");
-        // LOGIQUE CORRIGEE ICI : Seuls 'Intéressé' et 'Vente' vont au formulaire
+        // LOGIQUE CORRIGEE : Interested et Vente vont étape 2
         if(state.wizard.tag === '🤝 Intéressé' || state.wizard.tag === '🏠 À Vendre') { 
             document.getElementById('step-1').style.display='none'; 
             document.getElementById('step-2').style.display='block';
         } else {
-            // Refus, etc -> Sauvegarde immédiate
             await saveHistory(); 
             closeWizard(); 
         }
     };
     window.selCiv = (el,v) => { document.querySelectorAll('.radio-btn').forEach(b=>b.classList.remove('selected')); el.classList.add('selected'); state.wizard.civ=v; };
     window.finishWizard = async () => {
-        state.wizard.contact = { nom: document.getElementById('c-name').value, tel: document.getElementById('c-tel').value, mail: document.getElementById('c-mail').value, civ: state.wizard.civ||'M' };
+        state.wizard.contact = { 
+            nom: document.getElementById('c-name').value, 
+            tel: document.getElementById('c-tel').value, 
+            mail: document.getElementById('c-mail').value, 
+            note: document.getElementById('c-note').value, // NOTE AJOUTÉE ICI
+            civ: state.wizard.civ||'M' 
+        };
         await saveHistory(); closeWizard();
     };
     async function saveHistory() {
@@ -440,7 +449,6 @@
         const { data } = await supabaseClient.from('street_passages').select('*');
         let hist = {}; if(data) data.forEach(d => hist[d.street_name] = d);
         
-        // REQUETE LARGE
         const q = `[out:json][timeout:90]; way["highway"~"residential|unclassified|living_street|tertiary|secondary|primary|service|track|pedestrian"](44.96,-0.50,45.04,-0.40); out geom;`;
         
         try {
@@ -451,19 +459,16 @@
         document.getElementById('loader').style.display='none';
     }
 
-    // TOGGLE SATELLITE & DARK MODE
+    // UTILS
     window.toggleSat = () => { 
         state.sat=!state.sat; 
         const btn = document.getElementById('btn-sat');
-        
         if(state.sat) { 
-            map.removeLayer(lPlan); 
-            map.addLayer(lSat); 
-            document.body.classList.add('sat-mode'); // Force normal colors for map
+            map.removeLayer(lPlan); map.addLayer(lSat); 
+            document.body.classList.add('sat-mode'); 
             btn.classList.add('sat-active');
         } else { 
-            map.removeLayer(lSat); 
-            map.addLayer(lPlan); 
+            map.removeLayer(lSat); map.addLayer(lPlan); 
             document.body.classList.remove('sat-mode'); 
             btn.classList.remove('sat-active');
         } 
@@ -472,6 +477,7 @@
     document.getElementById('user-pick').addEventListener('change', (e) => { 
         state.nego = e.target.value; 
         document.getElementById('user-emoji').innerText = EMOJIS[state.nego];
+        // FIX CENTRAGE : on récupère bien la propriété center
         map.flyTo(USERS[state.nego].center, 15);
     });
     
