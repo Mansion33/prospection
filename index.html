@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8" />
-  <title>Mansion V25 - Production</title>
+  <title>Mansion V26 - Robust</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
   
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -15,7 +15,7 @@
       --shadow: 0 4px 20px rgba(0,0,0,0.15);
     }
     
-    /* RESET TOTAL */
+    /* RESET TACTILE */
     * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; user-select: none; -webkit-user-select: none; touch-action: none; }
     input, textarea { user-select: text; -webkit-user-select: text; touch-action: auto; }
 
@@ -43,8 +43,8 @@
     /* ETATS ACTIFS */
     .gps-active { color: var(--accent); border: 2px solid var(--accent); }
     .sat-active { border: 2px solid var(--success); color: var(--success); }
-    .cad-active { background: #FF9500; color: white; }
-    .dvf-active { background: #5856D6; color: white; }
+    .cad-active { background: #FF9500; color: white !important; border: none; }
+    .dvf-active { background: #5856D6; color: white !important; border: none; }
 
     /* TOUR MENU */
     .tour-container { display: flex; flex-direction: column; gap: 10px; align-items: flex-end; }
@@ -83,7 +83,7 @@
     .radio-btn { flex: 1; padding: 10px; border-radius: 10px; border: 1px solid #ccc; background: transparent; font-weight: 600; cursor: pointer; }
     .radio-btn.selected { background: var(--text); color: var(--bg); border-color: var(--text); }
 
-    /* NOUVEAU VISEUR STREET VIEW (PIN) */
+    /* STREET VIEW TARGET (PIN) */
     #touch-pin {
         position: absolute; width: 50px; height: 50px; 
         background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23FF3B30"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>');
@@ -91,19 +91,17 @@
         transform: translate(-50%, -100%); pointer-events: none; z-index: 9999; 
         display: none; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.5));
     }
-    /* Effet d'ombre au sol */
     #touch-shadow {
-        position: absolute; width: 10px; height: 4px; background: rgba(0,0,0,0.3);
+        position: absolute; width: 12px; height: 6px; background: rgba(0,0,0,0.4);
         border-radius: 50%; transform: translate(-50%, 0);
         pointer-events: none; z-index: 9998; display: none;
     }
 
-    /* DVF MARKER (Visible par dessus tout) */
+    /* DVF MARKER */
     .dvf-marker { 
         background: #5856D6; color: white; border-radius: 8px; padding: 4px 8px; 
         font-size: 11px; font-weight: 800; white-space: nowrap; border: 2px solid white; 
-        box-shadow: 0 2px 6px rgba(0,0,0,0.4); text-align:center; width: auto !important; height: auto !important;
-        z-index: 1000 !important;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.4); text-align:center; 
     }
 
     /* UTILS */
@@ -198,7 +196,6 @@
         <textarea id="c-note" class="form-input" placeholder="📝 Note importante..."></textarea>
       </div>
       <button class="btn-main" onclick="finishWizard()">ENREGISTRER</button>
-      <button onclick="closeWizard()" style="width:100%; margin-top:10px; background:none; border:none; color:gray">Fermer</button>
     </div>
   </div>
 
@@ -234,7 +231,6 @@
     // --- MAP INIT ---
     const map = L.map('map', { zoomControl: false, tap: false }).setView(USERS["Alexis"].center, 15);
     
-    // Z-INDEX PANES
     map.createPane('zonesPane'); map.getPane('zonesPane').style.zIndex = 350;
     map.createPane('cadastrePane'); map.getPane('cadastrePane').style.zIndex = 400;
     map.createPane('streetsPane'); map.getPane('streetsPane').style.zIndex = 450;
@@ -243,11 +239,12 @@
     const lPlan = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', { maxZoom: 20 }).addTo(map);
     const lSat = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { maxZoom: 19 });
     
-    // LAYER CADASTRE (SERVEUR ESRI - PLUS STABLE QUE IGN)
+    // CADASTRE (Serveur ArcGIS - Plus fiable)
     state.layers.cadastre = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/France/Cadastre/MapServer/tile/{z}/{y}/{x}', {
         pane: 'cadastrePane', opacity: 0.6
     });
     
+    // DVF
     state.layers.dvf = L.layerGroup();
 
     const polyLayer = L.layerGroup().addTo(map);
@@ -312,7 +309,7 @@
     window.toggleCadastre = () => {
         const btn = document.getElementById('btn-cadastre');
         if(map.hasLayer(state.layers.cadastre)) { map.removeLayer(state.layers.cadastre); btn.classList.remove('cad-active'); }
-        else { map.addLayer(state.layers.cadastre); btn.classList.add('cad-active'); showToast("📐 Cadastre activé"); }
+        else { map.addLayer(state.layers.cadastre); btn.classList.add('cad-active'); showToast("📐 Cadastre"); }
     };
 
     window.toggleDVF = async () => {
@@ -330,7 +327,8 @@
         state.layers.dvf.clearLayers();
         const center = map.getCenter();
         try {
-            const res = await fetch(`https://api-dvf.etalab.gouv.fr/api/mutations3/geocodage?lat=${center.lat}&lon=${center.lng}&dist=300`);
+            // RAYON ELARGI 800m
+            const res = await fetch(`https://api-dvf.etalab.gouv.fr/api/mutations3/geocodage?lat=${center.lat}&lon=${center.lng}&dist=800`);
             const json = await res.json();
             if(json.features && json.features.length > 0) {
                 json.features.forEach(f => {
@@ -340,11 +338,11 @@
                     const icon = L.divIcon({ className: 'dvf-marker', html: prix, iconSize: [null,null] });
                     L.marker([f.geometry.coordinates[1], f.geometry.coordinates[0]], {icon: icon, pane:'markersPane'}).addTo(state.layers.dvf);
                 });
-                showToast(`${json.features.length} ventes trouvées`);
+                showToast(`${json.features.length} ventes affichées`);
             } else {
                 showToast("Aucune vente trouvée ici");
             }
-        } catch(e) { console.error(e); showToast("Erreur DVF"); }
+        } catch(e) { console.error(e); showToast("Erreur Serveur DVF"); }
     }
 
     // --- STREET VIEW (PIN DRAG & DROP) ---
@@ -357,12 +355,12 @@
     window.oncontextmenu = (e) => { e.preventDefault(); return false; };
 
     mapEl.addEventListener('touchstart', (e) => {
-        if(e.touches.length > 1) return; // Ignore zoom
+        if(e.touches.length > 1) return; 
         const t = e.touches[0];
-        
-        // Afficher Pin
         isDragging = true;
-        updatePinPosition(t.clientX, t.clientY);
+        
+        // Positionner le Pin au dessus du doigt
+        updatePin(t.clientX, t.clientY);
         pin.style.display = 'block';
         shadow.style.display = 'block';
         
@@ -371,10 +369,9 @@
 
     mapEl.addEventListener('touchmove', (e) => {
         if(!isDragging) return;
+        e.preventDefault(); // Stop map move
         const t = e.touches[0];
-        updatePinPosition(t.clientX, t.clientY);
-        // Prevent map dragging
-        e.preventDefault();
+        updatePin(t.clientX, t.clientY);
     }, {passive: false});
 
     mapEl.addEventListener('touchend', (e) => {
@@ -383,21 +380,21 @@
         pin.style.display = 'none';
         shadow.style.display = 'none';
         
-        // Open SV
+        // Ouvrir
         const t = e.changedTouches[0];
         const pt = L.point(t.clientX, t.clientY);
         const ll = map.containerPointToLatLng(pt);
         window.open(`https://www.google.com/maps/search/?api=1&query=$${ll.lat},${ll.lng}`, '_blank');
     });
 
-    function updatePinPosition(x, y) {
+    function updatePin(x, y) {
         pin.style.left = x + 'px';
-        pin.style.top = (y - 60) + 'px'; // Pin au dessus du doigt
+        pin.style.top = (y - 60) + 'px'; 
         shadow.style.left = x + 'px';
         shadow.style.top = y + 'px';
     }
 
-    // --- WIZARD & NOTES ---
+    // --- WIZARD ---
     window.startWizard = (tag) => {
         state.wizard = { tag, num: '' };
         document.getElementById('wiz-num').value = '';
@@ -409,43 +406,42 @@
     
     window.nextStep = () => {
         if(!state.wizard.num) return alert("Numéro requis");
-        // ALL GO TO STEP 2
         document.getElementById('step-1').style.display='none';
         document.getElementById('step-2').style.display='block';
     };
     window.selCiv = (el,v) => { document.querySelectorAll('.radio-btn').forEach(b=>b.classList.remove('selected')); el.classList.add('selected'); state.wizard.civ=v; };
     
+    // FINISH WIZARD : FORCE CLOSE
     window.finishWizard = async () => {
-        const noteContent = document.getElementById('c-note').value;
-        
+        const noteVal = document.getElementById('c-note').value || "";
         state.wizard.contact = { 
             nom: document.getElementById('c-name').value, 
             tel: document.getElementById('c-tel').value, 
             mail: document.getElementById('c-mail').value, 
-            note: noteContent, // SAVE NOTE
+            note: noteVal, 
             civ: state.wizard.civ||'M' 
         };
         
-        await saveHistory(); 
+        // Close UI FIRST
+        document.getElementById('wizard-modal').style.display='none';
+        document.getElementById('c-note').value = ""; // Reset
         
-        // CLOSE & RESET
-        document.getElementById('c-note').value = "";
-        closeWizard();
+        // Save Background
+        try {
+            await supabaseClient.from('street_history').insert({ 
+                street_name: state.selected, 
+                action_type: state.wizard.tag, 
+                action_data: { num: state.wizard.num, contact: state.wizard.contact }, 
+                negociateur: state.nego 
+            });
+            showToast("✅ Note Sauvegardée");
+        } catch(e) { showToast("❌ Erreur Save"); }
     };
     
-    async function saveHistory() {
-        await supabaseClient.from('street_history').insert({ 
-            street_name: state.selected, 
-            action_type: state.wizard.tag, 
-            action_data: { num: state.wizard.num, contact: state.wizard.contact }, 
-            negociateur: state.nego 
-        });
-        showToast("✅ Note sauvegardée !");
-    }
     window.closeWizard = () => document.getElementById('wizard-modal').style.display='none';
     function showToast(m) { const t=document.getElementById('toast'); t.innerText=m; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2000); }
 
-    // --- TOURNEE & GPS ---
+    // --- GPS ---
     function activateGPS() {
         if(!navigator.geolocation) return;
         document.getElementById('btn-gps').classList.add('gps-active');
@@ -480,9 +476,7 @@
 
     // --- INIT ---
     async function init() {
-        // TIMEOUT DE SECURITE
-        setTimeout(() => document.getElementById('loader').style.display='none', 3000);
-
+        setTimeout(() => document.getElementById('loader').style.display='none', 2500);
         const { data } = await supabaseClient.from('street_passages').select('*');
         let hist = {}; if(data) data.forEach(d => hist[d.street_name] = d);
         const q = `[out:json][timeout:90]; way["highway"~"residential|unclassified|living_street|tertiary|secondary|primary|service|track|pedestrian"](44.96,-0.50,45.04,-0.40); out geom;`;
