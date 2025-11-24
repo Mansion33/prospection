@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8" />
-  <title>Mansion V22 - Clean Fix</title>
+  <title>Mansion V23 - Final</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
   
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -15,15 +15,15 @@
       --shadow: 0 4px 20px rgba(0,0,0,0.15);
     }
     
-    /* RESET TACTILE GLOBAL */
+    /* RESET TACTILE TOTAL */
     * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; user-select: none; -webkit-user-select: none; touch-action: none; }
     input, textarea { user-select: text; -webkit-user-select: text; touch-action: auto; }
 
     body { margin: 0; font-family: 'Plus Jakarta Sans', sans-serif; background: var(--bg); overflow: hidden; color: var(--text); }
 
-    /* MAP & PANES */
+    /* MAP */
     #map { width: 100vw; height: 100vh; position: fixed; top: 0; left: 0; z-index: 1; }
-    /* FIX V22 : Pas de filtre sombre par défaut */
+    /* Mode jour par défaut, pas de filtre */
     body.sat-mode #map { filter: none !important; }
 
     /* HEADER */
@@ -39,7 +39,7 @@
 
     /* WIDGETS */
     .widgets { position: absolute; right: 15px; top: 80px; z-index: 900; display: flex; flex-direction: column; gap: 15px; align-items: flex-end; }
-    .fab { width: 44px; height: 44px; border-radius: 50%; background: var(--card); color: var(--text); border: none; box-shadow: var(--shadow); font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center; position: relative; }
+    .fab { width: 44px; height: 44px; border-radius: 50%; background: var(--card); color: var(--text); border: none; box-shadow: var(--shadow); font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
     
     /* Etats Actifs */
     .gps-active { color: var(--accent); border: 2px solid var(--accent); }
@@ -84,19 +84,22 @@
     .radio-btn { flex: 1; padding: 10px; border-radius: 10px; border: 1px solid #ccc; background: transparent; font-weight: 600; cursor: pointer; }
     .radio-btn.selected { background: var(--text); color: var(--bg); border-color: var(--text); }
 
-    /* STREET VIEW TARGET */
-    #touch-ring { position: absolute; width: 80px; height: 80px; border-radius: 50%; border: 4px solid rgba(255,255,255,0.5); transform: translate(-50%, -50%); pointer-events: none; z-index: 9999; display: none; }
-    #touch-ring .fill { width: 100%; height: 100%; background: rgba(255,255,255,0.3); border-radius: 50%; transform: scale(0); transition: transform 0.8s linear; }
-    #touch-ring.active { display: block; }
-    #touch-ring.active .fill { transform: scale(1); }
-    #touch-ring.success { border-color: #34C759; }
-    #touch-ring.success .fill { background: rgba(52, 199, 89, 0.5); transition: none; transform: scale(1); }
+    /* NOUVEAU VISEUR STREET VIEW (PIN) */
+    #touch-pin {
+        position: absolute; width: 40px; height: 40px; 
+        background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23FF3B30"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>');
+        background-size: contain; background-repeat: no-repeat;
+        transform: translate(-50%, -100%); pointer-events: none; z-index: 9999; 
+        display: none; filter: drop-shadow(0 4px 4px rgba(0,0,0,0.4));
+    }
+    #touch-pin.bounce { animation: bounce 0.3s ease infinite; }
+    @keyframes bounce { 0%, 100% { transform: translate(-50%, -100%); } 50% { transform: translate(-50%, -120%); } }
 
-    /* DVF MARKER */
+    /* DVF MARKER (Bulles de prix) */
     .dvf-marker { 
-        background: #5856D6; color: white; border-radius: 8px; padding: 4px 6px; 
-        font-size: 11px; font-weight: 800; white-space: nowrap; border: 1px solid white; 
-        box-shadow: 0 2px 4px rgba(0,0,0,0.2); text-align:center; 
+        background: #5856D6; color: white; border-radius: 8px; padding: 4px 8px; 
+        font-size: 11px; font-weight: 800; white-space: nowrap; border: 2px solid white; 
+        box-shadow: 0 2px 6px rgba(0,0,0,0.3); text-align:center; width: auto !important; height: auto !important;
     }
 
     /* UTILS */
@@ -139,7 +142,8 @@
 
   <div id="loader">Chargement...</div>
   <div id="toast" class="toast">Action enregistrée</div>
-  <div id="touch-ring"><div class="fill"></div></div>
+  
+  <div id="touch-pin"></div>
 
   <div id="map"></div>
 
@@ -178,7 +182,7 @@
     </div>
 
     <div class="wizard-card" id="step-2" style="display:none">
-      <div class="wiz-title">Détails & Note</div>
+      <div class="wiz-title">Note & Détails</div>
       <div class="radio-group">
         <button class="radio-btn selected" onclick="selCiv(this, 'M')">M.</button>
         <button class="radio-btn" onclick="selCiv(this, 'Mme')">Mme</button>
@@ -224,22 +228,20 @@
     // --- MAP INIT ---
     const map = L.map('map', { zoomControl: false, tap: false }).setView(USERS["Alexis"].center, 15);
     
-    // PANES POUR SUPERPOSITION (Zones < Cadastre < Rues < Markers)
     map.createPane('zonesPane'); map.getPane('zonesPane').style.zIndex = 350;
-    map.createPane('cadastrePane'); map.getPane('cadastrePane').style.zIndex = 400; 
+    map.createPane('cadastrePane'); map.getPane('cadastrePane').style.zIndex = 380; 
     map.createPane('streetsPane'); map.getPane('streetsPane').style.zIndex = 450;
     map.createPane('markersPane'); map.getPane('markersPane').style.zIndex = 650;
 
     const lPlan = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', { maxZoom: 20 }).addTo(map);
     const lSat = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { maxZoom: 19 });
     
-    // LAYER CADASTRE (IGN)
+    // LAYER CADASTRE (IGN WMS PUBLIC)
     state.layers.cadastre = L.tileLayer.wms('https://data.geopf.fr/wms-r/wms', {
         layers: 'CADASTRALPARCELS.PARCELS', format: 'image/png', transparent: true, pane: 'cadastrePane', opacity: 0.7
     });
     
-    // LAYER DVF
-    state.layers.dvf = L.layerGroup();
+    state.layers.dvf = L.layerGroup(); // DVF
 
     const polyLayer = L.layerGroup().addTo(map);
     function drawZones() {
@@ -299,7 +301,7 @@
         await supabaseClient.from('street_passages').upsert({ street_name: name, passage_date: today, negociateur: state.nego, method: 'boitage' }, { onConflict: 'street_name' });
     };
 
-    // --- TOOLS (CADASTRE / DVF) ---
+    // --- TOOLS ---
     window.toggleCadastre = () => {
         const btn = document.getElementById('btn-cadastre');
         if(map.hasLayer(state.layers.cadastre)) { map.removeLayer(state.layers.cadastre); btn.classList.remove('cad-active'); }
@@ -311,151 +313,4 @@
         if(map.hasLayer(state.layers.dvf)) { map.removeLayer(state.layers.dvf); btn.classList.remove('dvf-active'); }
         else { 
             btn.classList.add('dvf-active'); 
-            showToast("💰 Chargement Ventes...");
-            await loadDVFData();
-            map.addLayer(state.layers.dvf);
-        }
-    };
-
-    async function loadDVFData() {
-        state.layers.dvf.clearLayers();
-        const center = map.getCenter();
-        try {
-            const res = await fetch(`https://api-dvf.etalab.gouv.fr/api/mutations3/geocodage?lat=${center.lat}&lon=${center.lng}&dist=500`);
-            const json = await res.json();
-            if(json.features) {
-                json.features.forEach(f => {
-                    const p = f.properties;
-                    if(!p.valeur_fonciere) return;
-                    const prix = Math.round(p.valeur_fonciere/1000) + "k";
-                    const icon = L.divIcon({ className: 'dvf-marker', html: prix, iconSize: [null,null] });
-                    L.marker([f.geometry.coordinates[1], f.geometry.coordinates[0]], {icon: icon, pane:'markersPane'}).bindPopup(`<b>${prix}€</b><br>${new Date(p.date_mutation).toLocaleDateString()}`).addTo(state.layers.dvf);
-                });
-            }
-        } catch(e) { console.error(e); }
-    }
-
-    // --- STREET VIEW (TACTILE) ---
-    const mapEl = document.getElementById('map');
-    const ring = document.getElementById('touch-ring');
-    let pressTimer = null;
-    let isReady = false;
-
-    window.oncontextmenu = (e) => { e.preventDefault(); return false; };
-
-    mapEl.addEventListener('touchstart', (e) => {
-        if(e.touches.length > 1) return; 
-        const t = e.touches[0];
-        const x = t.clientX; const y = t.clientY;
-        isReady = false;
-        
-        ring.style.left = x + 'px'; ring.style.top = (y - 40) + 'px';
-        ring.classList.remove('success'); ring.classList.add('active');
-
-        pressTimer = setTimeout(() => {
-            isReady = true; if(navigator.vibrate) navigator.vibrate(50);
-            ring.classList.add('success');
-        }, 800);
-    }, {passive: false});
-
-    mapEl.addEventListener('touchmove', () => { clearTimeout(pressTimer); ring.classList.remove('active'); isReady = false; }, {passive: false});
-
-    mapEl.addEventListener('touchend', (e) => {
-        clearTimeout(pressTimer); ring.classList.remove('active');
-        if(isReady) {
-            const t = e.changedTouches[0];
-            const pt = L.point(t.clientX, t.clientY);
-            const ll = map.containerPointToLatLng(pt);
-            window.open(`https://www.google.com/maps/search/?api=1&query=$${ll.lat},${ll.lng}`, '_blank');
-        }
-        isReady = false;
-    });
-
-    // --- WIZARD (FIXED NOTES) ---
-    window.startWizard = (tag) => {
-        state.wizard = { tag, num: '' };
-        document.getElementById('wiz-num').value = '';
-        document.getElementById('step-1').style.display = 'block';
-        document.getElementById('step-2').style.display = 'none';
-        document.getElementById('wizard-modal').style.display = 'flex';
-    };
-    window.kp = (k) => { if(k==='C') state.wizard.num=''; else state.wizard.num+=k; document.getElementById('wiz-num').value = state.wizard.num; };
-    
-    window.nextStep = () => {
-        if(!state.wizard.num) return alert("Numéro requis");
-        document.getElementById('step-1').style.display='none';
-        document.getElementById('step-2').style.display='block';
-    };
-    window.selCiv = (el,v) => { document.querySelectorAll('.radio-btn').forEach(b=>b.classList.remove('selected')); el.classList.add('selected'); state.wizard.civ=v; };
-    
-    window.finishWizard = async () => {
-        state.wizard.contact = { 
-            nom: document.getElementById('c-name').value, 
-            tel: document.getElementById('c-tel').value, 
-            mail: document.getElementById('c-mail').value, 
-            note: document.getElementById('c-note').value, 
-            civ: state.wizard.civ||'M' 
-        };
-        await saveHistory(); closeWizard();
-    };
-    
-    async function saveHistory() {
-        await supabaseClient.from('street_history').insert({ street_name: state.selected, action_type: state.wizard.tag, action_data: { num: state.wizard.num, contact: state.wizard.contact }, negociateur: state.nego });
-        showToast("Note enregistrée !");
-    }
-    window.closeWizard = () => document.getElementById('wizard-modal').style.display='none';
-    function showToast(m) { const t=document.getElementById('toast'); t.innerText=m; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2000); }
-
-    // --- TOURNEE & GPS ---
-    window.toggleTourMenu = () => {
-        if(!state.tour.active) {
-            state.tour.active = true; state.tour.paused = false; state.tour.start = Date.now();
-            document.getElementById('btn-tour-main').innerText = "⏱️";
-            document.getElementById('chrono-badge').style.display = 'block';
-            activateGPS();
-            state.tour.int = setInterval(() => {
-                if(state.tour.paused) return;
-                const sec = Math.floor((Date.now() - state.tour.start) / 1000);
-                const m = Math.floor(sec / 60).toString().padStart(2, '0');
-                const s = (sec % 60).toString().padStart(2, '0');
-                document.getElementById('chrono-badge').innerText = `${m}:${s}`;
-            }, 1000);
-        } else { document.getElementById('tour-menu').classList.toggle('visible'); }
-    };
-    window.pauseTour = () => { state.tour.paused = !state.tour.paused; document.getElementById('chrono-badge').style.opacity = state.tour.paused ? 0.5 : 1; document.getElementById('tour-menu').classList.remove('visible'); };
-    window.endTour = () => { clearInterval(state.tour.int); state.tour.active = false; const km = state.tour.dist; const cal = Math.round(km * USERS[state.nego].w * 0.75); document.getElementById('res-cal').innerText = cal + " kcal"; document.getElementById('end-modal').style.display = 'flex'; };
-    window.saveTour = async () => { const qty = document.getElementById('res-fly').value; await supabaseClient.from('tours').insert({ negociateur: state.nego, duration: document.getElementById('chrono-badge').innerText, flyers_count: qty, distance_km: state.tour.dist.toFixed(2), calories: parseInt(document.getElementById('res-cal').innerText) }); location.reload(); };
-
-    function activateGPS() {
-        if(!navigator.geolocation) return;
-        document.getElementById('btn-gps').classList.add('gps-active');
-        state.gps = navigator.geolocation.watchPosition(pos => {
-            const ll = [pos.coords.latitude, pos.coords.longitude];
-            if(!state.me) { state.me = L.circleMarker(ll, {radius:8,color:'white',fillColor:'#007AFF',fillOpacity:1}).addTo(map); map.setView(ll,17); }
-            else state.me.setLatLng(ll);
-            if(state.tour.active && !state.tour.paused && state.tour.last) { state.tour.dist += turf.distance(turf.point(state.tour.last), turf.point([ll[1],ll[0]])); }
-            state.tour.last = [ll[1],ll[0]];
-        }, null, {enableHighAccuracy:true});
-    }
-    window.toggleGPS = () => { if(state.gps) { navigator.geolocation.clearWatch(state.gps); state.gps=null; document.getElementById('btn-gps').classList.remove('gps-active'); } else activateGPS(); };
-
-    // --- INIT ---
-    async function init() {
-        const { data } = await supabaseClient.from('street_passages').select('*');
-        let hist = {}; if(data) data.forEach(d => hist[d.street_name] = d);
-        const q = `[out:json][timeout:90]; way["highway"~"residential|unclassified|living_street|tertiary|secondary|primary|service|track|pedestrian"](44.96,-0.50,45.04,-0.40); out geom;`;
-        try {
-            const res = await fetch("https://overpass-api.de/api/interpreter?data=" + encodeURIComponent(q));
-            const json = await res.json();
-            json.elements.forEach(el => { if(el.tags && el.tags.name) drawStreet(el.tags.name, el.geometry.map(p=>[p.lat,p.lon]), hist[el.tags.name]); });
-        } catch(e) { console.error(e); }
-        document.getElementById('loader').style.display='none';
-    }
-
-    window.toggleSat = () => { state.sat=!state.sat; const btn = document.getElementById('btn-sat'); if(state.sat) { map.removeLayer(lPlan); map.addLayer(lSat); document.body.classList.add('sat-mode'); btn.classList.add('sat-active'); } else { map.removeLayer(lSat); map.addLayer(lPlan); document.body.classList.remove('sat-mode'); btn.classList.remove('sat-active'); } };
-    document.getElementById('user-pick').addEventListener('change', (e) => { state.nego = e.target.value; map.flyTo(USERS[state.nego].center, 15, { duration: 1 }); });
-    
-    init();
-  </script>
-</body>
-</html>
+            showToast("💰
