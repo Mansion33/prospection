@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8" />
-  <title>Mansion V18 - Notes Unlocked</title>
+  <title>Mansion V19 - Precision View</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
   
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -15,7 +15,6 @@
       --shadow: 0 4px 20px rgba(0,0,0,0.15);
     }
     
-    /* RESET TACTILE */
     * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; user-select: none; -webkit-user-select: none; touch-action: none; }
     input, textarea { user-select: text; -webkit-user-select: text; touch-action: auto; }
 
@@ -78,13 +77,25 @@
     .radio-btn { flex: 1; padding: 10px; border-radius: 10px; border: 1px solid #ccc; background: transparent; font-weight: 600; cursor: pointer; }
     .radio-btn.selected { background: var(--text); color: var(--bg); border-color: var(--text); }
 
-    /* STREET VIEW TARGET */
-    #touch-ring { position: absolute; width: 80px; height: 80px; border-radius: 50%; border: 4px solid rgba(255,255,255,0.5); transform: translate(-50%, -50%); pointer-events: none; z-index: 9999; display: none; }
-    #touch-ring .fill { width: 100%; height: 100%; background: rgba(255,255,255,0.3); border-radius: 50%; transform: scale(0); transition: transform 0.8s linear; }
-    #touch-ring.active { display: block; }
-    #touch-ring.active .fill { transform: scale(1); }
-    #touch-ring.success { border-color: #34C759; }
-    #touch-ring.success .fill { background: rgba(52, 199, 89, 0.5); transition: none; transform: scale(1); }
+    /* --- VISEUR STREET VIEW --- */
+    #sv-pin {
+        position: absolute; width: 4px; height: 4px; background: var(--primary);
+        border-radius: 50%; z-index: 9999; pointer-events: none; display: none;
+        transform: translate(-50%, -50%);
+    }
+    /* L'épingle au dessus du doigt */
+    #sv-pin::after {
+        content: '📍'; font-size: 40px; position: absolute; 
+        bottom: 0px; left: 50%; transform: translateX(-50%);
+        filter: drop-shadow(0 4px 6px rgba(0,0,0,0.3));
+    }
+    /* Cercle de chargement */
+    #sv-loader {
+        position: absolute; top: -50px; left: -25px; width: 50px; height: 50px;
+        border: 4px solid rgba(0,0,0,0.1); border-top: 4px solid var(--success);
+        border-radius: 50%; animation: spin 0.8s linear infinite; opacity: 0;
+    }
+    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
     /* UTILS */
     .toast { position: absolute; top: 100px; left: 50%; transform: translateX(-50%); background: var(--primary); color: var(--bg); padding: 10px 20px; border-radius: 30px; font-weight: 700; font-size: 13px; opacity: 0; pointer-events: none; transition: 0.3s; z-index: 2000; }
@@ -123,7 +134,8 @@
 
   <div id="loader">Chargement...</div>
   <div id="toast" class="toast">Action enregistrée</div>
-  <div id="touch-ring"><div class="fill"></div></div>
+  
+  <div id="sv-pin"><div id="sv-loader"></div></div>
 
   <div id="map"></div>
 
@@ -162,14 +174,14 @@
     </div>
 
     <div class="wizard-card" id="step-2" style="display:none">
-      <div class="wiz-title" id="wiz-title-2">Détails & Note</div>
+      <div class="wiz-title">Fiche Contact</div>
       <div class="radio-group">
         <button class="radio-btn selected" onclick="selCiv(this, 'M')">M.</button>
         <button class="radio-btn" onclick="selCiv(this, 'Mme')">Mme</button>
       </div>
-      <div class="form-group"><input id="c-name" class="form-input" placeholder="Nom (Optionnel)"></div>
-      <div class="form-group"><input id="c-tel" class="form-input" type="tel" placeholder="Téléphone (Optionnel)"></div>
-      <div class="form-group"><input id="c-mail" class="form-input" type="email" placeholder="Email (Optionnel)"></div>
+      <div class="form-group"><input id="c-name" class="form-input" placeholder="Nom"></div>
+      <div class="form-group"><input id="c-tel" class="form-input" type="tel" placeholder="Téléphone"></div>
+      <div class="form-group"><input id="c-mail" class="form-input" type="email" placeholder="Email"></div>
       <div class="form-group">
         <textarea id="c-note" class="form-input" placeholder="📝 Note importante..."></textarea>
       </div>
@@ -233,6 +245,7 @@
         const vis = L.polyline(latlngs, { color: color, weight: weight, opacity: opacity, interactive: false, pane: 'streetsPane' }).addTo(map);
         const hit = L.polyline(latlngs, { weight: 25, opacity: 0 }).addTo(map);
         state.streets[name] = { vis, hit, dbData, defColor: color, defOp: opacity };
+        
         hit.on('click', (e) => { L.DomEvent.stopPropagation(e); selectStreet(name); });
     }
 
@@ -271,44 +284,48 @@
         await supabaseClient.from('street_passages').upsert({ street_name: name, passage_date: today, negociateur: state.nego, method: 'boitage' }, { onConflict: 'street_name' });
     };
 
-    // --- STREET VIEW (TACTILE NATIVE) ---
+    // --- VISEUR TACTILE (FIXED) ---
     const mapEl = document.getElementById('map');
-    const ring = document.getElementById('touch-ring');
-    let pressTimer = null;
-    let isReady = false;
+    const pin = document.getElementById('sv-pin');
+    const loader = document.getElementById('sv-loader');
+    let pTimer;
+    let isPinActive = false;
 
-    // Prevent context menu
-    window.oncontextmenu = function(event) { event.preventDefault(); event.stopPropagation(); return false; };
+    // Bloquer menu natif
+    window.oncontextmenu = (e) => { e.preventDefault(); return false; };
 
     mapEl.addEventListener('touchstart', (e) => {
         if(e.touches.length > 1) return;
         const t = e.touches[0];
-        const x = t.clientX; const y = t.clientY;
-        isReady = false;
         
-        ring.style.left = x + 'px'; ring.style.top = (y - 40) + 'px';
-        ring.classList.remove('success'); ring.classList.add('active');
+        isPinActive = false;
+        pin.style.left = t.clientX + 'px';
+        pin.style.top = (t.clientY - 50) + 'px'; // Offset pour voir le pin
+        pin.style.display = 'block';
+        loader.style.opacity = 0;
 
-        pressTimer = setTimeout(() => {
-            isReady = true; if(navigator.vibrate) navigator.vibrate(50);
-            ring.classList.add('success');
+        pTimer = setTimeout(() => {
+            isPinActive = true;
+            loader.style.opacity = 1; // Cercle vert
+            if(navigator.vibrate) navigator.vibrate(50);
         }, 800);
     }, {passive: false});
 
-    mapEl.addEventListener('touchmove', () => { clearTimeout(pressTimer); ring.classList.remove('active'); isReady = false; }, {passive: false});
+    mapEl.addEventListener('touchmove', () => { clearTimeout(pTimer); pin.style.display='none'; isPinActive=false; });
 
     mapEl.addEventListener('touchend', (e) => {
-        clearTimeout(pressTimer); ring.classList.remove('active');
-        if(isReady) {
+        clearTimeout(pTimer);
+        pin.style.display='none';
+        
+        if(isPinActive) {
             const t = e.changedTouches[0];
-            const pt = L.point(t.clientX, t.clientY);
+            const pt = L.point(t.clientX, t.clientY - 50); // Compenser l'offset visuel
             const ll = map.containerPointToLatLng(pt);
             window.open(`https://www.google.com/maps/search/?api=1&query=$${ll.lat},${ll.lng}`, '_blank');
         }
-        isReady = false;
     });
 
-    // --- WIZARD (TUNNEL) ---
+    // --- WIZARD (FIXED NOTES) ---
     window.startWizard = (tag) => {
         state.wizard = { tag, num: '' };
         document.getElementById('wiz-num').value = '';
@@ -318,10 +335,9 @@
     };
     window.kp = (k) => { if(k==='C') state.wizard.num=''; else state.wizard.num+=k; document.getElementById('wiz-num').value = state.wizard.num; };
     
-    window.nextStep = async () => {
+    window.nextStep = () => {
         if(!state.wizard.num) return alert("Numéro requis");
-        // TOUS LES TAGS VONT A L'ETAPE 2 (NOTES)
-        document.getElementById('wiz-title-2').innerText = state.wizard.tag;
+        // TOUT LE MONDE PASSE PAR L'ETAPE 2 POUR LA NOTE
         document.getElementById('step-1').style.display='none';
         document.getElementById('step-2').style.display='block';
     };
@@ -333,7 +349,7 @@
             nom: document.getElementById('c-name').value, 
             tel: document.getElementById('c-tel').value, 
             mail: document.getElementById('c-mail').value, 
-            note: document.getElementById('c-note').value, 
+            note: document.getElementById('c-note').value, // NOTE OK
             civ: state.wizard.civ||'M' 
         };
         await saveHistory(); closeWizard();
@@ -346,23 +362,28 @@
     window.closeWizard = () => document.getElementById('wizard-modal').style.display='none';
     function showToast(m) { const t=document.getElementById('toast'); t.innerText=m; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2000); }
 
-    // --- UTILS ---
-    window.toggleSat = () => { 
-        state.sat=!state.sat; 
-        const btn = document.getElementById('btn-sat');
-        if(state.sat) { map.removeLayer(lPlan); map.addLayer(lSat); document.body.classList.add('sat-mode'); btn.classList.add('sat-active'); }
-        else { map.removeLayer(lSat); map.addLayer(lPlan); document.body.classList.remove('sat-mode'); btn.classList.remove('sat-active'); } 
-    };
+    // --- INIT ---
+    async function init() {
+        const { data } = await supabaseClient.from('street_passages').select('*');
+        let hist = {}; if(data) data.forEach(d => hist[d.street_name] = d);
+        const q = `[out:json][timeout:90]; way["highway"~"residential|unclassified|living_street|tertiary|secondary|primary|service|track|pedestrian"](44.96,-0.50,45.04,-0.40); out geom;`;
+        try {
+            const res = await fetch("https://overpass-api.de/api/interpreter?data=" + encodeURIComponent(q));
+            const json = await res.json();
+            json.elements.forEach(el => { if(el.tags && el.tags.name) drawStreet(el.tags.name, el.geometry.map(p=>[p.lat,p.lon]), hist[el.tags.name]); });
+        } catch(e) { console.error(e); }
+        document.getElementById('loader').style.display='none';
+    }
+
+    window.toggleSat = () => { state.sat=!state.sat; if(state.sat) { map.removeLayer(lPlan); map.addLayer(lSat); document.body.classList.add('sat-mode'); } else { map.removeLayer(lSat); map.addLayer(lPlan); document.body.classList.remove('sat-mode'); } };
     
-    // CENTRAGE SECTEUR FIXÉ
+    // FIX CENTRAGE
     document.getElementById('user-pick').addEventListener('change', (e) => { 
         state.nego = e.target.value; 
-        document.getElementById('user-emoji').innerText = EMOJIS[state.nego];
-        const center = USERS[state.nego].center;
-        if(center) map.setView(center, 15, { animate: true });
+        map.flyTo(USERS[state.nego].center, 15, { duration: 1 });
     });
 
-    // TOURNEE
+    // TOURNEE & GPS
     window.toggleTourMenu = () => {
         if(!state.tour.active) {
             state.tour.active = true; state.tour.paused = false; state.tour.start = Date.now();
@@ -394,18 +415,7 @@
         }, null, {enableHighAccuracy:true});
     }
     window.toggleGPS = () => { if(state.gps) { navigator.geolocation.clearWatch(state.gps); state.gps=null; document.getElementById('btn-gps').classList.remove('gps-active'); } else activateGPS(); };
-
-    async function init() {
-        const { data } = await supabaseClient.from('street_passages').select('*');
-        let hist = {}; if(data) data.forEach(d => hist[d.street_name] = d);
-        const q = `[out:json][timeout:90]; way["highway"~"residential|unclassified|living_street|tertiary|secondary|primary|service|track|pedestrian"](44.96,-0.50,45.04,-0.40); out geom;`;
-        try {
-            const res = await fetch("https://overpass-api.de/api/interpreter?data=" + encodeURIComponent(q));
-            const json = await res.json();
-            json.elements.forEach(el => { if(el.tags && el.tags.name) drawStreet(el.tags.name, el.geometry.map(p=>[p.lat,p.lon]), hist[el.tags.name]); });
-        } catch(e) { console.error(e); }
-        document.getElementById('loader').style.display='none';
-    }
+    
     init();
   </script>
 </body>
