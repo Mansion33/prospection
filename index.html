@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8" />
-  <title>Mansion V27 - Hard Data</title>
+  <title>Mansion V24 - Unlocked</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
   
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -15,8 +15,9 @@
       --shadow: 0 4px 20px rgba(0,0,0,0.15);
     }
     
-    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; user-select: none; -webkit-user-select: none; touch-action: none; }
-    input, textarea { user-select: text; -webkit-user-select: text; touch-action: auto; }
+    /* RESET TACTILE RAISONNABLE */
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; user-select: none; -webkit-user-select: none; }
+    input, textarea { user-select: text; -webkit-user-select: text; }
 
     body { margin: 0; font-family: 'Plus Jakarta Sans', sans-serif; background: var(--bg); overflow: hidden; color: var(--text); }
 
@@ -39,7 +40,10 @@
     .widgets { position: absolute; right: 15px; top: 80px; z-index: 900; display: flex; flex-direction: column; gap: 15px; align-items: flex-end; }
     .fab { width: 44px; height: 44px; border-radius: 50%; background: var(--card); color: var(--text); border: none; box-shadow: var(--shadow); font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
     
-    .active-tool { background: var(--primary) !important; color: var(--bg) !important; border: 2px solid var(--bg); }
+    .gps-active { color: var(--accent); border: 2px solid var(--accent); }
+    .sat-active { border: 2px solid var(--success); color: var(--success); }
+    .cad-active { background: #FF9500; color: white; border: none; }
+    .dvf-active { background: #5856D6; color: white; border: none; }
 
     /* TOUR MENU */
     .tour-container { display: flex; flex-direction: column; gap: 10px; align-items: flex-end; }
@@ -59,39 +63,39 @@
     /* QUICK ACTIONS */
     .quick-actions { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 15px; }
     .q-btn { display: flex; flex-direction: column; align-items: center; gap: 5px; background: rgba(120,120,128,0.05); border: 1px solid rgba(120,120,128,0.1); border-radius: 12px; padding: 12px 5px; cursor: pointer; transition: 0.2s; }
-    .q-btn span { font-size: 20px; }
-    .q-btn div { font-size: 10px; font-weight: 700; text-transform: uppercase; }
     .q-btn:active { background: var(--text); color: var(--bg); }
     .btn-main { width: 100%; padding: 16px; border-radius: 18px; background: var(--success); color: white; border: none; font-weight: 800; font-size: 16px; box-shadow: 0 4px 15px rgba(52, 199, 89, 0.4); cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; }
 
-    /* SIMPLE MODAL (NOTES) */
-    .modal-overlay { position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); z-index: 5000; display:none; align-items:center; justify-content:center; backdrop-filter: blur(5px); }
-    .modal-card { background: var(--bg); width: 90%; max-width: 350px; padding: 25px; border-radius: 24px; }
-    .modal-title { font-size: 18px; font-weight: 800; margin-bottom: 15px; }
+    /* WIZARD */
+    .modal-overlay { position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); z-index: 5000; display:none; align-items:flex-end; justify-content:center; backdrop-filter: blur(5px); }
+    .wizard-card { background: var(--bg); width: 100%; max-width: 400px; padding: 25px; border-top-left-radius: 30px; border-top-right-radius: 30px; animation: slideUp 0.3s ease-out; }
+    @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
     
+    .keypad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 15px; }
+    .key { background: var(--card); padding: 15px; border-radius: 12px; border: none; font-size: 20px; font-weight: 700; box-shadow: 0 2px 5px rgba(0,0,0,0.05); cursor: pointer; }
+    .num-display { width: 100%; padding: 15px; font-size: 24px; text-align: center; font-weight: 800; background: rgba(0,0,0,0.05); border-radius: 12px; margin-bottom: 15px; border: none; }
+
     .form-group { margin-bottom: 10px; }
     .form-input { width: 100%; padding: 12px; border-radius: 12px; border: 1px solid rgba(120,120,128,0.2); font-size: 16px; background: var(--card); }
-    textarea.form-input { min-height: 100px; font-family: inherit; resize: none; }
-
-    /* STREET VIEW MARKER */
-    #sv-marker {
-        position: absolute; width: 20px; height: 20px; border-radius: 50%; 
-        background: #FF3B30; border: 3px solid white; box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-        transform: translate(-50%, -50%) scale(0); transition: transform 0.2s;
-        z-index: 9999; pointer-events: none;
-    }
-    #sv-marker.visible { transform: translate(-50%, -50%) scale(1); }
+    textarea.form-input { min-height: 80px; font-family: inherit; resize: none; }
+    .radio-group { display: flex; gap: 10px; margin-bottom: 15px; }
+    .radio-btn { flex: 1; padding: 10px; border-radius: 10px; border: 1px solid #ccc; background: transparent; font-weight: 600; cursor: pointer; }
+    .radio-btn.selected { background: var(--text); color: var(--bg); border-color: var(--text); }
 
     /* DVF MARKER */
     .dvf-marker { 
         background: #5856D6; color: white; border-radius: 8px; padding: 4px 8px; 
         font-size: 11px; font-weight: 800; white-space: nowrap; border: 2px solid white; 
-        box-shadow: 0 2px 6px rgba(0,0,0,0.4); text-align:center; width: auto !important; height: auto !important;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.3); text-align:center;
     }
+
+    .streetview-pin { font-size: 22px; line-height: 1; }
 
     /* UTILS */
     .toast { position: absolute; top: 100px; left: 50%; transform: translateX(-50%); background: var(--primary); color: var(--bg); padding: 10px 20px; border-radius: 30px; font-weight: 700; font-size: 13px; opacity: 0; pointer-events: none; transition: 0.3s; z-index: 2000; }
     .toast.show { opacity: 1; margin-top: 10px; }
+    
+    /* LOADER */
     #loader { position: absolute; bottom: 50%; left: 50%; transform: translate(-50%, 50%); background: var(--card); padding: 15px 30px; border-radius: 50px; font-weight: 800; z-index: 3000; box-shadow: var(--shadow); }
 
   </style>
@@ -129,8 +133,6 @@
 
   <div id="loader">Chargement...</div>
   <div id="toast" class="toast">Action enregistrée</div>
-  
-  <div id="sv-marker"></div>
 
   <div id="map"></div>
 
@@ -140,30 +142,52 @@
       <button class="close-sheet" onclick="closeSheet()">✕</button>
     </div>
     <div class="quick-actions">
-      <button class="q-btn" onclick="openNoteModal('Refus')"><span>⛔</span><div>Refus</div></button>
-      <button class="q-btn" onclick="openNoteModal('Intéressé')"><span>🤝</span><div>Intéressé</div></button>
-      <button class="q-btn" onclick="openNoteModal('Vente')"><span>🏠</span><div>Vente</div></button>
+      <button class="q-btn" onclick="startWizard('⛔ Refus')"><span>⛔</span><div>Refus</div></button>
+      <button class="q-btn" onclick="startWizard('🤝 Intéressé')"><span>🤝</span><div>Intéressé</div></button>
+      <button class="q-btn" onclick="startWizard('🏠 À Vendre')"><span>🏠</span><div>Vente</div></button>
     </div>
     <button class="btn-main" onclick="validateBoitage()">📬 BOÎTAGE FAIT</button>
   </div>
 
-  <div id="note-modal" class="modal-overlay">
-    <div class="modal-card">
-      <div class="modal-title" id="note-title">Note</div>
-      
-      <div class="form-group"><input id="c-num" class="form-input" placeholder="N° Rue (ex: 12 bis)"></div>
-      <div class="form-group"><input id="c-name" class="form-input" placeholder="Nom Contact"></div>
-      <div class="form-group"><input id="c-tel" class="form-input" type="tel" placeholder="Téléphone"></div>
-      <div class="form-group"><textarea id="c-msg" class="form-input" placeholder="Commentaire..."></textarea></div>
+  <div id="wizard-modal" class="modal-overlay">
+    <div class="wizard-card" id="step-1">
+      <div class="wiz-title">Numéro de rue ?</div>
+      <input type="text" id="wiz-num" class="num-display" placeholder="N°" readonly>
+      <div class="keypad">
+        <button class="key" onclick="kp('1')">1</button>
+        <button class="key" onclick="kp('2')">2</button>
+        <button class="key" onclick="kp('3')">3</button>
+        <button class="key" onclick="kp('4')">4</button>
+        <button class="key" onclick="kp('5')">5</button>
+        <button class="key" onclick="kp('6')">6</button>
+        <button class="key" onclick="kp('7')">7</button>
+        <button class="key" onclick="kp('8')">8</button>
+        <button class="key" onclick="kp('9')">9</button>
+        <button class="key" style="background:#eee" onclick="kp('C')">C</button>
+        <button class="key" onclick="kp('0')">0</button>
+        <button class="key" style="background:var(--success); color:white" onclick="nextStep()">OK</button>
+      </div>
+      <button onclick="closeWizard()" style="width:100%; padding:10px; background:none; border:none; color:gray">Annuler</button>
+    </div>
 
-      <button class="btn-main" onclick="saveNote()">ENREGISTRER</button>
-      <button onclick="closeNoteModal()" style="width:100%; margin-top:10px; background:none; border:none; padding:10px; color:#555">Annuler</button>
+    <div class="wizard-card" id="step-2" style="display:none">
+      <div class="wiz-title">Détails & Note</div>
+      <div class="radio-group">
+        <button class="radio-btn selected" onclick="selCiv(this, 'M')">M.</button>
+        <button class="radio-btn" onclick="selCiv(this, 'Mme')">Mme</button>
+      </div>
+      <div class="form-group"><input id="c-name" class="form-input" placeholder="Nom"></div>
+      <div class="form-group"><input id="c-tel" class="form-input" type="tel" placeholder="Téléphone"></div>
+      <div class="form-group">
+        <textarea id="c-note" class="form-input" placeholder="📝 Note importante..."></textarea>
+      </div>
+      <button class="btn-main" onclick="finishWizard()">ENREGISTRER</button>
     </div>
   </div>
 
   <div id="end-modal" class="modal-overlay">
-    <div class="modal-card" style="text-align:center">
-      <div class="modal-title">Fin de tournée 🎉</div>
+    <div class="wizard-card" style="text-align:center">
+      <div class="wiz-title">Fin de tournée 🎉</div>
       <div style="font-size:30px; margin:20px 0" id="res-cal">0 kcal</div>
       <input type="number" id="res-fly" class="form-input" placeholder="Flyers distribués ?" style="text-align:center">
       <button class="btn-main" style="margin-top:20px" onclick="saveTour()">VALIDER</button>
@@ -177,9 +201,13 @@
   <script>
     const CENTER_LAT = 44.9945;
     const CENTER_LNG = -0.4465;
+
     const SB_URL = "https://wqujtckrvdhrwknplumq.supabase.co";
     const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndxdWp0Y2tydmRocndrbnBsdW1xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjMxMjcwOTQsImV4cCI6MjA3ODcwMzA5NH0.btJD5-yD_zRJ9niEvwYEF46iB18OJo8nNXHRTbc8opE";
     const supabaseClient = supabase.createClient(SB_URL, SB_KEY);
+
+    // 🔑 Clé IGN à renseigner pour le cadastre
+    const IGN_API_KEY = ""; // <<--- À REMPLIR avec ta clé IGN Geoportail
 
     const USERS = {
       "Alexis":   { w: 79, color: '#e74c3c', center: [45.005, -0.455], zone: [[CENTER_LAT, CENTER_LNG], [CENTER_LAT+0.05, CENTER_LNG], [CENTER_LAT+0.05, CENTER_LNG-0.05], [CENTER_LAT, CENTER_LNG-0.05]] },
@@ -187,22 +215,26 @@
       "Thibault": { w: 72, color: '#f1c40f', center: [44.985, -0.455], zone: [[CENTER_LAT, CENTER_LNG], [CENTER_LAT-0.05, CENTER_LNG], [CENTER_LAT-0.05, CENTER_LNG-0.05], [CENTER_LAT, CENTER_LNG-0.05]] },
       "Laurent":  { w: 75, color: '#9b59b6', center: [44.985, -0.435], zone: [[CENTER_LAT, CENTER_LNG], [CENTER_LAT-0.05, CENTER_LNG], [CENTER_LAT-0.05, CENTER_LNG+0.05], [CENTER_LAT, CENTER_LNG+0.05]] }
     };
+
     const EMOJIS = { "Alexis": "👑", "Nicolas": "🚀", "Thibault": "🦁", "Laurent": "⚡" };
-    const state = { streets: {}, nego: "Alexis", selected: null, daily: 0, tour: { active: false, paused: false, start: 0, int: null, dist: 0 }, noteType: '', layers: {} };
 
-    // --- HARDCODED DVF (SOLUTION DE SECOURS ROBUSTE) ---
-    // Quelques points réels/simulés pour que tu voies le résultat immédiatement
-    const HARDCODED_DVF = [
-        {lat: 44.995, lng: -0.446, price: "240k", date: "12/03/2023"},
-        {lat: 44.996, lng: -0.444, price: "310k", date: "05/01/2024"},
-        {lat: 44.993, lng: -0.447, price: "180k", date: "22/11/2022"},
-        {lat: 45.002, lng: -0.450, price: "420k", date: "10/06/2023"},
-        {lat: 44.985, lng: -0.440, price: "210k", date: "14/02/2024"}
-    ];
+    const state = {
+      streets: {},
+      nego: "Alexis",
+      selected: null,
+      daily: 0,
+      tour: { active: false, paused: false, start: 0, int: null, dist: 0, last: null },
+      wizard: { tag: '', num: '' },
+      layers: {},
+      gps: null,
+      me: null,
+      sat: false,
+      streetPin: null
+    };
 
-    // --- MAP INIT ---
+    // MAP INIT
     const map = L.map('map', { zoomControl: false, tap: false }).setView(USERS["Alexis"].center, 15);
-    
+
     map.createPane('zonesPane'); map.getPane('zonesPane').style.zIndex = 350;
     map.createPane('cadastrePane'); map.getPane('cadastrePane').style.zIndex = 380;
     map.createPane('streetsPane'); map.getPane('streetsPane').style.zIndex = 450;
@@ -210,228 +242,418 @@
 
     const lPlan = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', { maxZoom: 20 }).addTo(map);
     const lSat = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { maxZoom: 19 });
-    
-    // CADASTRE WMS (IGN GEOPLATEFORME)
-    state.layers.cadastre = L.tileLayer.wms('https://data.geopf.fr/wms-r/wms', {
-        layers: 'CADASTRALPARCELS.PARCELS', format: 'image/png', transparent: true, pane: 'cadastrePane', opacity: 0.7
-    });
-    
-    // DVF LAYER
+
+    // CADASTRE (via IGN, nécessite une clé)
+    if (IGN_API_KEY) {
+      state.layers.cadastre = L.tileLayer.wms(
+        `https://wxs.ign.fr/${IGN_API_KEY}/geoportail/r/wms`,
+        {
+          layers: 'CADASTRALPARCELS.PARCELLAIRE_EXPRESS',
+          format: 'image/png',
+          transparent: true,
+          pane: 'cadastrePane',
+          opacity: 0.7
+        }
+      );
+    } else {
+      state.layers.cadastre = null;
+    }
+
     state.layers.dvf = L.layerGroup();
 
     const polyLayer = L.layerGroup().addTo(map);
     function drawZones() {
-        polyLayer.clearLayers();
-        Object.values(USERS).forEach(u => {
-            L.polygon(u.zone, { color: u.color, weight: 1, fillOpacity: 0.1, interactive: false, pane: 'zonesPane' }).addTo(polyLayer);
-        });
+      polyLayer.clearLayers();
+      Object.values(USERS).forEach(u => {
+        L.polygon(u.zone, {
+          color: u.color,
+          weight: 1,
+          fillOpacity: 0.1,
+          interactive: false,
+          pane: 'zonesPane'
+        }).addTo(polyLayer);
+      });
     }
     drawZones();
 
-    // --- STREET DRAW ---
+    // STREET DRAW
     function drawStreet(name, latlngs, dbData) {
-        let color = "#ff3b30"; let opacity = 0.5; let weight = 3;
-        if(dbData && dbData.method === 'boitage') {
-            const diff = (new Date() - new Date(dbData.passage_date)) / 8.64e7;
-            if(diff <= 20) { color = "#34C759"; opacity = 0.8; }
-            else color = "#FF9500";
-        }
-        const vis = L.polyline(latlngs, { color: color, weight: weight, opacity: opacity, interactive: false, pane: 'streetsPane' }).addTo(map);
-        const hit = L.polyline(latlngs, { weight: 25, opacity: 0 }).addTo(map);
-        state.streets[name] = { vis, hit, dbData, defColor: color, defOp: opacity };
-        hit.on('click', (e) => { L.DomEvent.stopPropagation(e); selectStreet(name); });
+      let color = "#ff3b30";
+      let opacity = 0.5;
+      let weight = 3;
+
+      if (dbData && dbData.method === 'boitage') {
+        const diff = (new Date() - new Date(dbData.passage_date)) / 8.64e7;
+        if (diff <= 20) { color = "#34C759"; opacity = 0.8; }
+        else color = "#FF9500";
+      }
+
+      const vis = L.polyline(latlngs, { color, weight, opacity, interactive: false, pane: 'streetsPane' }).addTo(map);
+      const hit = L.polyline(latlngs, { weight: 25, opacity: 0, interactive: true }).addTo(map);
+
+      state.streets[name] = { vis, hit, dbData, defColor: color, defOp: opacity };
+
+      hit.on('click', (e) => {
+        L.DomEvent.stopPropagation(e);
+        selectStreet(name);
+      });
     }
 
     function selectStreet(name) {
-        if(state.selected && state.streets[state.selected]) {
-            const old = state.streets[state.selected];
-            old.vis.setStyle({ color: old.defColor, weight: 3, opacity: old.defOp });
-        }
-        state.selected = name;
-        const st = state.streets[name];
-        st.vis.setStyle({ color: '#007AFF', weight: 6, opacity: 1 });
-        st.vis.bringToFront();
-        map.fitBounds(st.vis.getBounds(), { paddingBottomRight: [0, 200], maxZoom: 18, animate: true });
-        document.getElementById('st-name').innerText = name;
-        document.getElementById('sheet').classList.add('open');
+      if (state.selected && state.streets[state.selected]) {
+        const old = state.streets[state.selected];
+        old.vis.setStyle({ color: old.defColor, weight: 3, opacity: old.defOp });
+      }
+      state.selected = name;
+      const st = state.streets[name];
+      st.vis.setStyle({ color: '#007AFF', weight: 6, opacity: 1 });
+      st.vis.bringToFront();
+
+      map.fitBounds(st.vis.getBounds(), { paddingBottomRight: [0, 200], maxZoom: 18, animate: true });
+
+      document.getElementById('st-name').innerText = name;
+      document.getElementById('sheet').classList.add('open');
     }
 
     window.closeSheet = () => {
-        if(state.selected) {
-            const st = state.streets[state.selected];
-            st.vis.setStyle({ color: st.defColor, weight: 3, opacity: st.defOp });
-            state.selected = null;
-        }
-        document.getElementById('sheet').classList.remove('open');
+      if (state.selected) {
+        const st = state.streets[state.selected];
+        st.vis.setStyle({ color: st.defColor, weight: 3, opacity: st.defOp });
+        state.selected = null;
+      }
+      document.getElementById('sheet').classList.remove('open');
     };
 
     window.validateBoitage = async () => {
-        const name = state.selected;
-        if(!name) return;
-        state.streets[name].vis.setStyle({ color: "#34C759", weight: 3, opacity: 0.8 });
-        state.streets[name].defColor = "#34C759";
-        state.daily++; document.getElementById('daily-c').innerText = state.daily;
-        closeSheet();
-        showToast("✅ Boîtage OK");
-        const today = new Date().toISOString().split('T')[0];
-        await supabaseClient.from('street_passages').upsert({ street_name: name, passage_date: today, negociateur: state.nego, method: 'boitage' }, { onConflict: 'street_name' });
+      const name = state.selected;
+      if (!name) return;
+
+      state.streets[name].vis.setStyle({ color: "#34C759", weight: 3, opacity: 0.8 });
+      state.streets[name].defColor = "#34C759";
+
+      state.daily++;
+      document.getElementById('daily-c').innerText = state.daily;
+
+      closeSheet();
+      showToast("✅ Boîtage OK");
+
+      const today = new Date().toISOString().split('T')[0];
+      try {
+        await supabaseClient.from('street_passages').upsert(
+          { street_name: name, passage_date: today, negociateur: state.nego, method: 'boitage' },
+          { onConflict: 'street_name' }
+        );
+      } catch (e) {
+        console.error(e);
+      }
     };
 
-    // --- TOOLS ---
+    // CADASTRE
     window.toggleCadastre = () => {
-        const btn = document.getElementById('btn-cadastre');
-        if(map.hasLayer(state.layers.cadastre)) { 
-            map.removeLayer(state.layers.cadastre); 
-            btn.classList.remove('active-tool'); 
-        } else { 
-            map.addLayer(state.layers.cadastre); 
-            btn.classList.add('active-tool'); 
-            showToast("📐 Cadastre chargé"); 
-        }
+      const btn = document.getElementById('btn-cadastre');
+      if (!state.layers.cadastre) {
+        showToast("🔐 Cadastre : ajoute ta clé IGN dans le code");
+        return;
+      }
+      if (map.hasLayer(state.layers.cadastre)) {
+        map.removeLayer(state.layers.cadastre);
+        btn.classList.remove('cad-active');
+      } else {
+        map.addLayer(state.layers.cadastre);
+        btn.classList.add('cad-active');
+        showToast("📐 Cadastre activé");
+      }
     };
 
+    // DVF
     window.toggleDVF = async () => {
-        const btn = document.getElementById('btn-dvf');
-        if(map.hasLayer(state.layers.dvf)) {
-            map.removeLayer(state.layers.dvf);
-            btn.classList.remove('active-tool');
-        } else {
-            btn.classList.add('active-tool');
-            state.layers.dvf.clearLayers();
-            // Chargement des données hardcodées pour garantir l'affichage
-            HARDCODED_DVF.forEach(pt => {
-                const icon = L.divIcon({ className: 'dvf-marker', html: pt.price, iconSize: [null,null] });
-                L.marker([pt.lat, pt.lng], {icon: icon, pane: 'markersPane'})
-                 .bindPopup(`<b>${pt.price}</b><br>${pt.date}`)
-                 .addTo(state.layers.dvf);
-            });
-            map.addLayer(state.layers.dvf);
-            showToast("💰 Ventes affichées");
+      const btn = document.getElementById('btn-dvf');
+      if (map.hasLayer(state.layers.dvf)) {
+        map.removeLayer(state.layers.dvf);
+        btn.classList.remove('dvf-active');
+        return;
+      }
+      btn.classList.add('dvf-active');
+      showToast("💰 Chargement ventes DVF...");
+      await loadDVFData();
+      if (state.layers.dvf.getLayers().length > 0) {
+        map.addLayer(state.layers.dvf);
+      } else {
+        btn.classList.remove('dvf-active');
+      }
+    };
+
+    async function loadDVFData() {
+      state.layers.dvf.clearLayers();
+      const center = map.getCenter();
+      try {
+        const url = `https://api-dvf.etalab.gouv.fr/api/mutations3/geocodage?lat=${center.lat}&lon=${center.lng}&dist=500`;
+        const res = await fetch(url);
+        if (!res.ok) {
+          console.warn("DVF HTTP error", res.status);
+          showToast(`DVF indisponible (${res.status})`);
+          return;
         }
-    };
-
-    // --- STREET VIEW (SIMPLE LONG PRESS) ---
-    let pressTimer;
-    const svMarker = document.getElementById('sv-marker');
-
-    map.on('mousedown touchstart', (e) => {
-        // Ignore multi-touch zoom
-        if(e.originalEvent.touches && e.originalEvent.touches.length > 1) return;
-        
-        const latlng = e.latlng;
-        const pt = map.latLngToContainerPoint(latlng);
-        
-        // Affiche le marker
-        svMarker.style.left = pt.x + 'px';
-        svMarker.style.top = pt.y + 'px';
-        
-        pressTimer = setTimeout(() => {
-            svMarker.classList.add('visible');
-            if(navigator.vibrate) navigator.vibrate(50);
-            
-            // Attente du relâchement
-            const onUp = () => {
-                svMarker.classList.remove('visible');
-                window.open(`https://www.google.com/maps/search/?api=1&query=$${latlng.lat},${latlng.lng}`, '_blank');
-                document.removeEventListener('mouseup', onUp);
-                document.removeEventListener('touchend', onUp);
-            };
-            document.addEventListener('mouseup', onUp);
-            document.addEventListener('touchend', onUp);
-            
-        }, 800); // 800ms
-    });
-
-    map.on('mouseup touchend dragstart', () => {
-        clearTimeout(pressTimer);
-        svMarker.classList.remove('visible');
-    });
-
-    // --- NOTES ---
-    window.openNoteModal = (type) => {
-        state.noteType = type;
-        document.getElementById('note-title').innerText = "Note : " + type;
-        document.getElementById('c-num').value = "";
-        document.getElementById('c-name').value = "";
-        document.getElementById('c-tel').value = "";
-        document.getElementById('c-msg').value = "";
-        document.getElementById('note-modal').style.display = 'flex';
-    };
-
-    window.closeNoteModal = () => document.getElementById('note-modal').style.display = 'none';
-
-    window.saveNote = async () => {
-        const data = {
-            type: state.noteType,
-            num: document.getElementById('c-num').value,
-            nom: document.getElementById('c-name').value,
-            tel: document.getElementById('c-tel').value,
-            msg: document.getElementById('c-msg').value
-        };
-        
-        // 1. Fermer tout de suite (UX)
-        closeNoteModal();
-        showToast("✅ Note sauvegardée !");
-        
-        // 2. Sauver en background
-        await supabaseClient.from('street_history').insert({ 
-            street_name: state.selected, 
-            action_type: 'note', 
-            action_data: data, 
-            negociateur: state.nego 
+        const json = await res.json();
+        if (!json.features || json.features.length === 0) {
+          showToast("Aucune vente DVF ici");
+          return;
+        }
+        json.features.forEach(f => {
+          const p = f.properties;
+          if (!p.valeur_fonciere) return;
+          const prix = Math.round(p.valeur_fonciere / 1000) + "k";
+          const icon = L.divIcon({ className: 'dvf-marker', html: prix });
+          L.marker(
+            [f.geometry.coordinates[1], f.geometry.coordinates[0]],
+            { icon, pane: 'markersPane' }
+          ).addTo(state.layers.dvf);
         });
+        showToast(`${json.features.length} ventes trouvées`);
+      } catch (e) {
+        console.error(e);
+        showToast("Erreur DVF (réseau / limitation)");
+      }
+    }
+
+    // STREET VIEW PIN (clic droit / appui long)
+    const streetViewIcon = L.divIcon({
+      className: 'streetview-pin',
+      html: '📍',
+      iconSize: [24, 24],
+      iconAnchor: [12, 24]
+    });
+
+    map.on('contextmenu', (e) => {
+      const { lat, lng } = e.latlng;
+      if (state.streetPin) {
+        map.removeLayer(state.streetPin);
+      }
+      state.streetPin = L.marker([lat, lng], { icon: streetViewIcon, pane: 'markersPane' }).addTo(map);
+
+      const url = `https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${lat},${lng}`;
+      // ouverture dans le même onglet pour éviter les bloqueurs de pop-up
+      window.location.href = url;
+    });
+
+    // WIZARD
+    window.startWizard = (tag) => {
+      state.wizard = { tag, num: '' };
+      document.getElementById('wiz-num').value = '';
+      document.getElementById('c-name').value = '';
+      document.getElementById('c-tel').value = '';
+      document.getElementById('c-note').value = '';
+      document.querySelectorAll('.radio-btn').forEach(b => b.classList.remove('selected'));
+      document.querySelector('.radio-btn').classList.add('selected');
+      state.wizard.civ = 'M';
+      document.getElementById('step-1').style.display = 'block';
+      document.getElementById('step-2').style.display = 'none';
+      document.getElementById('wizard-modal').style.display = 'flex';
     };
 
-    // --- TOURNEE & GPS ---
-    function activateGPS() {
-        if(!navigator.geolocation) return;
-        document.getElementById('btn-gps').classList.add('gps-active');
-        state.gps = navigator.geolocation.watchPosition(pos => {
-            const ll = [pos.coords.latitude, pos.coords.longitude];
-            if(!state.me) { state.me = L.circleMarker(ll, {radius:8,color:'white',fillColor:'#007AFF',fillOpacity:1}).addTo(map); map.setView(ll,17); }
-            else state.me.setLatLng(ll);
-            if(state.tour.active && !state.tour.paused && state.tour.last) { state.tour.dist += turf.distance(turf.point(state.tour.last), turf.point([ll[1],ll[0]])); }
-            state.tour.last = [ll[1],ll[0]];
-        }, null, {enableHighAccuracy:true});
-    }
-    window.toggleGPS = () => { if(state.gps) { navigator.geolocation.clearWatch(state.gps); state.gps=null; document.getElementById('btn-gps').classList.remove('gps-active'); } else activateGPS(); };
+    window.kp = (k) => {
+      if (k === 'C') state.wizard.num = '';
+      else state.wizard.num += k;
+      document.getElementById('wiz-num').value = state.wizard.num;
+    };
 
+    window.nextStep = () => {
+      if (!state.wizard.num) {
+        alert("Numéro requis");
+        return;
+      }
+      document.getElementById('step-1').style.display = 'none';
+      document.getElementById('step-2').style.display = 'block';
+    };
+
+    window.selCiv = (el, v) => {
+      document.querySelectorAll('.radio-btn').forEach(b => b.classList.remove('selected'));
+      el.classList.add('selected');
+      state.wizard.civ = v;
+    };
+
+    window.finishWizard = async () => {
+      state.wizard.contact = {
+        nom: document.getElementById('c-name').value,
+        tel: document.getElementById('c-tel').value,
+        note: document.getElementById('c-note').value,
+        civ: state.wizard.civ || 'M'
+      };
+      try {
+        await supabaseClient.from('street_history').insert({
+          street_name: state.selected,
+          action_type: state.wizard.tag,
+          action_data: { num: state.wizard.num, contact: state.wizard.contact },
+          negociateur: state.nego
+        });
+        showToast("Note enregistrée !");
+      } catch (e) {
+        console.error(e);
+        showToast("Erreur enregistrement note");
+      }
+      closeWizard();
+    };
+
+    window.closeWizard = () => {
+      document.getElementById('wizard-modal').style.display = 'none';
+    };
+
+    function showToast(m) {
+      const t = document.getElementById('toast');
+      t.innerText = m;
+      t.classList.add('show');
+      setTimeout(() => t.classList.remove('show'), 2000);
+    }
+
+    // TOUR & GPS
     window.toggleTourMenu = () => {
-        if(!state.tour.active) {
-            state.tour.active = true; state.tour.paused = false; state.tour.start = Date.now();
-            document.getElementById('btn-tour-main').innerText = "⏱️";
-            document.getElementById('chrono-badge').style.display = 'block';
-            activateGPS();
-            state.tour.int = setInterval(() => {
-                if(state.tour.paused) return;
-                const sec = Math.floor((Date.now() - state.tour.start) / 1000);
-                const m = Math.floor(sec / 60).toString().padStart(2, '0');
-                const s = (sec % 60).toString().padStart(2, '0');
-                document.getElementById('chrono-badge').innerText = `${m}:${s}`;
-            }, 1000);
-        } else { document.getElementById('tour-menu').classList.toggle('visible'); }
+      if (!state.tour.active) {
+        state.tour.active = true;
+        state.tour.paused = false;
+        state.tour.start = Date.now();
+        state.tour.dist = 0;
+        state.tour.last = null;
+        document.getElementById('btn-tour-main').innerText = "⏱️";
+        document.getElementById('chrono-badge').style.display = 'block';
+        activateGPS();
+        state.tour.int = setInterval(() => {
+          if (state.tour.paused) return;
+          const sec = Math.floor((Date.now() - state.tour.start) / 1000);
+          const m = Math.floor(sec / 60).toString().padStart(2, '0');
+          const s = (sec % 60).toString().padStart(2, '0');
+          document.getElementById('chrono-badge').innerText = `${m}:${s}`;
+        }, 1000);
+      } else {
+        document.getElementById('tour-menu').classList.toggle('visible');
+      }
     };
-    window.pauseTour = () => { state.tour.paused = !state.tour.paused; document.getElementById('chrono-badge').style.opacity = state.tour.paused ? 0.5 : 1; document.getElementById('tour-menu').classList.remove('visible'); };
-    window.endTour = () => { clearInterval(state.tour.int); state.tour.active = false; const km = state.tour.dist; const cal = Math.round(km * USERS[state.nego].w * 0.75); document.getElementById('res-cal').innerText = cal + " kcal"; document.getElementById('end-modal').style.display = 'flex'; };
-    window.saveTour = async () => { const qty = document.getElementById('res-fly').value; await supabaseClient.from('tours').insert({ negociateur: state.nego, duration: document.getElementById('chrono-badge').innerText, flyers_count: qty, distance_km: state.tour.dist.toFixed(2), calories: parseInt(document.getElementById('res-cal').innerText) }); location.reload(); };
 
-    // --- INIT ---
-    async function init() {
-        setTimeout(() => document.getElementById('loader').style.display='none', 2000);
-        const { data } = await supabaseClient.from('street_passages').select('*');
-        let hist = {}; if(data) data.forEach(d => hist[d.street_name] = d);
-        const q = `[out:json][timeout:90]; way["highway"~"residential|unclassified|living_street|tertiary|secondary|primary|service|track|pedestrian"](44.96,-0.50,45.04,-0.40); out geom;`;
-        try {
-            const res = await fetch("https://overpass-api.de/api/interpreter?data=" + encodeURIComponent(q));
-            const json = await res.json();
-            json.elements.forEach(el => { if(el.tags && el.tags.name) drawStreet(el.tags.name, el.geometry.map(p=>[p.lat,p.lon]), hist[el.tags.name]); });
-        } catch(e) { console.error(e); }
-        document.getElementById('loader').style.display='none';
+    window.pauseTour = () => {
+      state.tour.paused = !state.tour.paused;
+      document.getElementById('chrono-badge').style.opacity = state.tour.paused ? 0.5 : 1;
+      document.getElementById('tour-menu').classList.remove('visible');
+    };
+
+    window.endTour = () => {
+      clearInterval(state.tour.int);
+      state.tour.active = false;
+      const km = state.tour.dist;
+      const cal = Math.round(km * USERS[state.nego].w * 0.75);
+      document.getElementById('res-cal').innerText = cal + " kcal";
+      document.getElementById('end-modal').style.display = 'flex';
+    };
+
+    window.saveTour = async () => {
+      const qty = document.getElementById('res-fly').value || 0;
+      const duration = document.getElementById('chrono-badge').innerText;
+      const calories = parseInt(document.getElementById('res-cal').innerText) || 0;
+      try {
+        await supabaseClient.from('tours').insert({
+          negociateur: state.nego,
+          duration,
+          flyers_count: qty,
+          distance_km: state.tour.dist.toFixed(2),
+          calories
+        });
+        showToast("Tournée enregistrée");
+      } catch (e) {
+        console.error(e);
+        showToast("Erreur enregistrement tournée");
+      }
+      location.reload();
+    };
+
+    function activateGPS() {
+      if (!navigator.geolocation) return;
+      document.getElementById('btn-gps').classList.add('gps-active');
+      state.gps = navigator.geolocation.watchPosition(pos => {
+        const ll = [pos.coords.latitude, pos.coords.longitude];
+        if (!state.me) {
+          state.me = L.circleMarker(ll, { radius: 8, color: 'white', fillColor: '#007AFF', fillOpacity: 1, pane: 'markersPane' }).addTo(map);
+          map.setView(ll, 17);
+        } else {
+          state.me.setLatLng(ll);
+        }
+        if (state.tour.active && !state.tour.paused && state.tour.last) {
+          const d = turf.distance(
+            turf.point(state.tour.last),
+            turf.point([ll[1], ll[0]])
+          );
+          state.tour.dist += d;
+        }
+        state.tour.last = [ll[1], ll[0]];
+      }, err => {
+        console.error(err);
+        showToast("GPS refusé ou indisponible");
+        document.getElementById('btn-gps').classList.remove('gps-active');
+      }, { enableHighAccuracy: true });
     }
 
-    window.toggleSat = () => { state.sat=!state.sat; const btn = document.getElementById('btn-sat'); if(state.sat) { map.removeLayer(lPlan); map.addLayer(lSat); document.body.classList.add('sat-mode'); btn.classList.add('active-tool'); } else { map.removeLayer(lSat); map.addLayer(lPlan); document.body.classList.remove('sat-mode'); btn.classList.remove('active-tool'); } };
-    document.getElementById('user-pick').addEventListener('change', (e) => { state.nego = e.target.value; map.flyTo(USERS[state.nego].center, 15, { duration: 1 }); });
-    
+    window.toggleGPS = () => {
+      const btn = document.getElementById('btn-gps');
+      if (state.gps) {
+        navigator.geolocation.clearWatch(state.gps);
+        state.gps = null;
+        btn.classList.remove('gps-active');
+      } else {
+        activateGPS();
+      }
+    };
+
+    window.toggleSat = () => {
+      state.sat = !state.sat;
+      const btn = document.getElementById('btn-sat');
+      if (state.sat) {
+        map.removeLayer(lPlan);
+        map.addLayer(lSat);
+        document.body.classList.add('sat-mode');
+        btn.classList.add('sat-active');
+      } else {
+        map.removeLayer(lSat);
+        map.addLayer(lPlan);
+        document.body.classList.remove('sat-mode');
+        btn.classList.remove('sat-active');
+      }
+    };
+
+    document.getElementById('user-pick').addEventListener('change', (e) => {
+      state.nego = e.target.value;
+      document.getElementById('user-emoji').innerText = EMOJIS[state.nego] || '👤';
+      map.flyTo(USERS[state.nego].center, 15, { duration: 1 });
+    });
+
+    // INIT
+    async function init() {
+      setTimeout(() => document.getElementById('loader').style.display = 'none', 3000);
+
+      let hist = {};
+      try {
+        const { data } = await supabaseClient.from('street_passages').select('*');
+        if (data) data.forEach(d => { hist[d.street_name] = d; });
+      } catch (e) {
+        console.error(e);
+      }
+
+      const q = `[out:json][timeout:90];
+        way["highway"~"residential|unclassified|living_street|tertiary|secondary|primary|service|track|pedestrian"](44.96,-0.50,45.04,-0.40);
+        out geom;`;
+
+      try {
+        const res = await fetch("https://overpass-api.de/api/interpreter?data=" + encodeURIComponent(q));
+        const json = await res.json();
+        json.elements.forEach(el => {
+          if (el.tags && el.tags.name) {
+            drawStreet(el.tags.name, el.geometry.map(p => [p.lat, p.lon]), hist[el.tags.name]);
+          }
+        });
+      } catch (e) {
+        console.error(e);
+        showToast("Erreur chargement rues (Overpass)");
+      }
+
+      document.getElementById('loader').style.display = 'none';
+    }
+
     init();
   </script>
 </body>
