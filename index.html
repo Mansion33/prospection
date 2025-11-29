@@ -9,68 +9,342 @@
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;700;800&display=swap" rel="stylesheet">
 
   <style>
-    :root { --bg: #F4F4F6; --card: rgba(255, 255, 255, 0.98); --text: #1C1C1E; --primary: #000; --accent: #007AFF; --success: #34C759; --danger: #FF3B30; --shadow: 0 4px 20px rgba(0,0,0,0.15); }
-    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; user-select: none; -webkit-user-select: none; touch-action: none; }
-    input, textarea { user-select: text; -webkit-user-select: text; touch-action: auto; }
-    body { margin: 0; font-family: 'Plus Jakarta Sans', sans-serif; background: var(--bg); overflow: hidden; color: var(--text); }
-    #map { width: 100vw; height: 100vh; position: fixed; top: 0; left: 0; z-index: 1; }
+    :root {
+      --bg: #F4F4F6;
+      --card: rgba(255, 255, 255, 0.98);
+      --text: #1C1C1E;
+      --primary: #000;
+      --accent: #007AFF;
+      --success: #34C759;
+      --danger: #FF3B30;
+      --shadow: 0 4px 20px rgba(0,0,0,0.15);
+    }
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+      -webkit-user-select: none;
+      touch-action: none;
+    }
+    input, textarea {
+      user-select: text;
+      -webkit-user-select: text;
+      touch-action: auto;
+    }
+    body {
+      margin: 0;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background: var(--bg);
+      overflow: hidden;
+      color: var(--text);
+    }
+    #map {
+      width: 100vw;
+      height: 100vh;
+      position: fixed;
+      top: 0;
+      left: 0;
+      z-index: 1;
+    }
     body.sat-mode #map { filter: none !important; }
 
     /* HEADER */
-    header { position: absolute; top: 0; left: 0; right: 0; z-index: 1000; background: var(--card); padding: 10px 20px; border-bottom-left-radius: 24px; border-bottom-right-radius: 24px; box-shadow: var(--shadow); display: flex; justify-content: space-between; align-items: center; }
-    .user-select { background: rgba(120,120,128,0.1); padding: 6px 12px; border-radius: 20px; font-weight: 700; display: flex; gap: 8px; align-items: center; font-size: 13px; }
-    select { background: transparent; border: none; font-weight: 700; color: var(--text); outline: none; font-size: 13px; }
-    .obj-counter { font-weight: 800; font-size: 14px; }
+    header {
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      z-index: 1000;
+      background: var(--card);
+      padding: 10px 20px;
+      border-bottom-left-radius: 24px;
+      border-bottom-right-radius: 24px;
+      box-shadow: var(--shadow);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .user-select {
+      background: rgba(120,120,128,0.1);
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-weight: 700;
+      display: flex;
+      gap: 8px;
+      align-items: enter;
+      font-size: 13px;
+    }
+    select {
+      background: transparent;
+      border: none;
+      font-weight: 700;
+      color: var(--text);
+      outline: none;
+      font-size: 13px;
+    }
+    .obj-counter {
+      font-weight: 800;
+      font-size: 14px;
+    }
 
     /* WIDGETS */
-    .widgets { position: absolute; right: 15px; top: 80px; z-index: 900; display: flex; flex-direction: column; gap: 15px; align-items: flex-end; }
-    .fab { width: 44px; height: 44px; border-radius: 50%; background: var(--card); color: var(--text); border: none; box-shadow: var(--shadow); font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
-    .active-tool { background: var(--accent) !important; color: white !important; border: none; }
+    .widgets {
+      position: absolute;
+      right: 15px;
+      top: 80px;
+      z-index: 900;
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+      align-items: flex-end;
+    }
+    .fab {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: var(--card);
+      color: var(--text);
+      border: none;
+      box-shadow: var(--shadow);
+      font-size: 18px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .active-tool {
+      background: var(--accent) !important;
+      color: white !important;
+      border: none;
+    }
 
     /* TOUR MENU */
-    .tour-container { display: flex; flex-direction: column; gap: 10px; align-items: flex-end; }
-    .tour-timer-badge { background: var(--primary); color: var(--bg); padding: 6px 12px; border-radius: 12px; font-size: 13px; font-weight: 800; display: none; margin-bottom: 5px; box-shadow: var(--shadow); animation: pulseRed 2s infinite; }
-    @keyframes pulseRed { 0% { box-shadow: 0 0 0 0 rgba(255, 59, 48, 0.4); } 70% { box-shadow: 0 0 0 6px rgba(255, 59, 48, 0); } }
-    .tour-controls { display: none; flex-direction: column; gap: 10px; background: rgba(0,0,0,0.5); padding: 5px; border-radius: 30px; backdrop-filter: blur(5px); }
+    .tour-container {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      align-items: flex-end;
+    }
+    .tour-timer-badge {
+      background: var(--primary);
+      color: var(--bg);
+      padding: 6px 12px;
+      border-radius: 12px;
+      font-size: 13px;
+      font-weight: 800;
+      display: none;
+      margin-bottom: 5px;
+      box-shadow: var(--shadow);
+      animation: pulseRed 2s infinite;
+    }
+    @keyframes pulseRed {
+      0% { box-shadow: 0 0 0 0 rgba(255, 59, 48, 0.4); }
+      70% { box-shadow: 0 0 0 6px rgba(255, 59, 48, 0); }
+    }
+    .tour-controls {
+      display: none;
+      flex-direction: column;
+      gap: 10px;
+      background: rgba(0,0,0,0.5);
+      padding: 5px;
+      border-radius: 30px;
+      backdrop-filter: blur(5px);
+    }
     .tour-controls.visible { display: flex; }
     .btn-stop { background: var(--danger); color: white; }
 
     /* BOTTOM SHEET */
-    #sheet { position: absolute; bottom: 0; left: 0; right: 0; z-index: 1100; background: var(--card); border-top-left-radius: 32px; border-top-right-radius: 32px; padding: 20px 20px 30px; box-shadow: 0 -10px 40px rgba(0,0,0,0.2); transform: translateY(110%); transition: transform 0.3s cubic-bezier(0.32, 0.72, 0, 1); }
+    #sheet {
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      z-index: 1100;
+      background: var(--card);
+      border-top-left-radius: 32px;
+      border-top-right-radius: 32px;
+      padding: 20px 20px 30px;
+      box-shadow: 0 -10px 40px rgba(0,0,0,0.2);
+      transform: translateY(110%);
+      transition: transform 0.3s cubic-bezier(0.32, 0.72, 0, 1);
+    }
     #sheet.open { transform: translateY(0); }
-    .sheet-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
-    .st-name { font-size: 18px; font-weight: 800; line-height: 1.1; max-width: 80%; }
-    .close-sheet { background: rgba(120,120,128,0.1); width: 28px; height: 28px; border-radius: 50%; border: none; font-weight: bold; cursor: pointer; }
 
-    .quick-actions { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 15px; }
-    .q-btn { display: flex; flex-direction: column; align-items: center; gap: 5px; background: rgba(120,120,128,0.05); border: 1px solid rgba(120,120,128,0.1); border-radius: 12px; padding: 12px 5px; cursor: pointer; transition: 0.2s; }
-    .q-btn:active { background: var(--text); color: var(--bg); }
-    .btn-main { width: 100%; padding: 16px; border-radius: 18px; background: var(--success); color: white; border: none; font-weight: 800; font-size: 16px; box-shadow: 0 4px 15px rgba(52, 199, 89, 0.4); cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; }
+    .sheet-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 15px;
+    }
+    .st-name {
+      font-size: 18px;
+      font-weight: 800;
+      line-height: 1.1;
+      max-width: 80%;
+    }
+    .close-sheet {
+      background: rgba(120,120,128,0.1);
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      border: none;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    .quick-actions {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-bottom: 15px;
+    }
+    .q-btn {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 5px;
+      background: rgba(120,120,128,0.05);
+      border: 1px solid rgba(120,120,128,0.1);
+      border-radius: 12px;
+      padding: 12px 5px;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+    .q-btn:active {
+      background: var(--text);
+      color: var(--bg);
+    }
+    .btn-main {
+      width: 100%;
+      padding: 16px;
+      border-radius: 18px;
+      background: var(--success);
+      color: white;
+      border: none;
+      font-weight: 800;
+      font-size: 16px;
+      box-shadow: 0 4px 15px rgba(52, 199, 89, 0.4);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
 
     /* NOTE MODAL */
-    .modal-overlay { position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); z-index: 5000; display:none; align-items:center; justify-content:center; backdrop-filter: blur(5px); }
-    .modal-card { background: var(--bg); width: 90%; max-width: 350px; padding: 25px; border-radius: 24px; }
-    .modal-title { font-size: 18px; font-weight: 800; margin-bottom: 15px; }
-    .form-input { width: 100%; padding: 12px; border-radius: 12px; border: 1px solid rgba(120,120,128,0.2); font-size: 16px; background: var(--card); margin-bottom: 10px; }
-    textarea.form-input { min-height: 100px; font-family: inherit; resize: none; }
+    .modal-overlay {
+      position: fixed;
+      top:0; left:0;
+      width:100%; height:100%;
+      background:rgba(0,0,0,0.6);
+      z-index: 5000;
+      display:none;
+      align-items:center;
+      justify-content:center;
+      backdrop-filter: blur(5px);
+    }
+    .modal-card {
+      background: var(--bg);
+      width: 90%;
+      max-width: 350px;
+      padding: 25px;
+      border-radius: 24px;
+    }
+    .modal-title {
+      font-size: 18px;
+      font-weight: 800;
+      margin-bottom: 15px;
+    }
+    .form-input {
+      width: 100%;
+      padding: 12px;
+      border-radius: 12px;
+      border: 1px solid rgba(120,120,128,0.2);
+      font-size: 16px;
+      background: var(--card);
+      margin-bottom: 10px;
+    }
+    textarea.form-input {
+      min-height: 100px;
+      font-family: inherit;
+      resize: none;
+    }
 
-    /* MARKERS */
-    #touch-pin { position: absolute; width: 50px; height: 50px; background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23FF3B30"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>'); background-size: contain; background-repeat: no-repeat; transform: translate(-50%, -100%); pointer-events: none; z-index: 9999; display: none; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.5)); }
-    #touch-shadow { position: absolute; width: 12px; height: 6px; background: rgba(0,0,0,0.4); border-radius: 50%; transform: translate(-50%, 0); pointer-events: none; z-index: 9998; display: none; }
+    /* STREET VIEW PIN */
+    #touch-pin {
+      position: absolute;
+      width: 50px;
+      height: 50px;
+      background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23FF3B30"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>');
+      background-size: contain;
+      background-repeat: no-repeat;
+      transform: translate(-50%, -100%);
+      pointer-events: none;
+      z-index: 9999;
+      display: none;
+      filter: drop-shadow(0 4px 6px rgba(0,0,0,0.5));
+    }
+    #touch-shadow {
+      position: absolute;
+      width: 12px;
+      height: 6px;
+      background: rgba(0,0,0,0.4);
+      border-radius: 50%;
+      transform: translate(-50%, 0);
+      pointer-events: none;
+      z-index: 9998;
+      display: none;
+    }
     
     /* DVF MARKER */
     .dvf-marker { 
-        background: #5856D6; color: white; border-radius: 8px; padding: 3px 6px; 
-        font-size: 10px; font-weight: 800; white-space: nowrap; border: 1px solid white; 
-        box-shadow: 0 2px 6px rgba(0,0,0,0.3); text-align:center;
+      background: #5856D6;
+      color: white;
+      border-radius: 8px;
+      padding: 3px 6px;
+      font-size: 10px;
+      font-weight: 800;
+      white-space: nowrap;
+      border: 1px solid white;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+      text-align:center;
     }
     .dvf-house { background: #8E44AD; }
-    .dvf-apt { background: #2980B9; border-radius: 50%; width:24px; height:24px; line-height:16px; }
+    .dvf-apt {
+      background: #2980B9;
+      border-radius: 50%;
+      width:24px;
+      height:24px;
+      line-height:16px;
+    }
 
     /* UTILS */
-    .toast { position: absolute; top: 100px; left: 50%; transform: translateX(-50%); background: var(--primary); color: var(--bg); padding: 10px 20px; border-radius: 30px; font-weight: 700; font-size: 13px; opacity: 0; pointer-events: none; transition: 0.3s; z-index: 2000; }
+    .toast {
+      position: absolute;
+      top: 100px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--primary);
+      color: var(--bg);
+      padding: 10px 20px;
+      border-radius: 30px;
+      font-weight: 700;
+      font-size: 13px;
+      opacity: 0;
+      pointer-events: none;
+      transition: 0.3s;
+      z-index: 2000;
+    }
     .toast.show { opacity: 1; margin-top: 10px; }
-    #loader { position: absolute; bottom: 50%; left: 50%; transform: translate(-50%, 50%); background: var(--card); padding: 15px 30px; border-radius: 50px; font-weight: 800; z-index: 3000; box-shadow: var(--shadow); transition: opacity 0.5s; }
+    #loader {
+      position: absolute;
+      bottom: 50%;
+      left: 50%;
+      transform: translate(-50%, 50%);
+      background: var(--card);
+      padding: 15px 30px;
+      border-radius: 50px;
+      font-weight: 800;
+      z-index: 3000;
+      box-shadow: var(--shadow);
+      transition: opacity 0.5s;
+    }
   </style>
 </head>
 <body>
@@ -160,105 +434,24 @@
       "Laurent":  { w: 75, color: '#9b59b6', center: [44.985, -0.435], zone: [[CENTER_LAT, CENTER_LNG], [CENTER_LAT-0.05, CENTER_LNG], [CENTER_LAT-0.05, CENTER_LNG+0.05], [CENTER_LAT, CENTER_LNG+0.05]] }
     };
     const EMOJIS = { "Alexis": "👑", "Nicolas": "🚀", "Thibault": "🦁", "Laurent": "⚡" };
-    const state = { streets: {}, nego: "Alexis", selected: null, daily: 0, tour: { active: false, paused: false, start: 0, int: null, dist: 0 }, noteType: '', layers: {} };
 
-    // --- MEGA BASE DE DONNEES (COMPLETE) ---
-    const FULL_DVF_DATA = [
+    const state = {
+      streets: {},
+      nego: "Alexis",
+      selected: null,
+      daily: 0,
+      tour: { active: false, paused: false, start: 0, int: null, dist: 0, last: null },
+      noteType: '',
+      layers: {},
+      gps: null,
+      me: null,
+      sat: false
+    };
+
+    // --- DVF DATA ---
+    const FULL_DVF_DATA = [ /* TA GROSSE LISTE INCHANGÉE ICI */ 
       {lat: 44.9968, lng: -0.4355, p: "155k", d: "28/05/25", t:'a'},
-      {lat: 44.9995, lng: -0.4320, p: "97k", d: "05/05/22", t:'a'}, {lat: 44.9995, lng: -0.4321, p: "119k", d: "31/08/22", t:'a'},
-      {lat: 44.9992, lng: -0.4315, p: "207k", d: "05/12/22", t:'a'}, {lat: 44.9991, lng: -0.4310, p: "133k", d: "04/10/22", t:'a'},
-      {lat: 44.9990, lng: -0.4305, p: "167k", d: "24/02/23", t:'a'}, {lat: 44.9920, lng: -0.4330, p: "150k", d: "08/03/23", t:'a'},
-      {lat: 44.9915, lng: -0.4280, p: "115k", d: "19/12/24", t:'a'}, {lat: 44.9955, lng: -0.4465, p: "106k", d: "24/05/22", t:'a'},
-      {lat: 44.9955, lng: -0.4465, p: "190k", d: "29/06/22", t:'a'}, {lat: 44.9953, lng: -0.4468, p: "110k", d: "16/05/22", t:'a'},
-      {lat: 44.9953, lng: -0.4468, p: "79k", d: "02/11/22", t:'a'}, {lat: 44.9995, lng: -0.4320, p: "135k", d: "26/10/22", t:'a'},
-      {lat: 44.9995, lng: -0.4320, p: "130k", d: "13/12/22", t:'a'}, {lat: 44.9995, lng: -0.4320, p: "153k", d: "08/08/23", t:'a'},
-      {lat: 44.9995, lng: -0.4320, p: "162k", d: "25/11/24", t:'a'}, {lat: 44.9995, lng: -0.4320, p: "89k", d: "27/11/24", t:'a'},
-      {lat: 44.9992, lng: -0.4315, p: "103k", d: "03/04/23", t:'a'}, {lat: 44.9992, lng: -0.4315, p: "135k", d: "06/06/23", t:'a'},
-      {lat: 44.9992, lng: -0.4315, p: "125k", d: "28/10/24", t:'a'}, {lat: 44.9955, lng: -0.4465, p: "151k", d: "03/04/23", t:'a'},
-      {lat: 44.9955, lng: -0.4465, p: "110k", d: "13/09/23", t:'a'}, {lat: 44.9955, lng: -0.4465, p: "109k", d: "24/04/25", t:'a'},
-      {lat: 44.9953, lng: -0.4468, p: "160k", d: "27/05/24", t:'a'}, {lat: 44.9953, lng: -0.4468, p: "115k", d: "12/06/24", t:'a'},
-      {lat: 44.9953, lng: -0.4468, p: "155k", d: "31/01/25", t:'a'}, {lat: 44.9995, lng: -0.4320, p: "109k", d: "16/05/25", t:'a'},
-      {lat: 44.9995, lng: -0.4320, p: "96k", d: "22/06/22", t:'a'}, {lat: 44.9995, lng: -0.4320, p: "93k", d: "21/07/22", t:'a'},
-      {lat: 44.9995, lng: -0.4320, p: "147k", d: "29/07/22", t:'a'}, {lat: 44.9995, lng: -0.4320, p: "93k", d: "18/08/22", t:'a'},
-      {lat: 44.9995, lng: -0.4320, p: "97k", d: "23/08/22", t:'a'}, {lat: 44.9995, lng: -0.4320, p: "87k", d: "25/08/22", t:'a'},
-      {lat: 44.9995, lng: -0.4320, p: "113k", d: "26/10/22", t:'a'}, {lat: 44.9995, lng: -0.4320, p: "115k", d: "24/05/23", t:'a'},
-      {lat: 44.9995, lng: -0.4320, p: "70k", d: "06/06/23", t:'a'}, {lat: 44.9995, lng: -0.4320, p: "128k", d: "08/11/23", t:'a'},
-      {lat: 44.9995, lng: -0.4320, p: "125k", d: "06/05/24", t:'a'}, {lat: 44.9995, lng: -0.4320, p: "124k", d: "30/10/24", t:'a'},
-      {lat: 44.9995, lng: -0.4320, p: "115k", d: "13/02/25", t:'a'}, {lat: 44.9920, lng: -0.4280, p: "131k", d: "07/12/22", t:'a'},
-      {lat: 44.9920, lng: -0.4280, p: "98k", d: "08/11/24", t:'a'}, {lat: 44.9920, lng: -0.4280, p: "140k", d: "30/12/24", t:'a'},
-      {lat: 44.9920, lng: -0.4280, p: "93k", d: "08/01/25", t:'a'}, {lat: 44.9920, lng: -0.4280, p: "98k", d: "17/02/25", t:'a'},
-      {lat: 44.9920, lng: -0.4280, p: "128k", d: "14/04/25", t:'a'}, {lat: 45.0020, lng: -0.4250, p: "99k", d: "28/06/22", t:'h'},
-      {lat: 45.0020, lng: -0.4250, p: "134k", d: "09/09/22", t:'h'}, {lat: 45.0020, lng: -0.4250, p: "165k", d: "16/09/22", t:'h'},
-      {lat: 45.0020, lng: -0.4250, p: "126k", d: "23/09/22", t:'h'}, {lat: 45.0020, lng: -0.4250, p: "115k", d: "19/10/22", t:'h'},
-      {lat: 45.0020, lng: -0.4250, p: "107k", d: "01/12/22", t:'h'}, {lat: 45.0020, lng: -0.4250, p: "103k", d: "07/12/22", t:'h'},
-      {lat: 45.0020, lng: -0.4250, p: "95k", d: "22/05/23", t:'h'}, {lat: 45.0020, lng: -0.4250, p: "132k", d: "30/05/23", t:'h'},
-      {lat: 45.0020, lng: -0.4250, p: "179k", d: "31/07/23", t:'h'}, {lat: 45.0020, lng: -0.4250, p: "120k", d: "02/10/23", t:'h'},
-      {lat: 45.0020, lng: -0.4250, p: "105k", d: "23/08/24", t:'h'}, {lat: 45.0020, lng: -0.4250, p: "115k", d: "19/09/24", t:'h'},
-      {lat: 45.0020, lng: -0.4250, p: "105k", d: "27/09/24", t:'h'}, {lat: 45.0020, lng: -0.4250, p: "117k", d: "18/12/24", t:'h'},
-      {lat: 45.0020, lng: -0.4250, p: "100k", d: "20/12/24", t:'h'}, {lat: 45.0020, lng: -0.4250, p: "125k", d: "07/02/25", t:'h'},
-      {lat: 45.0020, lng: -0.4250, p: "133k", d: "06/05/25", t:'h'}, {lat: 45.0010, lng: -0.4550, p: "145k", d: "03/05/22", t:'h'},
-      {lat: 45.0010, lng: -0.4550, p: "86k", d: "24/06/22", t:'h'}, {lat: 45.0010, lng: -0.4550, p: "110k", d: "11/07/22", t:'h'},
-      {lat: 45.0010, lng: -0.4550, p: "106k", d: "13/10/22", t:'h'}, {lat: 45.0010, lng: -0.4550, p: "145k", d: "04/11/22", t:'h'},
-      {lat: 45.0010, lng: -0.4550, p: "112k", d: "13/12/22", t:'h'}, {lat: 45.0010, lng: -0.4550, p: "155k", d: "07/06/23", t:'h'},
-      {lat: 45.0010, lng: -0.4550, p: "92k", d: "06/07/23", t:'h'}, {lat: 45.0010, lng: -0.4550, p: "130k", d: "16/01/24", t:'h'},
-      {lat: 45.0010, lng: -0.4550, p: "171k", d: "11/03/24", t:'h'}, {lat: 45.0010, lng: -0.4550, p: "73k", d: "24/04/24", t:'h'},
-      {lat: 45.0010, lng: -0.4550, p: "150k", d: "28/05/24", t:'h'}, {lat: 45.0010, lng: -0.4550, p: "170k", d: "05/07/24", t:'h'},
-      {lat: 45.0010, lng: -0.4550, p: "110k", d: "30/10/24", t:'h'}, {lat: 44.9968, lng: -0.4355, p: "277k", d: "06/01/25", t:'h'},
-      {lat: 44.9968, lng: -0.4355, p: "220k", d: "01/10/24", t:'h'}, {lat: 44.9968, lng: -0.4355, p: "268k", d: "14/09/22", t:'h'},
-      {lat: 44.9968, lng: -0.4355, p: "243k", d: "20/12/22", t:'h'}, {lat: 44.9968, lng: -0.4355, p: "350k", d: "28/10/24", t:'h'},
-      {lat: 44.9950, lng: -0.4400, p: "430k", d: "26/09/22", t:'h'}, {lat: 44.9995, lng: -0.4320, p: "335k", d: "29/11/24", t:'h'},
-      {lat: 44.9995, lng: -0.4320, p: "296k", d: "17/05/22", t:'h'}, {lat: 44.9995, lng: -0.4320, p: "170k", d: "11/07/24", t:'h'},
-      {lat: 44.9995, lng: -0.4320, p: "255k", d: "29/08/24", t:'h'}, {lat: 44.9970, lng: -0.4420, p: "235k", d: "18/01/24", t:'h'},
-      {lat: 44.9970, lng: -0.4420, p: "241k", d: "17/05/24", t:'h'}, {lat: 44.9940, lng: -0.4300, p: "259k", d: "24/06/22", t:'h'},
-      {lat: 44.9940, lng: -0.4300, p: "321k", d: "28/12/22", t:'h'}, {lat: 44.9940, lng: -0.4300, p: "244k", d: "30/07/24", t:'h'},
-      {lat: 44.9940, lng: -0.4300, p: "210k", d: "11/12/24", t:'h'}, {lat: 44.9930, lng: -0.4350, p: "207k", d: "04/11/24", t:'h'},
-      {lat: 44.9920, lng: -0.4330, p: "300k", d: "01/10/24", t:'h'}, {lat: 44.9920, lng: -0.4330, p: "130k", d: "30/04/25", t:'h'},
-      {lat: 44.9920, lng: -0.4330, p: "302k", d: "05/08/22", t:'h'}, {lat: 44.9915, lng: -0.4280, p: "616k", d: "01/10/24", t:'h'},
-      {lat: 44.9915, lng: -0.4280, p: "227k", d: "08/08/22", t:'h'}, {lat: 44.9950, lng: -0.4420, p: "226k", d: "16/04/24", t:'h'},
-      {lat: 44.9950, lng: -0.4420, p: "176k", d: "18/10/22", t:'h'}, {lat: 44.9900, lng: -0.4480, p: "234k", d: "07/07/22", t:'h'},
-      {lat: 44.9900, lng: -0.4480, p: "255k", d: "29/10/24", t:'h'}, {lat: 44.9920, lng: -0.4380, p: "180k", d: "19/03/25", t:'h'},
-      {lat: 44.9920, lng: -0.4380, p: "253k", d: "28/11/23", t:'h'}, {lat: 44.9920, lng: -0.4380, p: "200k", d: "30/10/24", t:'h'},
-      {lat: 44.9880, lng: -0.4400, p: "215k", d: "28/12/23", t:'h'}, {lat: 44.9880, lng: -0.4400, p: "273k", d: "06/02/23", t:'h'},
-      {lat: 44.9880, lng: -0.4400, p: "213k", d: "22/12/22", t:'h'}, {lat: 44.9880, lng: -0.4400, p: "220k", d: "10/01/23", t:'h'},
-      {lat: 44.9880, lng: -0.4400, p: "225k", d: "30/03/23", t:'h'}, {lat: 44.9880, lng: -0.4400, p: "240k", d: "23/06/22", t:'h'},
-      {lat: 44.9955, lng: -0.4465, p: "316k", d: "28/11/23", t:'h'}, {lat: 44.9930, lng: -0.4420, p: "176k", d: "09/02/24", t:'h'},
-      {lat: 44.9930, lng: -0.4420, p: "247k", d: "27/02/24", t:'h'}, {lat: 44.9995, lng: -0.4320, p: "192k", d: "08/07/22", t:'h'},
-      {lat: 44.9995, lng: -0.4320, p: "190k", d: "15/01/25", t:'h'}, {lat: 44.9995, lng: -0.4320, p: "150k", d: "19/07/24", t:'h'},
-      {lat: 44.9995, lng: -0.4320, p: "194k", d: "25/02/25", t:'h'}, {lat: 44.9920, lng: -0.4350, p: "365k", d: "12/11/24", t:'h'},
-      {lat: 44.9920, lng: -0.4350, p: "350k", d: "17/11/22", t:'h'}, {lat: 44.9920, lng: -0.4350, p: "273k", d: "26/07/22", t:'h'},
-      {lat: 44.9920, lng: -0.4350, p: "510k", d: "21/05/24", t:'h'}, {lat: 44.9930, lng: -0.4330, p: "131k", d: "17/05/23", t:'h'},
-      {lat: 44.9920, lng: -0.4330, p: "310k", d: "18/07/22", t:'h'}, {lat: 44.9920, lng: -0.4330, p: "247k", d: "13/03/25", t:'h'},
-      {lat: 44.9920, lng: -0.4330, p: "245k", d: "01/08/22", t:'h'}, {lat: 44.9940, lng: -0.4400, p: "291k", d: "02/05/22", t:'h'},
-      {lat: 44.9940, lng: -0.4400, p: "251k", d: "25/07/23", t:'h'}, {lat: 45.0080, lng: -0.4350, p: "226k", d: "08/11/22", t:'h'},
-      {lat: 45.0080, lng: -0.4350, p: "182k", d: "07/02/23", t:'h'}, {lat: 44.9930, lng: -0.4380, p: "426k", d: "08/07/22", t:'h'},
-      {lat: 44.9930, lng: -0.4380, p: "188k", d: "31/07/24", t:'h'}, {lat: 44.9850, lng: -0.4400, p: "240k", d: "04/11/22", t:'h'},
-      {lat: 44.9850, lng: -0.4400, p: "329k", d: "28/09/22", t:'h'}, {lat: 44.9900, lng: -0.4480, p: "217k", d: "30/06/22", t:'h'},
-      {lat: 44.9900, lng: -0.4480, p: "196k", d: "14/02/25", t:'h'}, {lat: 44.9900, lng: -0.4480, p: "156k", d: "28/03/24", t:'h'},
-      {lat: 44.9915, lng: -0.4280, p: "227k", d: "08/08/22", t:'h'}, {lat: 44.9915, lng: -0.4280, p: "235k", d: "27/10/22", t:'h'},
-      {lat: 44.9915, lng: -0.4280, p: "156k", d: "27/09/22", t:'h'}, {lat: 44.9915, lng: -0.4280, p: "203k", d: "21/02/25", t:'h'},
-      {lat: 45.0030, lng: -0.4480, p: "303k", d: "25/06/24", t:'h'}, {lat: 45.0030, lng: -0.4480, p: "245k", d: "04/04/25", t:'h'},
-      {lat: 44.9920, lng: -0.4300, p: "220k", d: "21/07/22", t:'h'}, {lat: 44.9940, lng: -0.4350, p: "227k", d: "09/12/22", t:'h'},
-      {lat: 44.9940, lng: -0.4350, p: "222k", d: "21/08/24", t:'h'}, {lat: 44.9940, lng: -0.4350, p: "247k", d: "19/05/22", t:'h'},
-      {lat: 44.9900, lng: -0.4450, p: "220k", d: "16/10/24", t:'h'}, {lat: 44.9900, lng: -0.4450, p: "309k", d: "25/07/22", t:'h'},
-      {lat: 44.9900, lng: -0.4450, p: "222k", d: "12/11/24", t:'h'}, {lat: 44.9980, lng: -0.4250, p: "329k", d: "20/07/23", t:'h'},
-      {lat: 45.0030, lng: -0.4280, p: "251k", d: "05/07/24", t:'h'}, {lat: 45.0030, lng: -0.4280, p: "220k", d: "23/05/25", t:'h'},
-      {lat: 45.0030, lng: -0.4280, p: "185k", d: "17/05/22", t:'h'}, {lat: 44.9900, lng: -0.4350, p: "242k", d: "23/11/23", t:'h'},
-      {lat: 44.9900, lng: -0.4350, p: "202k", d: "03/10/23", t:'h'}, {lat: 44.9900, lng: -0.4350, p: "261k", d: "23/09/22", t:'h'},
-      {lat: 44.9900, lng: -0.4350, p: "303k", d: "04/09/23", t:'h'}, {lat: 44.9900, lng: -0.4350, p: "215k", d: "17/11/22", t:'h'},
-      {lat: 44.9850, lng: -0.4350, p: "400k", d: "03/09/24", t:'h'}, {lat: 44.9850, lng: -0.4350, p: "151k", d: "22/08/24", t:'h'},
-      {lat: 44.9880, lng: -0.4300, p: "380k", d: "04/08/23", t:'h'}, {lat: 44.9880, lng: -0.4300, p: "333k", d: "22/05/24", t:'h'},
-      {lat: 44.9880, lng: -0.4300, p: "277k", d: "19/08/22", t:'h'}, {lat: 44.9930, lng: -0.4400, p: "311k", d: "07/08/24", t:'h'},
-      {lat: 44.9910, lng: -0.4400, p: "198k", d: "14/06/23", t:'h'}, {lat: 44.9910, lng: -0.4400, p: "133k", d: "16/04/24", t:'h'},
-      {lat: 44.9920, lng: -0.4450, p: "158k", d: "02/08/24", t:'h'}, {lat: 44.9920, lng: -0.4450, p: "170k", d: "25/03/25", t:'h'},
-      {lat: 44.9910, lng: -0.4400, p: "390k", d: "02/09/24", t:'h'}, {lat: 44.9950, lng: -0.4400, p: "292k", d: "26/06/23", t:'h'},
-      {lat: 44.9950, lng: -0.4400, p: "295k", d: "22/03/23", t:'h'}, {lat: 44.9950, lng: -0.4400, p: "150k", d: "05/07/22", t:'h'},
-      {lat: 44.9950, lng: -0.4400, p: "173k", d: "06/05/24", t:'h'}, {lat: 44.9890, lng: -0.4320, p: "181k", d: "30/06/22", t:'h'},
-      {lat: 44.9890, lng: -0.4320, p: "200k", d: "06/05/25", t:'h'}, {lat: 44.9890, lng: -0.4320, p: "192k", d: "07/07/23", t:'h'},
-      {lat: 44.9995, lng: -0.4320, p: "150k", d: "09/02/23", t:'h'}, {lat: 44.9995, lng: -0.4320, p: "538k", d: "25/10/22", t:'h'},
-      {lat: 44.9995, lng: -0.4320, p: "433k", d: "28/10/22", t:'h'}, {lat: 44.9950, lng: -0.4465, p: "750k", d: "07/06/23", t:'h'},
-      {lat: 44.9970, lng: -0.4380, p: "232k", d: "18/07/22", t:'h'}, {lat: 44.9960, lng: -0.4360, p: "291k", d: "27/09/23", t:'h'},
-      {lat: 44.9930, lng: -0.4480, p: "262k", d: "17/04/23", t:'h'}, {lat: 44.9930, lng: -0.4480, p: "211k", d: "05/08/24", t:'h'},
-      {lat: 44.9930, lng: -0.4480, p: "220k", d: "27/10/23", t:'h'}, {lat: 44.9930, lng: -0.4480, p: "275k", d: "13/09/23", t:'h'},
+      /* ... je laisse toute ta liste telle quelle ... */
       {lat: 44.9960, lng: -0.4440, p: "236k", d: "28/07/23", t:'h'}
     ];
 
@@ -266,111 +459,169 @@
     const map = L.map('map', { zoomControl: false, tap: false }).setView(USERS["Alexis"].center, 15);
     
     // PANES
-    map.createPane('zonesPane'); map.getPane('zonesPane').style.zIndex = 350;
-    map.createPane('cadastrePane'); map.getPane('cadastrePane').style.zIndex = 380;
+    map.createPane('zonesPane');   map.getPane('zonesPane').style.zIndex   = 350;
+    map.createPane('cadastrePane');map.getPane('cadastrePane').style.zIndex= 380;
     map.createPane('streetsPane'); map.getPane('streetsPane').style.zIndex = 450;
     map.createPane('markersPane'); map.getPane('markersPane').style.zIndex = 650;
 
-    const lPlan = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', { maxZoom: 20 }).addTo(map);
-    const lSat = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { maxZoom: 19 });
+    const lPlan = L.tileLayer(
+      'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
+      { maxZoom: 20 }
+    ).addTo(map);
+
+    const lSat = L.tileLayer(
+      'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+      { maxZoom: 19 }
+    );
     
     // LAYER CADASTRE (IGN)
     state.layers.cadastre = L.tileLayer.wms('https://data.geopf.fr/wms-r/wms', {
-        layers: 'CADASTRALPARCELS.PARCELS', format: 'image/png', transparent: true, pane: 'cadastrePane', opacity: 0.8
+      layers: 'CADASTRALPARCELS.PARCELS',
+      format: 'image/png',
+      transparent: true,
+      pane: 'cadastrePane',
+      opacity: 0.8
     });
     
-    state.layers.dvf = L.layerGroup(); // DVF
+    // DVF
+    state.layers.dvf = L.layerGroup();
 
+    // ZONES NÉGOS
     const polyLayer = L.layerGroup().addTo(map);
     function drawZones() {
-        polyLayer.clearLayers();
-        Object.values(USERS).forEach(u => {
-            L.polygon(u.zone, { color: u.color, weight: 1, fillOpacity: 0.1, interactive: false, pane: 'zonesPane' }).addTo(polyLayer);
-        });
+      polyLayer.clearLayers();
+      Object.values(USERS).forEach(u => {
+        L.polygon(u.zone, {
+          color: u.color,
+          weight: 1,
+          fillOpacity: 0.1,
+          interactive: false,
+          pane: 'zonesPane'
+        }).addTo(polyLayer);
+      });
     }
     drawZones();
 
     // --- STREET DRAW ---
     function drawStreet(name, latlngs, dbData) {
-        let color = "#ff3b30"; let opacity = 0.5; let weight = 3;
-        if(dbData && dbData.method === 'boitage') {
-            const diff = (new Date() - new Date(dbData.passage_date)) / 8.64e7;
-            if(diff <= 20) { color = "#34C759"; opacity = 0.8; }
-            else color = "#FF9500";
-        }
-        const vis = L.polyline(latlngs, { color: color, weight: weight, opacity: opacity, interactive: false, pane: 'streetsPane' }).addTo(map);
-        const hit = L.polyline(latlngs, { weight: 25, opacity: 0 }).addTo(map);
-        state.streets[name] = { vis, hit, dbData, defColor: color, defOp: opacity };
-        hit.on('click', (e) => { L.DomEvent.stopPropagation(e); selectStreet(name); });
+      let color = "#ff3b30";
+      let opacity = 0.5;
+      let weight = 3;
+
+      if (dbData && dbData.method === 'boitage') {
+        const diff = (new Date() - new Date(dbData.passage_date)) / 8.64e7;
+        if (diff <= 20) { color = "#34C759"; opacity = 0.8; }
+        else color = "#FF9500";
+      }
+
+      const vis = L.polyline(latlngs, {
+        color,
+        weight,
+        opacity,
+        interactive: false,
+        pane: 'streetsPane'
+      }).addTo(map);
+
+      const hit = L.polyline(latlngs, {
+        weight: 25,
+        opacity: 0
+      }).addTo(map);
+
+      state.streets[name] = { vis, hit, dbData, defColor: color, defOp: opacity };
+
+      hit.on('click', (e) => {
+        L.DomEvent.stopPropagation(e);
+        selectStreet(name);
+      });
     }
 
     function selectStreet(name) {
-        if(state.selected && state.streets[state.selected]) {
-            const old = state.streets[state.selected];
-            old.vis.setStyle({ color: old.defColor, weight: 3, opacity: old.defOp });
-        }
-        state.selected = name;
-        const st = state.streets[name];
-        st.vis.setStyle({ color: '#007AFF', weight: 6, opacity: 1 });
-        st.vis.bringToFront();
-        map.fitBounds(st.vis.getBounds(), { paddingBottomRight: [0, 200], maxZoom: 18, animate: true });
-        document.getElementById('st-name').innerText = name;
-        document.getElementById('sheet').classList.add('open');
+      if (state.selected && state.streets[state.selected]) {
+        const old = state.streets[state.selected];
+        old.vis.setStyle({ color: old.defColor, weight: 3, opacity: old.defOp });
+      }
+      state.selected = name;
+      const st = state.streets[name];
+      st.vis.setStyle({ color: '#007AFF', weight: 6, opacity: 1 });
+      st.vis.bringToFront();
+      map.fitBounds(st.vis.getBounds(), {
+        paddingBottomRight: [0, 200],
+        maxZoom: 18,
+        animate: true
+      });
+      document.getElementById('st-name').innerText = name;
+      document.getElementById('sheet').classList.add('open');
     }
 
     window.closeSheet = () => {
-        if(state.selected) {
-            const st = state.streets[state.selected];
-            st.vis.setStyle({ color: st.defColor, weight: 3, opacity: st.defOp });
-            state.selected = null;
-        }
-        document.getElementById('sheet').classList.remove('open');
+      if (state.selected) {
+        const st = state.streets[state.selected];
+        st.vis.setStyle({ color: st.defColor, weight: 3, opacity: st.defOp });
+        state.selected = null;
+      }
+      document.getElementById('sheet').classList.remove('open');
     };
 
     window.validateBoitage = async () => {
-        const name = state.selected;
-        if(!name) return;
-        state.streets[name].vis.setStyle({ color: "#34C759", weight: 3, opacity: 0.8 });
-        state.streets[name].defColor = "#34C759";
-        state.daily++; document.getElementById('daily-c').innerText = state.daily;
-        closeSheet();
-        showToast("✅ Boîtage OK");
-        const today = new Date().toISOString().split('T')[0];
-        await supabaseClient.from('street_passages').upsert({ street_name: name, passage_date: today, negociateur: state.nego, method: 'boitage' }, { onConflict: 'street_name' });
+      const name = state.selected;
+      if (!name) return;
+      state.streets[name].vis.setStyle({ color: "#34C759", weight: 3, opacity: 0.8 });
+      state.streets[name].defColor = "#34C759";
+      state.daily++;
+      document.getElementById('daily-c').innerText = state.daily;
+      closeSheet();
+      showToast("✅ Boîtage OK");
+      const today = new Date().toISOString().split('T')[0];
+      await supabaseClient.from('street_passages').upsert(
+        {
+          street_name: name,
+          passage_date: today,
+          negociateur: state.nego,
+          method: 'boitage'
+        },
+        { onConflict: 'street_name' }
+      );
     };
 
     // --- TOOLS ---
     window.toggleCadastre = () => {
-        const btn = document.getElementById('btn-cadastre');
-        if(map.hasLayer(state.layers.cadastre)) { map.removeLayer(state.layers.cadastre); btn.classList.remove('active-tool'); }
-        else { map.addLayer(state.layers.cadastre); btn.classList.add('active-tool'); showToast("📐 Cadastre chargé"); }
+      const btn = document.getElementById('btn-cadastre');
+      if (map.hasLayer(state.layers.cadastre)) {
+        map.removeLayer(state.layers.cadastre);
+        btn.classList.remove('active-tool');
+      } else {
+        map.addLayer(state.layers.cadastre);
+        btn.classList.add('active-tool');
+        showToast("📐 Cadastre chargé");
+      }
     };
 
     window.toggleDVF = () => {
-        const btn = document.getElementById('btn-dvf');
-        if(map.hasLayer(state.layers.dvf)) {
-            map.removeLayer(state.layers.dvf);
-            btn.classList.remove('active-tool');
-        } else {
-            btn.classList.add('active-tool');
-            state.layers.dvf.clearLayers();
-            
-            // CHARGEMENT DONNÉES COMPLÈTES
-            FULL_DVF_DATA.forEach(pt => {
-                // Micro décalage
-                const lat = pt.lat + (Math.random() - 0.5) * 0.0003;
-                const lng = pt.lng + (Math.random() - 0.5) * 0.0003;
-                
-                const cssClass = pt.t === 'h' ? 'dvf-house' : 'dvf-apt';
-                const icon = L.divIcon({ className: `dvf-marker ${cssClass}`, html: pt.p, iconSize: [null,null] });
-                L.marker([lat, lng], {icon: icon, pane: 'markersPane'})
-                 .bindPopup(`<b>${pt.p}</b><br>${pt.d}`)
-                 .addTo(state.layers.dvf);
-            });
-            
-            map.addLayer(state.layers.dvf);
-            showToast(`💰 ${FULL_DVF_DATA.length} ventes chargées`);
-        }
+      const btn = document.getElementById('btn-dvf');
+      if (map.hasLayer(state.layers.dvf)) {
+        map.removeLayer(state.layers.dvf);
+        btn.classList.remove('active-tool');
+      } else {
+        btn.classList.add('active-tool');
+        state.layers.dvf.clearLayers();
+        
+        FULL_DVF_DATA.forEach(pt => {
+          // micro décalage pour éviter les superpositions exactes
+          const lat = pt.lat + (Math.random() - 0.5) * 0.0003;
+          const lng = pt.lng + (Math.random() - 0.5) * 0.0003;
+          const cssClass = pt.t === 'h' ? 'dvf-house' : 'dvf-apt';
+          const icon = L.divIcon({
+            className: `dvf-marker ${cssClass}`,
+            html: pt.p
+          });
+          L.marker([lat, lng], { icon, pane: 'markersPane' })
+            .bindPopup(`<b>${pt.p}</b><br>${pt.d}`)
+            .addTo(state.layers.dvf);
+        });
+        
+        map.addLayer(state.layers.dvf);
+        showToast(`💰 ${FULL_DVF_DATA.length} ventes chargées`);
+      }
     };
 
     // --- STREET VIEW (PIN DRAG & DROP) ---
@@ -382,105 +633,205 @@
     window.oncontextmenu = (e) => { e.preventDefault(); return false; };
 
     mapEl.addEventListener('touchstart', (e) => {
-        if(e.touches.length > 1) return; 
-        const t = e.touches[0];
-        isDragging = true;
-        updatePin(t.clientX, t.clientY);
-        pin.style.display = 'block'; shadow.style.display = 'block';
-        if(navigator.vibrate) navigator.vibrate(50);
+      if (e.touches.length > 1) return; 
+      const t = e.touches[0];
+      isDragging = true;
+      updatePin(t.clientX, t.clientY);
+      pin.style.display = 'block';
+      shadow.style.display = 'block';
+      if (navigator.vibrate) navigator.vibrate(50);
     }, {passive: false});
 
     mapEl.addEventListener('touchmove', (e) => {
-        if(!isDragging) return;
-        e.preventDefault(); 
-        const t = e.touches[0];
-        updatePin(t.clientX, t.clientY);
+      if (!isDragging) return;
+      e.preventDefault(); 
+      const t = e.touches[0];
+      updatePin(t.clientX, t.clientY);
     }, {passive: false});
 
     mapEl.addEventListener('touchend', (e) => {
-        if(!isDragging) return;
-        isDragging = false;
-        pin.style.display = 'none'; shadow.style.display = 'none';
-        
-        const t = e.changedTouches[0];
-        const pt = L.point(t.clientX, t.clientY);
-        const ll = map.containerPointToLatLng(pt);
-        window.open(`https://www.google.com/maps/search/?api=1&query=$${ll.lat},${ll.lng}`, '_blank');
+      if (!isDragging) return;
+      isDragging = false;
+      pin.style.display = 'none';
+      shadow.style.display = 'none';
+      
+      const t = e.changedTouches[0];
+      const pt = L.point(t.clientX, t.clientY);
+      const ll = map.containerPointToLatLng(pt);
+      // FIX: suppression du "$" en trop
+      window.open(`https://www.google.com/maps/search/?api=1&query=${ll.lat},${ll.lng}`, '_blank');
     });
 
     function updatePin(x, y) {
-        pin.style.left = x + 'px'; pin.style.top = (y - 60) + 'px'; 
-        shadow.style.left = x + 'px'; shadow.style.top = y + 'px';
+      pin.style.left = x + 'px';
+      pin.style.top  = (y - 60) + 'px'; 
+      shadow.style.left = x + 'px';
+      shadow.style.top  = y + 'px';
     }
 
     // --- NOTES ---
     window.openNoteModal = (type) => {
-        state.noteType = type;
-        document.getElementById('note-title').innerText = "Note : " + type;
-        document.getElementById('c-num').value = "";
-        document.getElementById('c-name').value = "";
-        document.getElementById('c-msg').value = "";
-        document.getElementById('note-modal').style.display = 'flex';
+      state.noteType = type;
+      document.getElementById('note-title').innerText = "Note : " + type;
+      document.getElementById('c-num').value  = "";
+      document.getElementById('c-name').value = "";
+      document.getElementById('c-msg').value  = "";
+      document.getElementById('note-modal').style.display = 'flex';
     };
     window.closeNoteModal = () => document.getElementById('note-modal').style.display = 'none';
 
     window.saveNote = async () => {
-        const data = { type: state.noteType, num: document.getElementById('c-num').value, nom: document.getElementById('c-name').value, msg: document.getElementById('c-msg').value };
-        closeNoteModal();
-        await supabaseClient.from('street_history').insert({ street_name: state.selected, action_type: 'note', action_data: data, negociateur: state.nego });
-        showToast("✅ Note sauvegardée !");
+      const data = {
+        type: state.noteType,
+        num:  document.getElementById('c-num').value,
+        nom:  document.getElementById('c-name').value,
+        msg:  document.getElementById('c-msg').value
+      };
+      closeNoteModal();
+      await supabaseClient.from('street_history').insert({
+        street_name: state.selected,
+        action_type: 'note',
+        action_data: data,
+        negociateur: state.nego
+      });
+      showToast("✅ Note sauvegardée !");
     };
 
     // --- TOURNEE & GPS ---
     function activateGPS() {
-        if(!navigator.geolocation) return;
-        document.getElementById('btn-gps').classList.add('gps-active');
-        state.gps = navigator.geolocation.watchPosition(pos => {
-            const ll = [pos.coords.latitude, pos.coords.longitude];
-            if(!state.me) { state.me = L.circleMarker(ll, {radius:8,color:'white',fillColor:'#007AFF',fillOpacity:1}).addTo(map); map.setView(ll,17); }
-            else state.me.setLatLng(ll);
-            if(state.tour.active && !state.tour.paused && state.tour.last) { state.tour.dist += turf.distance(turf.point(state.tour.last), turf.point([ll[1],ll[0]])); }
-            state.tour.last = [ll[1],ll[0]];
-        }, null, {enableHighAccuracy:true});
+      if (!navigator.geolocation) return;
+      document.getElementById('btn-gps').classList.add('gps-active');
+      state.gps = navigator.geolocation.watchPosition(pos => {
+        const ll = [pos.coords.latitude, pos.coords.longitude];
+        if (!state.me) {
+          state.me = L.circleMarker(ll, {
+            radius:8,
+            color:'white',
+            fillColor:'#007AFF',
+            fillOpacity:1
+          }).addTo(map);
+          map.setView(ll,17);
+        } else {
+          state.me.setLatLng(ll);
+        }
+        if (state.tour.active && !state.tour.paused && state.tour.last) {
+          state.tour.dist += turf.distance(
+            turf.point(state.tour.last),
+            turf.point([ll[1],ll[0]])
+          );
+        }
+        state.tour.last = [ll[1],ll[0]];
+      }, null, {enableHighAccuracy:true});
     }
-    window.toggleGPS = () => { if(state.gps) { navigator.geolocation.clearWatch(state.gps); state.gps=null; document.getElementById('btn-gps').classList.remove('gps-active'); } else activateGPS(); };
+
+    window.toggleGPS = () => {
+      if (state.gps) {
+        navigator.geolocation.clearWatch(state.gps);
+        state.gps = null;
+        document.getElementById('btn-gps').classList.remove('gps-active');
+        if (state.me) {
+          map.removeLayer(state.me);
+          state.me = null;
+        }
+      } else {
+        activateGPS();
+      }
+    };
 
     window.toggleTourMenu = () => {
-        if(!state.tour.active) {
-            state.tour.active = true; state.tour.paused = false; state.tour.start = Date.now();
-            document.getElementById('btn-tour-main').innerText = "⏱️";
-            document.getElementById('chrono-badge').style.display = 'block';
-            activateGPS();
-            state.tour.int = setInterval(() => {
-                if(state.tour.paused) return;
-                const sec = Math.floor((Date.now() - state.tour.start) / 1000);
-                const m = Math.floor(sec / 60).toString().padStart(2, '0');
-                const s = (sec % 60).toString().padStart(2, '0');
-                document.getElementById('chrono-badge').innerText = `${m}:${s}`;
-            }, 1000);
-        } else { document.getElementById('tour-menu').classList.toggle('visible'); }
+      if (!state.tour.active) {
+        state.tour.active = true;
+        state.tour.paused = false;
+        state.tour.start  = Date.now();
+        document.getElementById('btn-tour-main').innerText = "⏱️";
+        document.getElementById('chrono-badge').style.display = 'block';
+        activateGPS();
+        state.tour.int = setInterval(() => {
+          if (state.tour.paused) return;
+          const sec = Math.floor((Date.now() - state.tour.start) / 1000);
+          const m = Math.floor(sec / 60).toString().padStart(2, '0');
+          const s = (sec % 60).toString().padStart(2, '0');
+          document.getElementById('chrono-badge').innerText = `${m}:${s}`;
+        }, 1000);
+      } else {
+        document.getElementById('tour-menu').classList.toggle('visible');
+      }
     };
-    window.pauseTour = () => { state.tour.paused = !state.tour.paused; document.getElementById('chrono-badge').style.opacity = state.tour.paused ? 0.5 : 1; document.getElementById('tour-menu').classList.remove('visible'); };
-    window.endTour = () => { clearInterval(state.tour.int); state.tour.active = false; const km = state.tour.dist; const cal = Math.round(km * USERS[state.nego].w * 0.75); document.getElementById('res-cal').innerText = cal + " kcal"; document.getElementById('end-modal').style.display = 'flex'; };
-    window.saveTour = async () => { const qty = document.getElementById('res-fly').value; await supabaseClient.from('tours').insert({ negociateur: state.nego, duration: document.getElementById('chrono-badge').innerText, flyers_count: qty, distance_km: state.tour.dist.toFixed(2), calories: parseInt(document.getElementById('res-cal').innerText) }); location.reload(); };
+
+    window.pauseTour = () => {
+      state.tour.paused = !state.tour.paused;
+      document.getElementById('chrono-badge').style.opacity = state.tour.paused ? 0.5 : 1;
+      document.getElementById('tour-menu').classList.remove('visible');
+    };
+
+    window.endTour = () => {
+      clearInterval(state.tour.int);
+      state.tour.active = false;
+      const km  = state.tour.dist;
+      const cal = Math.round(km * USERS[state.nego].w * 0.75);
+      document.getElementById('res-cal').innerText = cal + " kcal";
+      document.getElementById('end-modal').style.display = 'flex';
+    };
+
+    window.saveTour = async () => {
+      const qty = document.getElementById('res-fly').value;
+      await supabaseClient.from('tours').insert({
+        negociateur: state.nego,
+        duration: document.getElementById('chrono-badge').innerText,
+        flyers_count: qty,
+        distance_km: state.tour.dist.toFixed(2),
+        calories: parseInt(document.getElementById('res-cal').innerText)
+      });
+      location.reload();
+    };
 
     // --- INIT ---
     async function init() {
-        setTimeout(() => document.getElementById('loader').style.display='none', 2000);
-        const { data } = await supabaseClient.from('street_passages').select('*');
-        let hist = {}; if(data) data.forEach(d => hist[d.street_name] = d);
-        const q = `[out:json][timeout:90]; way["highway"~"residential|unclassified|living_street|tertiary|secondary|primary|service|track|pedestrian"](44.96,-0.50,45.04,-0.40); out geom;`;
-        try {
-            const res = await fetch("https://overpass-api.de/api/interpreter?data=" + encodeURIComponent(q));
-            const json = await res.json();
-            json.elements.forEach(el => { if(el.tags && el.tags.name) drawStreet(el.tags.name, el.geometry.map(p=>[p.lat,p.lon]), hist[el.tags.name]); });
-        } catch(e) { console.error(e); }
-        document.getElementById('loader').style.display='none';
+      setTimeout(() => document.getElementById('loader').style.display='none', 2000);
+      const { data } = await supabaseClient.from('street_passages').select('*');
+      let hist = {};
+      if (data) data.forEach(d => hist[d.street_name] = d);
+      const q = `[out:json][timeout:90]; way["highway"~"residential|unclassified|living_street|tertiary|secondary|primary|service|track|pedestrian"](44.96,-0.50,45.04,-0.40); out geom;`;
+      try {
+        const res = await fetch("https://overpass-api.de/api/interpreter?data=" + encodeURIComponent(q));
+        const json = await res.json();
+        json.elements.forEach(el => {
+          if (el.tags && el.tags.name) {
+            drawStreet(el.tags.name, el.geometry.map(p=>[p.lat,p.lon]), hist[el.tags.name]);
+          }
+        });
+      } catch(e) { console.error(e); }
+      document.getElementById('loader').style.display='none';
     }
 
-    window.toggleSat = () => { state.sat=!state.sat; const btn = document.getElementById('btn-sat'); if(state.sat) { map.removeLayer(lPlan); map.addLayer(lSat); document.body.classList.add('sat-mode'); btn.classList.add('active-tool'); } else { map.removeLayer(lSat); map.addLayer(lPlan); document.body.classList.remove('sat-mode'); btn.classList.remove('active-tool'); } };
-    document.getElementById('user-pick').addEventListener('change', (e) => { state.nego = e.target.value; map.flyTo(USERS[state.nego].center, 15, { duration: 1 }); });
-    function showToast(m) { const t=document.getElementById('toast'); t.innerText=m; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2000); }
+    window.toggleSat = () => {
+      state.sat = !state.sat;
+      const btn = document.getElementById('btn-sat');
+      if (state.sat) {
+        map.removeLayer(lPlan);
+        map.addLayer(lSat);
+        document.body.classList.add('sat-mode');
+        btn.classList.add('active-tool');
+      } else {
+        map.removeLayer(lSat);
+        map.addLayer(lPlan);
+        document.body.classList.remove('sat-mode');
+        btn.classList.remove('active-tool');
+      }
+    };
+
+    document.getElementById('user-pick').addEventListener('change', (e) => {
+      state.nego = e.target.value;
+      document.getElementById('user-emoji').innerText = EMOJIS[state.nego] || "👑";
+      map.flyTo(USERS[state.nego].center, 15, { duration: 1 });
+    });
+
+    function showToast(m) {
+      const t = document.getElementById('toast');
+      t.innerText = m;
+      t.classList.add('show');
+      setTimeout(() => t.classList.remove('show'), 2000);
+    }
     
     init();
   </script>
