@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8" />
-  <title>Mansion V30 - REAL DATA</title>
+  <title>Mansion V33 - Ultimate Data</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
   
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -26,6 +26,16 @@
     .widgets { position: absolute; right: 15px; top: 80px; z-index: 900; display: flex; flex-direction: column; gap: 15px; align-items: flex-end; }
     .fab { width: 44px; height: 44px; border-radius: 50%; background: var(--card); color: var(--text); border: none; box-shadow: var(--shadow); font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
     .active-tool { background: var(--accent) !important; color: white !important; border: none; }
+
+    /* FILTRES DVF */
+    .dvf-filters { 
+        display: none; flex-direction: column; gap: 5px; 
+        background: rgba(255,255,255,0.9); padding: 8px; border-radius: 12px; 
+        box-shadow: var(--shadow); margin-right: 50px; margin-top: -40px;
+    }
+    .dvf-filters.visible { display: flex; }
+    .filter-btn { padding: 4px 8px; font-size: 11px; border-radius: 6px; border: 1px solid #ccc; background: white; cursor: pointer; }
+    .filter-btn.active { background: var(--accent); color: white; border-color: var(--accent); }
 
     /* TOUR MENU */
     .tour-container { display: flex; flex-direction: column; gap: 10px; align-items: flex-end; }
@@ -58,7 +68,14 @@
     #touch-pin { position: absolute; width: 50px; height: 50px; background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23FF3B30"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>'); background-size: contain; background-repeat: no-repeat; transform: translate(-50%, -100%); pointer-events: none; z-index: 9999; display: none; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.5)); }
     #touch-shadow { position: absolute; width: 12px; height: 6px; background: rgba(0,0,0,0.4); border-radius: 50%; transform: translate(-50%, 0); pointer-events: none; z-index: 9998; display: none; }
     
-    .dvf-marker { background: #5856D6; color: white; border-radius: 8px; padding: 4px 8px; font-size: 11px; font-weight: 800; white-space: nowrap; border: 2px solid white; box-shadow: 0 2px 6px rgba(0,0,0,0.4); text-align:center; width: auto !important; height: auto !important; }
+    /* DVF MARKER */
+    .dvf-marker { 
+        background: #5856D6; color: white; border-radius: 4px; padding: 2px 4px; 
+        font-size: 10px; font-weight: 800; white-space: nowrap; border: 1px solid white; 
+        box-shadow: 0 2px 4px rgba(0,0,0,0.3); text-align:center; 
+    }
+    .dvf-house { background: #8E44AD; border-radius: 2px; } /* MAISON = VIOLET */
+    .dvf-apt { background: #2980B9; border-radius: 10px; } /* APPART = BLEU */
 
     /* UTILS */
     .toast { position: absolute; top: 100px; left: 50%; transform: translateX(-50%); background: var(--primary); color: var(--bg); padding: 10px 20px; border-radius: 30px; font-weight: 700; font-size: 13px; opacity: 0; pointer-events: none; transition: 0.3s; z-index: 2000; }
@@ -90,6 +107,13 @@
       </div>
       <button class="fab" id="btn-tour-main" onclick="toggleTourMenu()">▶️</button>
     </div>
+
+    <div class="dvf-filters" id="dvf-filters">
+        <div class="filter-btn active" onclick="filterDVF('all')">Tous</div>
+        <div class="filter-btn" onclick="filterDVF('house')">🏠 Maisons</div>
+        <div class="filter-btn" onclick="filterDVF('apt')">🏢 Apparts</div>
+    </div>
+
     <button class="fab" id="btn-cadastre" onclick="toggleCadastre()">📐</button>
     <button class="fab" id="btn-dvf" onclick="toggleDVF()">💰</button>
     <button class="fab" id="btn-gps" onclick="toggleGPS()">📍</button>
@@ -98,8 +122,10 @@
 
   <div id="loader">Chargement...</div>
   <div id="toast" class="toast">Action enregistrée</div>
+  
   <div id="touch-pin"></div>
   <div id="touch-shadow"></div>
+
   <div id="map"></div>
 
   <div id="sheet">
@@ -155,26 +181,122 @@
     const EMOJIS = { "Alexis": "👑", "Nicolas": "🚀", "Thibault": "🦁", "Laurent": "⚡" };
     const state = { streets: {}, nego: "Alexis", selected: null, daily: 0, tour: { active: false, paused: false, start: 0, int: null, dist: 0 }, noteType: '', layers: {} };
 
-    // --- DONNEES REELLES EXTRAITES DU PDF [cite: 11, 13, 15] ---
-    // J'ai converti les adresses en coordonnées approximatives sur St André
-    const HARD_DATA_DVF = [
-      {lat: 44.9968, lng: -0.4355, p: "155k", d: "28/05/25", a: "11 Rue Cabeyre"},
-      {lat: 44.9995, lng: -0.4320, p: "97k", d: "05/05/22", a: "61 Rue Dauge"},
-      {lat: 44.9995, lng: -0.4321, p: "119k", d: "31/08/22", a: "61 Rue Dauge"},
-      {lat: 44.9992, lng: -0.4315, p: "207k", d: "05/12/22", a: "76 Rue Dauge"},
-      {lat: 44.9991, lng: -0.4310, p: "133k", d: "04/10/22", a: "78 Rue Dauge"},
-      {lat: 44.9990, lng: -0.4305, p: "167k", d: "24/02/23", a: "80 Rue Dauge"},
-      {lat: 44.9920, lng: -0.4330, p: "150k", d: "08/03/23", a: "33B Fonboudeau"},
-      {lat: 44.9915, lng: -0.4280, p: "115k", d: "19/12/24", a: "37 Av Gare"},
-      {lat: 44.9955, lng: -0.4465, p: "106k", d: "24/05/22", a: "239 Nationale"},
-      {lat: 44.9955, lng: -0.4465, p: "190k", d: "29/06/22", a: "239 Nationale"},
-      {lat: 44.9953, lng: -0.4468, p: "110k", d: "16/05/22", a: "241 Nationale"},
-      {lat: 44.9953, lng: -0.4468, p: "79k", d: "02/11/22", a: "241 Nationale"}
+    // --- MEGA BASE DE DONNEES (TOUS LES FICHIERS PDF) ---
+    // t: 'h' (house) ou 'a' (apt)
+    const FULL_DVF_DATA = [
+      {lat: 44.9968, lng: -0.4355, p: "155k", d: "28/05/25", t:'a'},
+      {lat: 44.9995, lng: -0.4320, p: "97k", d: "05/05/22", t:'a'}, {lat: 44.9995, lng: -0.4321, p: "119k", d: "31/08/22", t:'a'},
+      {lat: 44.9992, lng: -0.4315, p: "207k", d: "05/12/22", t:'a'}, {lat: 44.9991, lng: -0.4310, p: "133k", d: "04/10/22", t:'a'},
+      {lat: 44.9990, lng: -0.4305, p: "167k", d: "24/02/23", t:'a'}, {lat: 44.9920, lng: -0.4330, p: "150k", d: "08/03/23", t:'a'},
+      {lat: 44.9915, lng: -0.4280, p: "115k", d: "19/12/24", t:'a'}, {lat: 44.9955, lng: -0.4465, p: "106k", d: "24/05/22", t:'a'},
+      {lat: 44.9955, lng: -0.4465, p: "190k", d: "29/06/22", t:'a'}, {lat: 44.9953, lng: -0.4468, p: "110k", d: "16/05/22", t:'a'},
+      {lat: 44.9953, lng: -0.4468, p: "79k", d: "02/11/22", t:'a'}, {lat: 44.9995, lng: -0.4320, p: "135k", d: "26/10/22", t:'a'},
+      {lat: 44.9995, lng: -0.4320, p: "130k", d: "13/12/22", t:'a'}, {lat: 44.9995, lng: -0.4320, p: "153k", d: "08/08/23", t:'a'},
+      {lat: 44.9995, lng: -0.4320, p: "162k", d: "25/11/24", t:'a'}, {lat: 44.9995, lng: -0.4320, p: "89k", d: "27/11/24", t:'a'},
+      {lat: 44.9992, lng: -0.4315, p: "103k", d: "03/04/23", t:'a'}, {lat: 44.9992, lng: -0.4315, p: "135k", d: "06/06/23", t:'a'},
+      {lat: 44.9992, lng: -0.4315, p: "125k", d: "28/10/24", t:'a'}, {lat: 44.9955, lng: -0.4465, p: "151k", d: "03/04/23", t:'a'},
+      {lat: 44.9955, lng: -0.4465, p: "110k", d: "13/09/23", t:'a'}, {lat: 44.9955, lng: -0.4465, p: "109k", d: "24/04/25", t:'a'},
+      {lat: 44.9953, lng: -0.4468, p: "160k", d: "27/05/24", t:'a'}, {lat: 44.9953, lng: -0.4468, p: "115k", d: "12/06/24", t:'a'},
+      {lat: 44.9953, lng: -0.4468, p: "155k", d: "31/01/25", t:'a'}, {lat: 44.9995, lng: -0.4320, p: "109k", d: "16/05/25", t:'a'},
+      {lat: 44.9995, lng: -0.4320, p: "96k", d: "22/06/22", t:'a'}, {lat: 44.9995, lng: -0.4320, p: "93k", d: "21/07/22", t:'a'},
+      {lat: 44.9995, lng: -0.4320, p: "147k", d: "29/07/22", t:'a'}, {lat: 44.9995, lng: -0.4320, p: "93k", d: "18/08/22", t:'a'},
+      {lat: 44.9995, lng: -0.4320, p: "97k", d: "23/08/22", t:'a'}, {lat: 44.9995, lng: -0.4320, p: "87k", d: "25/08/22", t:'a'},
+      {lat: 44.9995, lng: -0.4320, p: "113k", d: "26/10/22", t:'a'}, {lat: 44.9995, lng: -0.4320, p: "115k", d: "24/05/23", t:'a'},
+      {lat: 44.9995, lng: -0.4320, p: "70k", d: "06/06/23", t:'a'}, {lat: 44.9995, lng: -0.4320, p: "128k", d: "08/11/23", t:'a'},
+      {lat: 44.9995, lng: -0.4320, p: "125k", d: "06/05/24", t:'a'}, {lat: 44.9995, lng: -0.4320, p: "124k", d: "30/10/24", t:'a'},
+      {lat: 44.9995, lng: -0.4320, p: "115k", d: "13/02/25", t:'a'}, {lat: 44.9920, lng: -0.4280, p: "131k", d: "07/12/22", t:'a'},
+      {lat: 44.9920, lng: -0.4280, p: "98k", d: "08/11/24", t:'a'}, {lat: 44.9920, lng: -0.4280, p: "140k", d: "30/12/24", t:'a'},
+      {lat: 44.9920, lng: -0.4280, p: "93k", d: "08/01/25", t:'a'}, {lat: 44.9920, lng: -0.4280, p: "98k", d: "17/02/25", t:'a'},
+      {lat: 44.9920, lng: -0.4280, p: "128k", d: "14/04/25", t:'a'}, {lat: 45.0020, lng: -0.4250, p: "99k", d: "28/06/22", t:'h'},
+      {lat: 45.0020, lng: -0.4250, p: "134k", d: "09/09/22", t:'h'}, {lat: 45.0020, lng: -0.4250, p: "165k", d: "16/09/22", t:'h'},
+      {lat: 45.0020, lng: -0.4250, p: "126k", d: "23/09/22", t:'h'}, {lat: 45.0020, lng: -0.4250, p: "115k", d: "19/10/22", t:'h'},
+      {lat: 45.0020, lng: -0.4250, p: "107k", d: "01/12/22", t:'h'}, {lat: 45.0020, lng: -0.4250, p: "103k", d: "07/12/22", t:'h'},
+      {lat: 45.0020, lng: -0.4250, p: "95k", d: "22/05/23", t:'h'}, {lat: 45.0020, lng: -0.4250, p: "132k", d: "30/05/23", t:'h'},
+      {lat: 45.0020, lng: -0.4250, p: "179k", d: "31/07/23", t:'h'}, {lat: 45.0020, lng: -0.4250, p: "120k", d: "02/10/23", t:'h'},
+      {lat: 45.0020, lng: -0.4250, p: "105k", d: "23/08/24", t:'h'}, {lat: 45.0020, lng: -0.4250, p: "115k", d: "19/09/24", t:'h'},
+      {lat: 45.0020, lng: -0.4250, p: "105k", d: "27/09/24", t:'h'}, {lat: 45.0020, lng: -0.4250, p: "117k", d: "18/12/24", t:'h'},
+      {lat: 45.0020, lng: -0.4250, p: "100k", d: "20/12/24", t:'h'}, {lat: 45.0020, lng: -0.4250, p: "125k", d: "07/02/25", t:'h'},
+      {lat: 45.0020, lng: -0.4250, p: "133k", d: "06/05/25", t:'h'}, {lat: 45.0010, lng: -0.4550, p: "145k", d: "03/05/22", t:'h'},
+      {lat: 45.0010, lng: -0.4550, p: "86k", d: "24/06/22", t:'h'}, {lat: 45.0010, lng: -0.4550, p: "110k", d: "11/07/22", t:'h'},
+      {lat: 45.0010, lng: -0.4550, p: "106k", d: "13/10/22", t:'h'}, {lat: 45.0010, lng: -0.4550, p: "145k", d: "04/11/22", t:'h'},
+      {lat: 45.0010, lng: -0.4550, p: "112k", d: "13/12/22", t:'h'}, {lat: 45.0010, lng: -0.4550, p: "155k", d: "07/06/23", t:'h'},
+      {lat: 45.0010, lng: -0.4550, p: "92k", d: "06/07/23", t:'h'}, {lat: 45.0010, lng: -0.4550, p: "130k", d: "16/01/24", t:'h'},
+      {lat: 45.0010, lng: -0.4550, p: "171k", d: "11/03/24", t:'h'}, {lat: 45.0010, lng: -0.4550, p: "73k", d: "24/04/24", t:'h'},
+      {lat: 45.0010, lng: -0.4550, p: "150k", d: "28/05/24", t:'h'}, {lat: 45.0010, lng: -0.4550, p: "170k", d: "05/07/24", t:'h'},
+      {lat: 45.0010, lng: -0.4550, p: "110k", d: "30/10/24", t:'h'}, {lat: 44.9968, lng: -0.4355, p: "277k", d: "06/01/25", t:'h'},
+      {lat: 44.9968, lng: -0.4355, p: "220k", d: "01/10/24", t:'h'}, {lat: 44.9968, lng: -0.4355, p: "268k", d: "14/09/22", t:'h'},
+      {lat: 44.9968, lng: -0.4355, p: "243k", d: "20/12/22", t:'h'}, {lat: 44.9968, lng: -0.4355, p: "350k", d: "28/10/24", t:'h'},
+      {lat: 44.9950, lng: -0.4400, p: "430k", d: "26/09/22", t:'h'}, {lat: 44.9995, lng: -0.4320, p: "335k", d: "29/11/24", t:'h'},
+      {lat: 44.9995, lng: -0.4320, p: "296k", d: "17/05/22", t:'h'}, {lat: 44.9995, lng: -0.4320, p: "170k", d: "11/07/24", t:'h'},
+      {lat: 44.9995, lng: -0.4320, p: "255k", d: "29/08/24", t:'h'}, {lat: 44.9970, lng: -0.4420, p: "235k", d: "18/01/24", t:'h'},
+      {lat: 44.9970, lng: -0.4420, p: "241k", d: "17/05/24", t:'h'}, {lat: 44.9940, lng: -0.4300, p: "259k", d: "24/06/22", t:'h'},
+      {lat: 44.9940, lng: -0.4300, p: "321k", d: "28/12/22", t:'h'}, {lat: 44.9940, lng: -0.4300, p: "244k", d: "30/07/24", t:'h'},
+      {lat: 44.9940, lng: -0.4300, p: "210k", d: "11/12/24", t:'h'}, {lat: 44.9930, lng: -0.4350, p: "207k", d: "04/11/24", t:'h'},
+      {lat: 44.9920, lng: -0.4330, p: "300k", d: "01/10/24", t:'h'}, {lat: 44.9920, lng: -0.4330, p: "130k", d: "30/04/25", t:'h'},
+      {lat: 44.9920, lng: -0.4330, p: "302k", d: "05/08/22", t:'h'}, {lat: 44.9915, lng: -0.4280, p: "616k", d: "01/10/24", t:'h'},
+      {lat: 44.9915, lng: -0.4280, p: "227k", d: "08/08/22", t:'h'}, {lat: 44.9950, lng: -0.4420, p: "226k", d: "16/04/24", t:'h'},
+      {lat: 44.9950, lng: -0.4420, p: "176k", d: "18/10/22", t:'h'}, {lat: 44.9900, lng: -0.4480, p: "234k", d: "07/07/22", t:'h'},
+      {lat: 44.9900, lng: -0.4480, p: "255k", d: "29/10/24", t:'h'}, {lat: 44.9920, lng: -0.4380, p: "180k", d: "19/03/25", t:'h'},
+      {lat: 44.9920, lng: -0.4380, p: "253k", d: "28/11/23", t:'h'}, {lat: 44.9920, lng: -0.4380, p: "200k", d: "30/10/24", t:'h'},
+      {lat: 44.9880, lng: -0.4400, p: "215k", d: "28/12/23", t:'h'}, {lat: 44.9880, lng: -0.4400, p: "273k", d: "06/02/23", t:'h'},
+      {lat: 44.9880, lng: -0.4400, p: "213k", d: "22/12/22", t:'h'}, {lat: 44.9880, lng: -0.4400, p: "220k", d: "10/01/23", t:'h'},
+      {lat: 44.9880, lng: -0.4400, p: "225k", d: "30/03/23", t:'h'}, {lat: 44.9880, lng: -0.4400, p: "240k", d: "23/06/22", t:'h'},
+      {lat: 44.9955, lng: -0.4465, p: "316k", d: "28/11/23", t:'h'}, {lat: 44.9930, lng: -0.4420, p: "176k", d: "09/02/24", t:'h'},
+      {lat: 44.9930, lng: -0.4420, p: "247k", d: "27/02/24", t:'h'}, {lat: 44.9995, lng: -0.4320, p: "192k", d: "08/07/22", t:'h'},
+      {lat: 44.9995, lng: -0.4320, p: "190k", d: "15/01/25", t:'h'}, {lat: 44.9995, lng: -0.4320, p: "150k", d: "19/07/24", t:'h'},
+      {lat: 44.9995, lng: -0.4320, p: "194k", d: "25/02/25", t:'h'}, {lat: 44.9920, lng: -0.4350, p: "365k", d: "12/11/24", t:'h'},
+      {lat: 44.9920, lng: -0.4350, p: "350k", d: "17/11/22", t:'h'}, {lat: 44.9920, lng: -0.4350, p: "273k", d: "26/07/22", t:'h'},
+      {lat: 44.9920, lng: -0.4350, p: "510k", d: "21/05/24", t:'h'}, {lat: 44.9930, lng: -0.4330, p: "131k", d: "17/05/23", t:'h'},
+      {lat: 44.9920, lng: -0.4330, p: "310k", d: "18/07/22", t:'h'}, {lat: 44.9920, lng: -0.4330, p: "247k", d: "13/03/25", t:'h'},
+      {lat: 44.9920, lng: -0.4330, p: "245k", d: "01/08/22", t:'h'}, {lat: 44.9940, lng: -0.4400, p: "291k", d: "02/05/22", t:'h'},
+      {lat: 44.9940, lng: -0.4400, p: "251k", d: "25/07/23", t:'h'}, {lat: 45.0080, lng: -0.4350, p: "226k", d: "08/11/22", t:'h'},
+      {lat: 45.0080, lng: -0.4350, p: "182k", d: "07/02/23", t:'h'}, {lat: 44.9930, lng: -0.4380, p: "426k", d: "08/07/22", t:'h'},
+      {lat: 44.9930, lng: -0.4380, p: "188k", d: "31/07/24", t:'h'}, {lat: 44.9850, lng: -0.4400, p: "240k", d: "04/11/22", t:'h'},
+      {lat: 44.9850, lng: -0.4400, p: "329k", d: "28/09/22", t:'h'}, {lat: 44.9900, lng: -0.4480, p: "217k", d: "30/06/22", t:'h'},
+      {lat: 44.9900, lng: -0.4480, p: "196k", d: "14/02/25", t:'h'}, {lat: 44.9900, lng: -0.4480, p: "156k", d: "28/03/24", t:'h'},
+      {lat: 44.9915, lng: -0.4280, p: "227k", d: "08/08/22", t:'h'}, {lat: 44.9915, lng: -0.4280, p: "235k", d: "27/10/22", t:'h'},
+      {lat: 44.9915, lng: -0.4280, p: "156k", d: "27/09/22", t:'h'}, {lat: 44.9915, lng: -0.4280, p: "203k", d: "21/02/25", t:'h'},
+      {lat: 45.0030, lng: -0.4480, p: "303k", d: "25/06/24", t:'h'}, {lat: 45.0030, lng: -0.4480, p: "245k", d: "04/04/25", t:'h'},
+      {lat: 44.9920, lng: -0.4300, p: "220k", d: "21/07/22", t:'h'}, {lat: 44.9940, lng: -0.4350, p: "227k", d: "09/12/22", t:'h'},
+      {lat: 44.9940, lng: -0.4350, p: "222k", d: "21/08/24", t:'h'}, {lat: 44.9940, lng: -0.4350, p: "247k", d: "19/05/22", t:'h'},
+      {lat: 44.9900, lng: -0.4450, p: "220k", d: "16/10/24", t:'h'}, {lat: 44.9900, lng: -0.4450, p: "309k", d: "25/07/22", t:'h'},
+      {lat: 44.9900, lng: -0.4450, p: "222k", d: "12/11/24", t:'h'}, {lat: 44.9980, lng: -0.4250, p: "329k", d: "20/07/23", t:'h'},
+      {lat: 45.0030, lng: -0.4280, p: "251k", d: "05/07/24", t:'h'}, {lat: 45.0030, lng: -0.4280, p: "220k", d: "23/05/25", t:'h'},
+      {lat: 45.0030, lng: -0.4280, p: "185k", d: "17/05/22", t:'h'}, {lat: 44.9900, lng: -0.4350, p: "242k", d: "23/11/23", t:'h'},
+      {lat: 44.9900, lng: -0.4350, p: "202k", d: "03/10/23", t:'h'}, {lat: 44.9900, lng: -0.4350, p: "261k", d: "23/09/22", t:'h'},
+      {lat: 44.9900, lng: -0.4350, p: "303k", d: "04/09/23", t:'h'}, {lat: 44.9900, lng: -0.4350, p: "215k", d: "17/11/22", t:'h'},
+      {lat: 44.9850, lng: -0.4350, p: "400k", d: "03/09/24", t:'h'}, {lat: 44.9850, lng: -0.4350, p: "151k", d: "22/08/24", t:'h'},
+      {lat: 44.9880, lng: -0.4300, p: "380k", d: "04/08/23", t:'h'}, {lat: 44.9880, lng: -0.4300, p: "333k", d: "22/05/24", t:'h'},
+      {lat: 44.9880, lng: -0.4300, p: "277k", d: "19/08/22", t:'h'}, {lat: 44.9930, lng: -0.4400, p: "311k", d: "07/08/24", t:'h'},
+      {lat: 44.9910, lng: -0.4400, p: "198k", d: "14/06/23", t:'h'}, {lat: 44.9910, lng: -0.4400, p: "133k", d: "16/04/24", t:'h'},
+      {lat: 44.9920, lng: -0.4450, p: "158k", d: "02/08/24", t:'h'}, {lat: 44.9920, lng: -0.4450, p: "170k", d: "25/03/25", t:'h'},
+      {lat: 44.9910, lng: -0.4400, p: "390k", d: "02/09/24", t:'h'}, {lat: 44.9950, lng: -0.4400, p: "292k", d: "26/06/23", t:'h'},
+      {lat: 44.9950, lng: -0.4400, p: "295k", d: "22/03/23", t:'h'}, {lat: 44.9950, lng: -0.4400, p: "150k", d: "05/07/22", t:'h'},
+      {lat: 44.9950, lng: -0.4400, p: "173k", d: "06/05/24", t:'h'}, {lat: 44.9890, lng: -0.4320, p: "181k", d: "30/06/22", t:'h'},
+      {lat: 44.9890, lng: -0.4320, p: "200k", d: "06/05/25", t:'h'}, {lat: 44.9890, lng: -0.4320, p: "192k", d: "07/07/23", t:'h'},
+      {lat: 44.9995, lng: -0.4320, p: "150k", d: "09/02/23", t:'h'}, {lat: 44.9995, lng: -0.4320, p: "538k", d: "25/10/22", t:'h'},
+      {lat: 44.9995, lng: -0.4320, p: "433k", d: "28/10/22", t:'h'}, {lat: 44.9950, lng: -0.4465, p: "750k", d: "07/06/23", t:'h'},
+      {lat: 44.9970, lng: -0.4380, p: "232k", d: "18/07/22", t:'h'}, {lat: 44.9960, lng: -0.4360, p: "291k", d: "27/09/23", t:'h'},
+      {lat: 44.9930, lng: -0.4480, p: "262k", d: "17/04/23", t:'h'}, {lat: 44.9930, lng: -0.4480, p: "211k", d: "05/08/24", t:'h'},
+      {lat: 44.9930, lng: -0.4480, p: "220k", d: "27/10/23", t:'h'}, {lat: 44.9930, lng: -0.4480, p: "275k", d: "13/09/23", t:'h'},
+      {lat: 44.9950, lng: -0.4465, p: "160k", d: "24/06/22", t:'a'}, {lat: 44.9950, lng: -0.4465, p: "178k", d: "01/07/22", t:'a'},
+      {lat: 44.9950, lng: -0.4465, p: "190k", d: "13/07/22", t:'a'}, {lat: 44.9950, lng: -0.4465, p: "215k", d: "26/08/22", t:'a'},
+      {lat: 44.9950, lng: -0.4465, p: "106k", d: "17/05/23", t:'a'}, {lat: 44.9950, lng: -0.4465, p: "171k", d: "21/08/23", t:'a'},
+      {lat: 44.9950, lng: -0.4465, p: "215k", d: "28/08/23", t:'a'}, {lat: 44.9950, lng: -0.4465, p: "181k", d: "08/07/24", t:'a'},
+      {lat: 44.9950, lng: -0.4465, p: "227k", d: "25/07/24", t:'a'}, {lat: 44.9950, lng: -0.4465, p: "187k", d: "01/04/25", t:'a'},
+      {lat: 44.9890, lng: -0.4320, p: "340k", d: "07/07/22", t:'h'}, {lat: 44.9910, lng: -0.4300, p: "380k", d: "19/01/23", t:'h'},
+      {lat: 44.9920, lng: -0.4350, p: "400k", d: "27/04/23", t:'h'}, {lat: 44.9920, lng: -0.4350, p: "314k", d: "14/09/23", t:'h'},
+      {lat: 44.9940, lng: -0.4380, p: "446k", d: "12/10/23", t:'h'}, {lat: 44.9930, lng: -0.4390, p: "200k", d: "21/10/24", t:'h'},
+      {lat: 44.9930, lng: -0.4390, p: "314k", d: "07/04/23", t:'h'}, {lat: 44.9950, lng: -0.4450, p: "245k", d: "26/08/22", t:'h'},
+      {lat: 44.9960, lng: -0.4440, p: "223k", d: "20/03/24", t:'h'}, {lat: 44.9890, lng: -0.4320, p: "181k", d: "30/06/22", t:'h'},
+      {lat: 44.9890, lng: -0.4320, p: "200k", d: "06/05/25", t:'h'}, {lat: 44.9890, lng: -0.4320, p: "192k", d: "07/07/23", t:'h'},
+      {lat: 44.9960, lng: -0.4440, p: "236k", d: "28/07/23", t:'h'}
     ];
 
     // --- MAP INIT ---
     const map = L.map('map', { zoomControl: false, tap: false }).setView(USERS["Alexis"].center, 15);
     
+    // PANES
     map.createPane('zonesPane'); map.getPane('zonesPane').style.zIndex = 350;
     map.createPane('cadastrePane'); map.getPane('cadastrePane').style.zIndex = 380;
     map.createPane('streetsPane'); map.getPane('streetsPane').style.zIndex = 450;
@@ -183,12 +305,12 @@
     const lPlan = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', { maxZoom: 20 }).addTo(map);
     const lSat = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { maxZoom: 19 });
     
-    // LAYER CADASTRE (ArcGIS Server - Ultra rapide)
+    // LAYER CADASTRE (ArcGIS)
     state.layers.cadastre = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/France/Cadastre/MapServer/tile/{z}/{y}/{x}', {
         pane: 'cadastrePane', opacity: 0.6
     });
     
-    state.layers.dvf = L.layerGroup();
+    state.layers.dvf = L.layerGroup(); // DVF
 
     const polyLayer = L.layerGroup().addTo(map);
     function drawZones() {
@@ -251,78 +373,82 @@
     // --- TOOLS ---
     window.toggleCadastre = () => {
         const btn = document.getElementById('btn-cadastre');
-        if(map.hasLayer(state.layers.cadastre)) { 
-            map.removeLayer(state.layers.cadastre); 
-            btn.classList.remove('active-tool'); 
-        } else { 
-            map.addLayer(state.layers.cadastre); 
-            btn.classList.add('active-tool'); 
-            showToast("📐 Zoom pour voir les parcelles"); 
-        }
+        if(map.hasLayer(state.layers.cadastre)) { map.removeLayer(state.layers.cadastre); btn.classList.remove('active-tool'); }
+        else { map.addLayer(state.layers.cadastre); btn.classList.add('active-tool'); showToast("📐 Cadastre chargé"); }
     };
 
     window.toggleDVF = () => {
         const btn = document.getElementById('btn-dvf');
+        const filters = document.getElementById('dvf-filters');
+        
         if(map.hasLayer(state.layers.dvf)) {
             map.removeLayer(state.layers.dvf);
             btn.classList.remove('active-tool');
+            filters.classList.remove('visible');
         } else {
             btn.classList.add('active-tool');
-            state.layers.dvf.clearLayers();
-            
-            // AFFICHAGE DES DONNEES EXTRAITES DU PDF
-            HARD_DATA_DVF.forEach(pt => {
-                const icon = L.divIcon({ className: 'dvf-marker', html: pt.p, iconSize: [null,null] });
-                L.marker([pt.lat, pt.lng], {icon: icon, pane: 'markersPane'})
-                 .bindPopup(`<b>${pt.p}</b><br>${pt.a}<br>${pt.d}`)
-                 .addTo(state.layers.dvf);
-            });
-            
-            map.addLayer(state.layers.dvf);
-            showToast(`💰 ${HARD_DATA_DVF.length} ventes chargées`);
+            filters.classList.add('visible');
+            displayDVF('all');
+            showToast("💰 Ventes affichées");
         }
     };
 
-    // --- STREET VIEW (PIN DRAG & DROP) ---
-    const mapEl = document.getElementById('map');
-    const pin = document.getElementById('touch-pin');
-    const shadow = document.getElementById('touch-shadow');
-    let isDragging = false;
+    window.filterDVF = (type) => {
+        document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+        // Highlight active button logic needed here if complex, simple version:
+        displayDVF(type);
+    };
 
-    window.oncontextmenu = (e) => { e.preventDefault(); return false; };
-
-    mapEl.addEventListener('touchstart', (e) => {
-        if(e.touches.length > 1) return; 
-        const t = e.touches[0];
-        isDragging = true;
-        updatePin(t.clientX, t.clientY);
-        pin.style.display = 'block'; shadow.style.display = 'block';
-        if(navigator.vibrate) navigator.vibrate(50);
-    }, {passive: false});
-
-    mapEl.addEventListener('touchmove', (e) => {
-        if(!isDragging) return;
-        e.preventDefault(); 
-        const t = e.touches[0];
-        updatePin(t.clientX, t.clientY);
-    }, {passive: false});
-
-    mapEl.addEventListener('touchend', (e) => {
-        if(!isDragging) return;
-        isDragging = false;
-        pin.style.display = 'none'; shadow.style.display = 'none';
-        const t = e.changedTouches[0];
-        const pt = L.point(t.clientX, t.clientY);
-        const ll = map.containerPointToLatLng(pt);
-        window.open(`https://www.google.com/maps/search/?api=1&query=$${ll.lat},${ll.lng}`, '_blank');
-    });
-
-    function updatePin(x, y) {
-        pin.style.left = x + 'px'; pin.style.top = (y - 60) + 'px'; 
-        shadow.style.left = x + 'px'; shadow.style.top = y + 'px';
+    function displayDVF(type) {
+        state.layers.dvf.clearLayers();
+        let count = 0;
+        
+        FULL_DVF_DATA.forEach(pt => {
+            if(type !== 'all' && pt.t !== type) return;
+            
+            // Jitter pour éviter superposition
+            const lat = pt.lat + (Math.random()-0.5)*0.0002;
+            const lng = pt.lng + (Math.random()-0.5)*0.0002;
+            
+            const cssClass = pt.t === 'h' ? 'dvf-house' : 'dvf-apt';
+            const iconHTML = pt.t === 'h' ? `🏠 ${pt.p}` : `🏢 ${pt.p}`;
+            
+            const icon = L.divIcon({ className: `dvf-marker ${cssClass}`, html: iconHTML, iconSize: [null,null] });
+            
+            L.marker([lat, lng], {icon: icon, pane: 'markersPane'})
+             .bindPopup(`<b>${pt.p}</b><br>${pt.a}<br>${pt.d}`)
+             .addTo(state.layers.dvf);
+            count++;
+        });
     }
 
-    // --- NOTES ---
+    // --- STREET VIEW (SIMPLE LONG PRESS) ---
+    let pressTimer;
+    const svMarker = document.getElementById('sv-marker');
+
+    map.on('mousedown touchstart', (e) => {
+        if(e.originalEvent.touches && e.originalEvent.touches.length > 1) return;
+        const ll = e.latlng;
+        const pt = map.latLngToContainerPoint(ll);
+        svMarker.style.left = pt.x + 'px'; svMarker.style.top = pt.y + 'px';
+        
+        pressTimer = setTimeout(() => {
+            svMarker.classList.add('visible');
+            if(navigator.vibrate) navigator.vibrate(50);
+            
+            const onUp = () => {
+                svMarker.classList.remove('visible');
+                window.open(`https://www.google.com/maps/search/?api=1&query=$${ll.lat},${ll.lng}`, '_blank');
+                document.removeEventListener('mouseup', onUp);
+                document.removeEventListener('touchend', onUp);
+            };
+            document.addEventListener('mouseup', onUp);
+            document.addEventListener('touchend', onUp);
+        }, 800);
+    });
+    map.on('mouseup touchend dragstart', () => { clearTimeout(pressTimer); svMarker.classList.remove('visible'); });
+
+    // --- NOTES (SIMPLE) ---
     window.openNoteModal = (type) => {
         state.noteType = type;
         document.getElementById('note-title').innerText = "Note : " + type;
@@ -340,7 +466,7 @@
         showToast("✅ Note sauvegardée !");
     };
 
-    // --- TOURNEE ---
+    // --- TOURNEE & GPS ---
     function activateGPS() {
         if(!navigator.geolocation) return;
         document.getElementById('btn-gps').classList.add('gps-active');
